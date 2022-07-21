@@ -69,7 +69,7 @@ func TestLoadSource(t *testing.T) {
 	_, err = loadSource("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
 
-	_, err = NewAnalysis("../testutils/testsource/not_go/dummy.txt")
+	_, err = NewAnalysisFromFile("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
 }
 
@@ -80,8 +80,16 @@ func TestFetch(t *testing.T) {
 	}
 }
 
+func TestAnalysFromTypes(t *testing.T) {
+	st := testPkg.Types.Scope().Lookup("structWithExternalRef").Type().(*types.Named)
+
+	an := NewAnalysisFromTypes(testPkg, []*types.Named{st})
+	Assert(t, len(an.Outline) == 1)
+	Assert(t, len(an.Types) == 6)
+}
+
 func TestAnalysisStruct(t *testing.T) {
-	an := newAnalysis(testPkg, testSource)
+	an := newAnalysisFromFile(testPkg, testSource)
 
 	st := testPkg.Types.Scope().Lookup("structWithExternalRef").Type().(*types.Named)
 	fields := an.Types[st].(*Struct).Fields

@@ -151,9 +151,9 @@ type Analysis struct {
 	Outline []*types.Named
 }
 
-// NewAnalysis calls `packages.Load` on the given `sourceFile`
-// and then built the analysis.
-func NewAnalysis(sourceFile string) (*Analysis, error) {
+// NewAnalysisFromFile calls `packages.Load` on the given `sourceFile`
+// and then builds the analysis for the types defined in `sourceFile`.
+func NewAnalysisFromFile(sourceFile string) (*Analysis, error) {
 	pa, err := loadSource(sourceFile)
 	if err != nil {
 		return nil, err
@@ -164,14 +164,12 @@ func NewAnalysis(sourceFile string) (*Analysis, error) {
 		return nil, err
 	}
 
-	return newAnalysis(pa, sourceFileAbs), nil
+	return newAnalysisFromFile(pa, sourceFileAbs), nil
 }
 
-func newAnalysis(pa *packages.Package, sourceFileAbs string) *Analysis {
-	enums, unions := fetchEnumsAndUnions(pa)
-	ctx := context{enums: enums, unions: unions, rootPackage: pa}
+func newAnalysisFromFile(pa *packages.Package, sourceFileAbs string) *Analysis {
+	var nameds []*types.Named
 
-	out := &Analysis{Types: make(map[types.Type]Type)}
 	// walk the top level type declarations
 	scope := pa.Types.Scope()
 	for _, name := range scope.Names() {
@@ -189,12 +187,27 @@ func newAnalysis(pa *packages.Package, sourceFileAbs string) *Analysis {
 
 		named := typeName.Type().(*types.Named)
 
-		out.Outline = append(out.Outline, named)
-
-		out.handleType(named, ctx)
+		nameds = append(nameds, named)
 	}
 
+	return NewAnalysisFromTypes(pa, nameds)
+}
+
+// NewAnalysisFromTypes build the analysis for the given `types`.
+func NewAnalysisFromTypes(pa *packages.Package, nameds []*types.Named) *Analysis {
+	out := &Analysis{Outline: nameds}
+	out.populateTypes(pa)
 	return out
+}
+
+func (an *Analysis) populateTypes(pa *packages.Package) {
+	enums, unions := fetchEnumsAndUnions(pa)
+	ctx := context{enums: enums, unions: unions, rootPackage: pa}
+
+	an.Types = make(map[types.Type]Type)
+	for _, named := range an.Outline {
+		an.handleType(named, ctx)
+	}
 }
 
 // context stores the parameters need by the analysis,

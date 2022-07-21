@@ -13,7 +13,7 @@ This module provides a tool taking Go code as input, and generating boilerplate 
 
 ### `analysis`
 
-This package provides an extension of the standard `go/types` package with support for enums and union types. It knows nothing about the output targets.
+This package provides an extension of the standard `go/types` package with support for enums, union types and time and date. It knows nothing about the output targets, but serves as a shared base.
 
 ### `generator`
 
