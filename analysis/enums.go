@@ -11,9 +11,9 @@ import (
 
 const IgnoreDeclComment = "gomacro:no-enum"
 
-// Enums is the set of named types which are
+// enumsMap is the set of named types which are
 // considered as enums.
-type Enums map[*types.Named]*Enum
+type enumsMap map[*types.Named]*Enum
 
 // EnumMember decribe the value of one item in an enumeration type.
 type EnumMember struct {
@@ -69,9 +69,9 @@ func fetchConstComment(pa *packages.Package, obj *types.Const) string {
 // fetchPkgEnums walks through all the constants defined by the given package
 // to extract enums types (and their members)
 // unexported values are ignored
-func fetchPkgEnums(pa *packages.Package) Enums {
+func fetchPkgEnums(pa *packages.Package) enumsMap {
 	// we detect values and then build the types from it
-	out := make(Enums)
+	out := make(enumsMap)
 	scope := pa.Types.Scope()
 	for _, name := range scope.Names() {
 		obj := scope.Lookup(name)

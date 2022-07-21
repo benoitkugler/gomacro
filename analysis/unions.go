@@ -6,9 +6,9 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// Unions is the set of named types which are
+// unionsMap is the set of named types which are
 // considered as union types.
-type Unions map[*types.Named]*Union
+type unionsMap map[*types.Named]*Union
 
 // Union is deduced from interfaces, with the limitation
 // that only types defined in the same package are considered
@@ -38,8 +38,8 @@ func allNamedTypes(pa *packages.Package) (out []*types.Named) {
 	return out
 }
 
-func fetchPkgUnions(pa *packages.Package) Unions {
-	out := make(Unions)
+func fetchPkgUnions(pa *packages.Package) unionsMap {
+	out := make(unionsMap)
 
 	// get all the named types (candidates for members)
 	candidates := allNamedTypes(pa)

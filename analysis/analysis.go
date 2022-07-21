@@ -106,9 +106,9 @@ func nodeAtFile(pos token.Pos, file *ast.File) (out ast.Node) {
 // which is <domain>/<org>/<root>.
 // For example, if `pa` is github.com/gopher/lib/server,
 // only the subpackages github.com/gopher/lib/... will be searched.
-func fetchEnumsAndUnions(pa *packages.Package) (Enums, Unions) {
-	outEnums := make(Enums)
-	outUnions := make(Unions)
+func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
+	outEnums := make(enumsMap)
+	outUnions := make(unionsMap)
 
 	chunks := strings.Split(pa.PkgPath, "/")
 	var prefix string
@@ -204,8 +204,8 @@ type context struct {
 
 	// enums and unions are used during analysis,
 	// and may be used to handle enums and union types
-	enums  Enums
-	unions Unions
+	enums  enumsMap
+	unions unionsMap
 
 	extern *externMap // optional
 }

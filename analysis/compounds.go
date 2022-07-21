@@ -61,7 +61,7 @@ func (cl *Struct) Name() *types.Named { return cl.name }
 
 // Implements return the union types this class implements,
 // among the ones given.
-func (cl *Struct) Implements(unions Unions) []*Union {
+func (cl *Struct) Implements(unions unionsMap) []*Union {
 	cl.name.Obj().Pos()
 	var out []*Union
 	for _, v := range unions {
