@@ -3,6 +3,9 @@ package testsource
 import (
 	"context"
 	"math/big"
+	"time"
+
+	"github.com/benoitkugler/gomacro/testutils/testsource/subpackage"
 )
 
 type concretType1 struct {
@@ -37,20 +40,28 @@ var (
 	_ itfType2 = concretType1{}
 )
 
+type MyDate time.Time
+
 type complexStruct struct {
-	Dict  map[int]int
-	B     string
-	Value itfType
-	L     itfList
-	A     int
+	Dict     map[int]int
+	U        *int
+	Time     *time.Time
+	B        string
+	Value    itfType
+	L        itfList
+	A        int
+	E        enumInt
+	Date     MyDate
+	F        [5]int
+	Imported subpackage.StructWithComment
 }
 
 type itfList []itfType
 
 type structWithExternalRef struct {
-	Field1 context.Context `dart-extern:"context:extern.dart"`
-	Field2 context.Context `dart-extern:"context:extern.dart"`
-	Field3 map[int]big.Rat `dart-extern:"big:extern.dart"`
+	Field1 context.Context    `gomacro-extern:"context:dart:extern.dart"`
+	Field2 context.CancelFunc `gomacro-extern:"context:dart:extern2.dart:ts:extern.ts"`
+	Field3 map[int]big.Rat    `gomacro-extern:"big:dart:extern3.dart"`
 }
 
 type recursiveType struct {
@@ -60,3 +71,9 @@ type recursiveType struct {
 type notAnEnum string
 
 const SpecialValue notAnEnum = "dummy" // gomacro:no-enum
+
+type withEmbeded struct {
+	notAnEnum
+
+	complexStruct
+}

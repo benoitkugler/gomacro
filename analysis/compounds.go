@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"fmt"
 	"go/ast"
 	"go/types"
 	"regexp"
@@ -43,23 +44,24 @@ type SpecialComment struct {
 	Kind    CommentKind
 }
 
-type ClassField struct {
-	Type Type
-	Name string // the name of the field in the Go struct
+type StructField struct {
+	Type  Type
+	Field *types.Var // returned by Struct.Field()
+	Tag   string     // returned by Struct.Tag()
 }
 
-type Class struct {
+type Struct struct {
 	name *types.Named
 
-	Fields   []ClassField
+	Fields   []StructField
 	Comments []SpecialComment
 }
 
-func (cl *Class) Name() *types.Named { return cl.name }
+func (cl *Struct) Name() *types.Named { return cl.name }
 
 // Implements return the union types this class implements,
 // among the ones given.
-func (cl *Class) Implements(unions Unions) []*Union {
+func (cl *Struct) Implements(unions Unions) []*Union {
 	cl.name.Obj().Pos()
 	var out []*Union
 	for _, v := range unions {
@@ -72,8 +74,28 @@ func (cl *Class) Implements(unions Unions) []*Union {
 	return out
 }
 
-func fetchStructComments(pa *packages.Package, obj *types.Named) (out []SpecialComment) {
-	pos := obj.Obj().Pos()
+// findPackage recurses through the imports to find the package `obj` belongs to
+func findPackage(rootPackage *packages.Package, obj types.Object) *packages.Package {
+	if obj.Pkg().Path() == rootPackage.PkgPath {
+		return rootPackage
+	}
+	for _, importPkg := range rootPackage.Imports {
+		if pa := findPackage(importPkg, obj); pa != nil {
+			return pa
+		}
+	}
+	return nil
+}
+
+func fetchStructComments(rootPackage *packages.Package, name *types.Named) (out []SpecialComment) {
+	pa := findPackage(rootPackage, name.Obj())
+	if pa == nil {
+		panic(fmt.Sprintf("package %s not found", name.Obj().Pkg()))
+	}
+	// make sure pa and name work with the same file set
+	name = pa.Types.Scope().Lookup(name.Obj().Name()).Type().(*types.Named)
+
+	pos := name.Obj().Pos()
 	node := nodeAt(pa, pos-1) // move up by one char to get the line right before the struct
 	decl, ok := node.(*ast.GenDecl)
 	if !ok || decl.Doc == nil {

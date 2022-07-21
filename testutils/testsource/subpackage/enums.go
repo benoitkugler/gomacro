@@ -7,3 +7,8 @@ const (
 	B
 	C
 )
+
+// gomacro:SQL add unique
+type StructWithComment struct {
+	A int
+}

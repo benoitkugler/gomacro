@@ -7,9 +7,11 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"log"
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -21,13 +23,9 @@ import (
 type Type interface {
 	// Name returns nil for universal types, such as
 	// []bool, string, int, map[int]MyStruct, etc...
+	// It also returns nil for time.Time, since we consider
+	// it as a standard type.
 	Name() *types.Named
-
-	// // Underlying returns the associated underlying Go type, which is
-	// // thus never *types.Named
-	// // For named types, it will always be Name().Underlying(), but
-	// // not for anonymous ones.
-	// Underlying() types.Type
 }
 
 // loadSource returns the `packages.Package` containing the given file.
@@ -146,18 +144,11 @@ type Analysis struct {
 	// Types adds the additional analysis of this package,
 	// and contains all the types needed by `Outline` and
 	// their dependencies.
-	Types map[*types.Named]Type
+	Types map[types.Type]Type
 
 	// Outline is the list of top-level types
 	// defined in the analysis input file.
 	Outline []*types.Named
-
-	// enums and unions are used during analysis,
-	// and may be used to handle enums and union types
-	// not that, once `Types` is built, these fields are
-	// somewhat redundant, since included in `Types`
-	enums  Enums
-	unions Unions
 }
 
 // NewAnalysis calls `packages.Load` on the given `sourceFile`
@@ -178,8 +169,9 @@ func NewAnalysis(sourceFile string) (*Analysis, error) {
 
 func newAnalysis(pa *packages.Package, sourceFileAbs string) *Analysis {
 	enums, unions := fetchEnumsAndUnions(pa)
+	ctx := context{enums: enums, unions: unions, rootPackage: pa}
 
-	out := &Analysis{Types: make(map[*types.Named]Type), unions: unions, enums: enums}
+	out := &Analysis{Types: make(map[types.Type]Type)}
 	// walk the top level type declarations
 	scope := pa.Types.Scope()
 	for _, name := range scope.Names() {
@@ -199,24 +191,164 @@ func newAnalysis(pa *packages.Package, sourceFileAbs string) *Analysis {
 
 		out.Outline = append(out.Outline, named)
 
-		out.handleType(named)
+		out.handleType(named, ctx)
 	}
 
 	return out
 }
 
+// context stores the parameters need by the analysis,
+// which may vary between types
+type context struct {
+	rootPackage *packages.Package
+
+	// enums and unions are used during analysis,
+	// and may be used to handle enums and union types
+	enums  Enums
+	unions Unions
+
+	extern *externMap // optional
+}
+
+type externMap struct {
+	externalFiles map[string]string
+	goPackage     string
+}
+
+// check for tag with the form gomacro-extern:"<pkg>:<mode1>:<targetFile1>:<mode2>:<targetFile2>"
+func newExternMap(tag string) *externMap {
+	de := reflect.StructTag(tag).Get("gomacro-extern")
+	if de == "" {
+		return nil
+	}
+
+	chunks := strings.Split(de, ":")
+	goPackage := chunks[0]
+	chunks = chunks[1:]
+	if len(chunks)%2 != 0 {
+		panic("invalid gomacro-extern tag " + de)
+	}
+	externalFiles := make(map[string]string)
+	for i := 0; i < len(chunks)/2; i++ {
+		externalFiles[chunks[2*i]] = chunks[2*i+1]
+	}
+	return &externMap{goPackage: goPackage, externalFiles: externalFiles}
+}
+
+func (an *Analysis) handleStructFields(typ *types.Struct, ctx context) []StructField {
+	var out []StructField
+	for i := 0; i < typ.NumFields(); i++ {
+		field := typ.Field(i)
+		tag := typ.Tag(i)
+
+		// handle extern definition
+		ctx.extern = newExternMap(tag)
+
+		// recurse
+		fieldType := an.handleType(field.Type(), ctx)
+
+		// to simplify, we do not fully support embedded fields :
+		// we only accept structs, and we merge the fields
+		if field.Embedded() {
+			if st, isStruct := fieldType.(*Struct); isStruct {
+				log.Printf("gomacro: embedded struct field %s will be flattened", field.Name())
+				out = append(out, st.Fields...)
+				continue
+			} else {
+				log.Printf("gomacro: field %s: embedding will be ignored", field.Name())
+			}
+		}
+
+		out = append(out, StructField{Type: fieldType, Field: field, Tag: tag})
+	}
+	return out
+}
+
+func (an *Analysis) createType(typ types.Type, ctx context) Type {
+	if typ == nil {
+		panic("nil types.Type")
+	}
+
+	// special case for time.Time
+	if ti, isTime := newTime(typ); isTime {
+		return ti
+	}
+
+	name, isNamed := typ.(*types.Named)
+	if isNamed {
+		if ctx.extern != nil { // check for external refs
+			if name.Obj().Pkg().Name() == ctx.extern.goPackage {
+				return &Extern{name: name, ExternalFiles: ctx.extern.externalFiles}
+			}
+		}
+
+		// look for enums and unions
+		if enum, isEnum := ctx.enums[name]; isEnum {
+			return enum
+		} else if union, isUnion := ctx.unions[name]; isUnion {
+			return union
+		}
+
+		// otherwise, analyze the underlying type
+	}
+
+	switch underlying := typ.Underlying().(type) {
+	case *types.Pointer:
+		// we do not distinguish between pointer vs regular values,
+		// simply resolve the indirection
+		return an.handleType(underlying.Elem(), ctx)
+	case *types.Basic:
+		return &Basic{typ: typ}
+
+	// to properly handle recursive types (for Array, Slice, Map, Struct), we first register
+	// an incomplete type so that handleType() returns early
+
+	case *types.Array:
+		out := &Array{name: name, Len: int(underlying.Len())}
+		an.Types[typ] = out
+		out.Elem = an.handleType(underlying.Elem(), ctx) // recurse
+		return out
+	case *types.Slice:
+		out := &Array{name: name, Len: -1}
+		an.Types[typ] = out
+		out.Elem = an.handleType(underlying.Elem(), ctx) // recurse
+		return out
+	case *types.Map:
+		out := &Map{name: name}
+		an.Types[typ] = out
+		out.Key = an.handleType(underlying.Key(), ctx)   // recurse
+		out.Elem = an.handleType(underlying.Elem(), ctx) // recurse
+		return out
+	case *types.Struct:
+		if !isNamed {
+			panic("anonymous structs are not supported")
+		}
+		out := &Struct{
+			name:     name,
+			Comments: fetchStructComments(ctx.rootPackage, name),
+		}
+		an.Types[typ] = out
+		out.Fields = an.handleStructFields(underlying, ctx) // recurse
+		return out
+	default:
+		// unhandled type, should not happend on real case
+		panic("unsupported type " + typ.String())
+	}
+}
+
 // handleType analyzes the given type, registers the resulting `Type`
 // and returns it.
-// it is a no-op of `named` as already been processed
-func (an *Analysis) handleType(named *types.Named) Type {
-	if v, has := an.Types[named]; has { // we have already seen this type
+// it is a no-op if `typ` as already been processed
+func (an *Analysis) handleType(typ types.Type, ctx context) Type {
+	if v, has := an.Types[typ]; has { // we have already seen this type
 		return v
 	}
 
-	// TODO: actually create the type
-	var type_ Type
+	// resolve the type
+	type_ := an.createType(typ, ctx)
 
 	// register it
-	an.Types[named] = type_
+	an.Types[typ] = type_
+
 	return type_
 }

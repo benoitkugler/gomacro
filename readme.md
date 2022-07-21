@@ -19,10 +19,11 @@ This package provides an extension of the standard `go/types` package with suppo
 
 This package uses the result provided by `analysis` to actually generate the code.
 
-## Code directives
+## Code directives and conventions
 
 This module tries to be as smart and general as possible, but relies on special comments when
 desambiguation is required.
 
 - Definition of a constant which is not an enumeration: add `// gomacro:no-enum`
 - Rely on an external generated file: add the `gomacro-extern:"<pkg>:<targetFile>"` tag to struct fields
+- Types with name containing "Date" and with underlying time.Time are considered as date

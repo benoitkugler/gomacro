@@ -10,9 +10,13 @@ func ShouldPanic(t *testing.T, f func()) {
 	t.Errorf("should have panicked")
 }
 
-func Assert(t *testing.T, b bool) {
+func Assert(t *testing.T, b bool, context ...interface{}) {
 	t.Helper()
 	if !b {
-		t.Fatal("assertion error")
+		if len(context) >= 1 {
+			t.Fatalf("assertion error %v", context[0])
+		} else {
+			t.Fatalf("assertion error")
+		}
 	}
 }

@@ -39,19 +39,26 @@ func TestPanics(t *testing.T) {
 	ShouldPanic(t, func() { fetchConstComment(&pkg, testPkg.Types.Scope().Lookup("Yes").(*types.Const)) })
 
 	ShouldPanic(t, func() { isSpecialComment("// gomacro:XXX a") })
+
+	ShouldPanic(t, func() { newExternMap(`gomacro-extern:"context:dart"`) })
+
+	ShouldPanic(t, func() { (&Analysis{}).createType(nil, context{}) })
+	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewStruct(nil, nil), context{}) })
+	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewChan(types.RecvOnly, nil), context{}) })
 }
 
 func TestMethodTags(t *testing.T) {
 	for _, v := range []Type{
-		&Basic{goType: &types.Basic{}},
+		&Basic{typ: &types.Basic{}},
 		&Enum{name: &types.Named{}},
-		&Class{},
+		&Struct{},
 		&Union{},
 		&Map{},
 		&Array{},
+		&Time{},
+		&Extern{},
 	} {
 		v.Name()
-		// v.Underlying()
 	}
 }
 
@@ -60,6 +67,9 @@ func TestLoadSource(t *testing.T) {
 	Assert(t, err != nil)
 
 	_, err = loadSource("../testutils/testsource/not_go/dummy.txt")
+	Assert(t, err != nil)
+
+	_, err = NewAnalysis("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
 }
 
@@ -70,7 +80,24 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-func TestAnalysis(t *testing.T) {
+func TestAnalysisStruct(t *testing.T) {
 	an := newAnalysis(testPkg, testSource)
-	fmt.Println(an.Outline)
+
+	st := testPkg.Types.Scope().Lookup("structWithExternalRef").Type().(*types.Named)
+	fields := an.Types[st].(*Struct).Fields
+	Assert(t, len(fields) == 3)
+
+	ext, ok := fields[0].Type.(*Extern)
+	Assert(t, ok)
+	Assert(t, len(ext.ExternalFiles) == 1)
+
+	ext, ok = fields[1].Type.(*Extern)
+	Assert(t, ok)
+	Assert(t, len(ext.ExternalFiles) == 2, ext.ExternalFiles)
+
+	ma, ok := fields[2].Type.(*Map)
+	Assert(t, ok)
+	ext, ok = ma.Elem.(*Extern)
+	Assert(t, ok)
+	Assert(t, len(ext.ExternalFiles) == 1)
 }
