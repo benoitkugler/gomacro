@@ -17,6 +17,14 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+const (
+	// ExhaustiveTypeSwitch may be used as marker to make futur refactor easier
+	ExhaustiveTypeSwitch = "exhaustive analysis.Type type switch"
+
+	// ExhaustiveBasicKindSwitch may be used as marker to make futur refactor easier
+	ExhaustiveBasicKindSwitch = "exhaustive analysis.BasicKind switch"
+)
+
 // Type is the common interface for all the supported types.
 // All implementation must be valid map keys, so that
 // the can easily be mapped to output types.
@@ -208,6 +216,12 @@ func (an *Analysis) populateTypes(pa *packages.Package) {
 	for _, named := range an.Outline {
 		an.handleType(named, ctx)
 	}
+
+	for _, type_ := range an.Types {
+		if st, isStruct := type_.(*Struct); isStruct {
+			st.setImplements(ctx.unions, an.Types)
+		}
+	}
 }
 
 // context stores the parameters need by the analysis,
@@ -282,7 +296,7 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 		panic("nil types.Type")
 	}
 
-	// special case for time.Time
+	// special case for time.Time, which require the name information
 	if ti, isTime := newTime(typ); isTime {
 		return ti
 	}
@@ -295,14 +309,30 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 			}
 		}
 
-		// look for enums and unions
+		// look for enums, unions and structs
 		if enum, isEnum := ctx.enums[name]; isEnum {
 			return enum
-		} else if union, isUnion := ctx.unions[name]; isUnion {
-			return union
+		} else if members, isUnion := ctx.unions[name]; isUnion {
+			// add the member to the type to analyze
+			out := &Union{name: name}
+			for _, member := range members {
+				out.Members = append(out.Members, an.handleType(member, ctx))
+			}
+			return out
+		} else if st, isStruct := typ.Underlying().(*types.Struct); isStruct {
+			out := &Struct{
+				name:     name,
+				Comments: fetchStructComments(ctx.rootPackage, name),
+				// Implements are defered
+			}
+			an.Types[typ] = out                         // register before recursing
+			out.Fields = an.handleStructFields(st, ctx) // recurse
+			return out
 		}
 
 		// otherwise, analyze the underlying type
+		under := an.handleType(typ.Underlying(), ctx).(AnonymousType)
+		return &Named{name: name, Underlying: under}
 	}
 
 	switch underlying := typ.Underlying().(type) {
@@ -311,38 +341,29 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 		// simply resolve the indirection
 		return an.handleType(underlying.Elem(), ctx)
 	case *types.Basic:
-		return &Basic{typ: typ}
+		return &Basic{typ: underlying}
 
 	// to properly handle recursive types (for Array, Slice, Map, Struct), we first register
 	// an incomplete type so that handleType() returns early
 
 	case *types.Array:
-		out := &Array{name: name, Len: int(underlying.Len())}
+		out := &Array{Len: int(underlying.Len())}
 		an.Types[typ] = out
 		out.Elem = an.handleType(underlying.Elem(), ctx) // recurse
 		return out
 	case *types.Slice:
-		out := &Array{name: name, Len: -1}
+		out := &Array{Len: -1}
 		an.Types[typ] = out
 		out.Elem = an.handleType(underlying.Elem(), ctx) // recurse
 		return out
 	case *types.Map:
-		out := &Map{name: name}
+		out := &Map{}
 		an.Types[typ] = out
 		out.Key = an.handleType(underlying.Key(), ctx)   // recurse
 		out.Elem = an.handleType(underlying.Elem(), ctx) // recurse
 		return out
 	case *types.Struct:
-		if !isNamed {
-			panic("anonymous structs are not supported")
-		}
-		out := &Struct{
-			name:     name,
-			Comments: fetchStructComments(ctx.rootPackage, name),
-		}
-		an.Types[typ] = out
-		out.Fields = an.handleStructFields(underlying, ctx) // recurse
-		return out
+		panic("anonymous structs are not supported")
 	default:
 		// unhandled type, should not happend on real case
 		panic("unsupported type " + typ.String())

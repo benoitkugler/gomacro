@@ -77,3 +77,10 @@ type withEmbeded struct {
 
 	complexStruct
 }
+
+type (
+	basic1 int
+	basic2 bool
+	basic3 float64
+	basic4 string
+)

@@ -12,14 +12,19 @@ func TestImplements(t *testing.T) {
 
 	concretType1 := testPkg.Types.Scope().Lookup("concretType1").Type().(*types.Named)
 	concretType2 := testPkg.Types.Scope().Lookup("concretType2").Type().(*types.Named)
+	itfType := testPkg.Types.Scope().Lookup("itfType").Type().(*types.Named)
+	itfType2 := testPkg.Types.Scope().Lookup("itfType2").Type().(*types.Named)
+
+	an := NewAnalysisFromTypes(testPkg, []*types.Named{itfType, itfType2})
 
 	cl1 := Struct{name: concretType1}
 	cl2 := Struct{name: concretType2}
 
-	Assert(t, len(cl1.Implements(dict)) == 2)
-	Assert(t, len(cl2.Implements(dict)) == 1)
+	cl1.setImplements(dict, an.Types)
+	cl2.setImplements(dict, an.Types)
 
-	fetchStructComments(testPkg, concretType1)
+	Assert(t, len(cl1.Implements) == 2)
+	Assert(t, len(cl2.Implements) == 1)
 }
 
 func TestStructComments(t *testing.T) {

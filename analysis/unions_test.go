@@ -14,7 +14,7 @@ func TestFetchUnion(t *testing.T) {
 	}
 
 	itf := testPkg.Types.Scope().Lookup("itfType").Type().(*types.Named)
-	union := dict[itf]
+	members := dict[itf]
 
-	Assert(t, len(union.Members) == 2)
+	Assert(t, len(members) == 2)
 }

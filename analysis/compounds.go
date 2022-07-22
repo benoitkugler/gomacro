@@ -11,21 +11,15 @@ import (
 
 // Array is either a fixed or variable length array
 type Array struct {
-	name *types.Named // optional
 	Elem Type
 	// -1 for slices
 	Len int
 }
 
-func (ar *Array) Name() *types.Named { return ar.name }
-
 type Map struct {
-	name *types.Named // optional
 	Key  Type
 	Elem Type
 }
-
-func (ma *Map) Name() *types.Named { return ma.name }
 
 type CommentKind uint8
 
@@ -53,25 +47,30 @@ type StructField struct {
 type Struct struct {
 	name *types.Named
 
-	Fields   []StructField
-	Comments []SpecialComment
+	Fields     []StructField
+	Comments   []SpecialComment
+	Implements []*Union
 }
 
 func (cl *Struct) Name() *types.Named { return cl.name }
 
-// Implements return the union types this class implements,
+// setImplements set `Implements` with the union types this class implements,
 // among the ones given.
-func (cl *Struct) Implements(unions unionsMap) []*Union {
-	cl.name.Obj().Pos()
+func (cl *Struct) setImplements(unions unionsMap, accu map[types.Type]Type) {
 	var out []*Union
-	for _, v := range unions {
-		for _, member := range v.Members {
+	for unionName, v := range unions {
+		unionType, isUnionAnalyzed := accu[unionName].(*Union)
+		if !isUnionAnalyzed {
+			continue // ignore the union if it was not required by the entry types
+		}
+		for _, member := range v {
 			if cl.name == member {
-				out = append(out, v)
+				out = append(out, unionType)
+				break
 			}
 		}
 	}
-	return out
+	cl.Implements = out
 }
 
 // findPackage recurses through the imports to find the package `obj` belongs to

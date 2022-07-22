@@ -31,9 +31,7 @@ type Enum struct {
 	Members []EnumMember
 }
 
-func (t *Enum) Name() *types.Named { return t.name }
-
-// func (t *Enum) Underlying() types.Type { return t.name.Underlying() }
+func (e *Enum) Name() *types.Named { return e.name }
 
 // IsInteger returns `true` is this enum is backed by
 // positive integer values (as opposed for instance to string values).

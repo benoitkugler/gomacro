@@ -5,22 +5,69 @@ import (
 	"strings"
 )
 
+// AnonymousType are the types which may be
+// seen without associated names.
+// Contrary to the Go language, this package
+// does not support anonymous structs, enums and unions.
+type AnonymousType interface {
+	Type
+
+	isAnonymous()
+}
+
+func (*Basic) isAnonymous() {}
+func (*Time) isAnonymous()  {}
+func (*Array) isAnonymous() {}
+func (*Map) isAnonymous()   {}
+
+func (*Basic) Name() *types.Named { return nil }
+func (*Time) Name() *types.Named  { return nil }
+func (*Array) Name() *types.Named { return nil }
+func (*Map) Name() *types.Named   { return nil }
+
+// Named is a named type pointing
+// to an `AnonymousType`. Structs, enums,
+// and unions are NOT `Named`
+type Named struct {
+	name       *types.Named
+	Underlying AnonymousType
+}
+
+func (na *Named) Name() *types.Named { return na.name }
+
+// BasicKind is a simplified information of the kind
+// of a basic type, typically shared by Dart, JSON and TypeScript generator
+type BasicKind uint8
+
+const (
+	BKString BasicKind = iota
+	BKInt
+	BKFloat
+	BKBool
+)
+
 // Basic represents all simple types.
 // Enums are special cased, meaning they are not of type `Basic`.
 type Basic struct {
-	typ types.Type // named or not
+	typ *types.Basic
 }
 
-func (b *Basic) Name() *types.Named {
-	named, _ := b.typ.(*types.Named)
-	return named
+func (b *Basic) Kind() BasicKind {
+	info := b.typ.Underlying().(*types.Basic).Info()
+	if info&types.IsBoolean != 0 {
+		return BKBool
+	} else if info&types.IsInteger != 0 {
+		return BKInt
+	} else if info&types.IsFloat != 0 {
+		return BKFloat
+	} else if info&types.IsString != 0 {
+		return BKString
+	} else {
+		panic("unsupported basic kind")
+	}
 }
-
-// func (b *Basic) Type() types.Type {}
 
 type Time struct {
-	name *types.Named // optional
-
 	// IsDate is true if only year/month/day are actually
 	// of interest for this type.
 	// The following heuristic is used to compute it :
@@ -28,9 +75,14 @@ type Time struct {
 	IsDate bool
 }
 
+var (
+	timeT = &Time{}
+	dateT = &Time{IsDate: true}
+)
+
 // newTime returns `true` is the underlying type
 // of `typ` is time.Time
-func newTime(typ types.Type) (*Time, bool) {
+func newTime(typ types.Type) (Type, bool) {
 	// since we can't acces the underlying name of named types,
 	// we check against this string, to detect time.Time
 	const timeString = "struct{wall uint64; ext int64; loc *time.Location}"
@@ -40,10 +92,16 @@ func newTime(typ types.Type) (*Time, bool) {
 	}
 	name, isNamed := typ.(*types.Named)
 	isDate := isNamed && strings.Contains(strings.ToLower(name.Obj().Name()), "date")
-	return &Time{name: name, IsDate: isDate}, true
+	isCustomNamed := name.Obj().Pkg().Path() != "time"
+	out := timeT
+	if isDate {
+		out = dateT
+	}
+	if isCustomNamed {
+		return &Named{name: name, Underlying: out}, true
+	}
+	return out, true
 }
-
-func (ti *Time) Name() *types.Named { return ti.name }
 
 // Extern is a special type used when
 // no declaration should be written for a type,

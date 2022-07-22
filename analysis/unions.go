@@ -8,7 +8,7 @@ import (
 
 // unionsMap is the set of named types which are
 // considered as union types.
-type unionsMap map[*types.Named]*Union
+type unionsMap map[*types.Named][]*types.Named
 
 // Union is deduced from interfaces, with the limitation
 // that only types defined in the same package are considered
@@ -16,9 +16,9 @@ type unionsMap map[*types.Named]*Union
 type Union struct {
 	name *types.Named // with underlying type *types.Interface
 
-	// The types implementing this interface, sorted by name
-	// Obj().Name() should be used as an idenfifier
-	Members []*types.Named
+	// The types implementing this interface, sorted by name.
+	// Name().Obj().Name() should be used as an idenfifier
+	Members []Type
 }
 
 func (u *Union) Name() *types.Named { return u.name }
@@ -51,7 +51,7 @@ func fetchPkgUnions(pa *packages.Package) unionsMap {
 			continue
 		}
 
-		u := &Union{name: c}
+		var members []*types.Named
 		// walk again through the candidates
 		for _, member := range candidates {
 			// do not add interfaces as member of an union
@@ -60,15 +60,15 @@ func fetchPkgUnions(pa *packages.Package) unionsMap {
 			}
 
 			if types.Implements(member, itf) {
-				u.Members = append(u.Members, member)
+				members = append(members, member)
 			}
 		}
 
-		if len(u.Members) == 0 {
+		if len(members) == 0 {
 			panic("empty union type")
 		}
 
-		out[c] = u
+		out[c] = members
 	}
 	return out
 }
