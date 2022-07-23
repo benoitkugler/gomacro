@@ -51,6 +51,8 @@ type complexStruct struct {
 	L        itfList
 	A        int
 	E        enumInt
+	E2       enumUInt
+	E3       enumString
 	Date     MyDate
 	F        [5]int
 	Imported subpackage.StructWithComment

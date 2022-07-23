@@ -21,6 +21,9 @@ const (
 	// ExhaustiveTypeSwitch may be used as marker to make futur refactor easier
 	ExhaustiveTypeSwitch = "exhaustive analysis.Type type switch"
 
+	// ExhaustiveAnonymousTypeSwitch may be used as marker to make futur refactor easier
+	ExhaustiveAnonymousTypeSwitch = "exhaustive analysis.AnonymousType type switch"
+
 	// ExhaustiveBasicKindSwitch may be used as marker to make futur refactor easier
 	ExhaustiveBasicKindSwitch = "exhaustive analysis.BasicKind switch"
 )

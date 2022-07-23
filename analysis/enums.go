@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/constant"
 	"go/types"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -24,34 +25,74 @@ type EnumMember struct {
 	Comment string
 }
 
+func (em EnumMember) int64() (int64, bool) {
+	return constant.Int64Val(em.Const.Val())
+}
+
 type Enum struct {
 	name *types.Named // by construction Underlying is *types.Basic
 
-	// Members contains only the exported members
+	// Members contains all the values, even the unexported one
 	Members []EnumMember
+
+	// IsIota is `true` if the enum exported values are consecutive positive integer starting at zero.
+	IsIota bool
 }
 
 func (e *Enum) Name() *types.Named { return e.name }
 
 // IsInteger returns `true` is this enum is backed by
-// positive integer values (as opposed for instance to string values).
+// integers (which may be negative and not contiguous)
 func (e *Enum) IsInteger() bool {
 	info := e.name.Underlying().(*types.Basic).Info()
-	if info&types.IsInteger == 0 {
-		return false
+	return info&types.IsInteger != 0
+}
+
+type sortBy struct {
+	members []EnumMember
+	values  []int64
+}
+
+func (a sortBy) Len() int { return len(a.members) }
+func (a sortBy) Swap(i, j int) {
+	a.members[i], a.members[j] = a.members[j], a.members[i]
+	a.values[i], a.values[j] = a.values[j], a.values[i]
+}
+func (a sortBy) Less(i, j int) bool { return a.values[i] < a.values[j] }
+
+// ensure the members are sorted
+func (e *Enum) setIsIota() {
+	if !e.IsInteger() {
+		return
 	}
 
-	if info&types.IsUnsigned != 0 { // fast path
-		return true
-	}
 	// check all the values
-	for _, member := range e.Members {
-		v, ok := constant.Int64Val(member.Const.Val())
+	values := make([]int64, len(e.Members))
+	seen := make(map[int64]bool)
+	var max int64 = -1
+	for i, member := range e.Members {
+		v, ok := member.int64()
 		if !ok || v < 0 {
-			return false
+			return
+		}
+		values[i] = v
+		if !member.Const.Exported() {
+			continue // ignore non exported const
+		}
+		seen[v] = true
+		if max < v {
+			max = v
 		}
 	}
-	return true
+	if len(seen) != int(max+1) {
+		return
+	}
+
+	sort.Sort(sortBy{
+		members: e.Members,
+		values:  values,
+	})
+	e.IsIota = true
 }
 
 // fetchConstComment retrieve the comment, not exposed in go/types
@@ -77,9 +118,6 @@ func fetchPkgEnums(pa *packages.Package) enumsMap {
 		if !isConst {
 			continue
 		}
-		if !decl.Exported() {
-			continue
-		}
 		named, isNamed := decl.Type().(*types.Named)
 		if !isNamed {
 			continue
@@ -101,5 +139,11 @@ func fetchPkgEnums(pa *packages.Package) enumsMap {
 			Comment: comment,
 		})
 	}
+
+	// once all values has been resolved, set IsIota
+	for _, e := range out {
+		e.setIsIota()
+	}
+
 	return out
 }

@@ -19,9 +19,12 @@ func TestFetchEnums(t *testing.T) {
 	enumOptionalBool := testPkg.Types.Scope().Lookup("enumOptionalBool").Type().(*types.Named)
 
 	Assert(t, dict[enumInt].IsInteger())
+	Assert(t, !dict[enumInt].IsIota)
 	Assert(t, dict[enumUInt].IsInteger())
+	Assert(t, dict[enumUInt].IsIota)
 	Assert(t, !dict[enumString].IsInteger())
-	Assert(t, !dict[enumOptionalBool].IsInteger())
+	Assert(t, dict[enumOptionalBool].IsInteger())
+	Assert(t, !dict[enumOptionalBool].IsIota)
 
 	Assert(t, len(dict[enumInt].Members) == 4)
 }

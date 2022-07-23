@@ -1,6 +1,8 @@
 package testutils
 
-import "testing"
+import (
+	"testing"
+)
 
 func ShouldPanic(t *testing.T, f func()) {
 	t.Helper()

@@ -16,6 +16,7 @@ const (
 	Ai enumInt = iota // sdsd
 	Bi                // sdsdB
 	Ci                // sdsdC
+	_                 // non exported
 	Di                // sdsdD
 )
 
@@ -37,6 +38,7 @@ const (
 	C                 // sdsdC
 	D                 // sdsdD
 	e                 // not added
+	_                 // not exported
 )
 
 type enumString string
