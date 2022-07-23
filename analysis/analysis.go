@@ -39,8 +39,8 @@ type Type interface {
 	Name() *types.Named
 }
 
-// loadSource returns the `packages.Package` containing the given file.
-func loadSource(sourceFile string) (*packages.Package, error) {
+// LoadSource returns the `packages.Package` containing the given file.
+func LoadSource(sourceFile string) (*packages.Package, error) {
 	_, err := os.Stat(sourceFile)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func loadSource(sourceFile string) (*packages.Package, error) {
 	cfg := &packages.Config{
 		Dir: dir,
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax |
-			packages.NeedTypes | packages.NeedImports | packages.NeedDeps,
+			packages.NeedTypes | packages.NeedImports | packages.NeedDeps | packages.NeedTypesInfo,
 	}
 	pkgs, err := packages.Load(cfg, "file="+sourceFile)
 	if err != nil {
@@ -157,15 +157,15 @@ type Analysis struct {
 	// their dependencies.
 	Types map[types.Type]Type
 
-	// Outline is the list of top-level types
+	// Source is the list of top-level types
 	// defined in the analysis input file.
-	Outline []*types.Named
+	Source []types.Type
 }
 
 // NewAnalysisFromFile calls `packages.Load` on the given `sourceFile`
 // and then builds the analysis for the types defined in `sourceFile`.
 func NewAnalysisFromFile(sourceFile string) (*Analysis, error) {
-	pa, err := loadSource(sourceFile)
+	pa, err := LoadSource(sourceFile)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func NewAnalysisFromFile(sourceFile string) (*Analysis, error) {
 }
 
 func newAnalysisFromFile(pa *packages.Package, sourceFileAbs string) *Analysis {
-	var nameds []*types.Named
+	var nameds []types.Type
 
 	// walk the top level type declarations
 	scope := pa.Types.Scope()
@@ -196,17 +196,15 @@ func newAnalysisFromFile(pa *packages.Package, sourceFileAbs string) *Analysis {
 			continue
 		}
 
-		named := typeName.Type().(*types.Named)
-
-		nameds = append(nameds, named)
+		nameds = append(nameds, typeName.Type())
 	}
 
 	return NewAnalysisFromTypes(pa, nameds)
 }
 
 // NewAnalysisFromTypes build the analysis for the given `types`.
-func NewAnalysisFromTypes(pa *packages.Package, nameds []*types.Named) *Analysis {
-	out := &Analysis{Outline: nameds}
+func NewAnalysisFromTypes(pa *packages.Package, source []types.Type) *Analysis {
+	out := &Analysis{Source: source}
 	out.populateTypes(pa)
 	return out
 }
@@ -216,7 +214,7 @@ func (an *Analysis) populateTypes(pa *packages.Package) {
 	ctx := context{enums: enums, unions: unions, rootPackage: pa}
 
 	an.Types = make(map[types.Type]Type)
-	for _, named := range an.Outline {
+	for _, named := range an.Source {
 		an.handleType(named, ctx)
 	}
 
@@ -225,6 +223,25 @@ func (an *Analysis) populateTypes(pa *packages.Package) {
 			st.setImplements(ctx.unions, an.Types)
 		}
 	}
+}
+
+// Pkg is a best effort to find the package of the types in
+// `Source`.
+// It will panic if no types are named or if two packages are present.
+func (an *Analysis) Pkg() *types.Package {
+	var pkg *types.Package
+	for _, typ := range an.Source {
+		if named, ok := typ.(*types.Named); ok {
+			if pkg != nil && pkg != named.Obj().Pkg() {
+				panic("heterogenous source packages")
+			}
+			pkg = named.Obj().Pkg()
+		}
+	}
+	if pkg == nil {
+		panic("source package not found")
+	}
+	return pkg
 }
 
 // context stores the parameters need by the analysis,

@@ -19,7 +19,7 @@ var (
 func init() {
 	fn := "../testutils/testsource/defs.go"
 	ti := time.Now()
-	pa, err := loadSource(fn)
+	pa, err := LoadSource(fn)
 	if err != nil {
 		panic(err)
 	}
@@ -47,6 +47,8 @@ func TestPanics(t *testing.T) {
 	ShouldPanic(t, func() { (&Analysis{}).createType(nil, context{}) })
 	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewStruct(nil, nil), context{}) })
 	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewChan(types.RecvOnly, nil), context{}) })
+
+	ShouldPanic(t, func() { (&Analysis{}).Pkg() })
 }
 
 func TestMethodTags(t *testing.T) {
@@ -65,10 +67,10 @@ func TestMethodTags(t *testing.T) {
 }
 
 func TestLoadSource(t *testing.T) {
-	_, err := loadSource("not existing")
+	_, err := LoadSource("not existing")
 	Assert(t, err != nil)
 
-	_, err = loadSource("../testutils/testsource/not_go/dummy.txt")
+	_, err = LoadSource("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
 
 	_, err = NewAnalysisFromFile("../testutils/testsource/not_go/dummy.txt")
@@ -85,9 +87,11 @@ func TestFetch(t *testing.T) {
 func TestAnalysFromTypes(t *testing.T) {
 	st := testPkg.Types.Scope().Lookup("structWithExternalRef").Type().(*types.Named)
 
-	an := NewAnalysisFromTypes(testPkg, []*types.Named{st})
-	Assert(t, len(an.Outline) == 1)
+	an := NewAnalysisFromTypes(testPkg, []types.Type{st})
+	Assert(t, len(an.Source) == 1)
 	Assert(t, len(an.Types) == 6)
+
+	Assert(t, an.Pkg() == st.Obj().Pkg())
 }
 
 func TestAnalysisStruct(t *testing.T) {

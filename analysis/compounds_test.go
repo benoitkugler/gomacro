@@ -15,7 +15,7 @@ func TestImplements(t *testing.T) {
 	itfType := testPkg.Types.Scope().Lookup("itfType").Type().(*types.Named)
 	itfType2 := testPkg.Types.Scope().Lookup("itfType2").Type().(*types.Named)
 
-	an := NewAnalysisFromTypes(testPkg, []*types.Named{itfType, itfType2})
+	an := NewAnalysisFromTypes(testPkg, []types.Type{itfType, itfType2})
 
 	cl1 := Struct{name: concretType1}
 	cl2 := Struct{name: concretType2}

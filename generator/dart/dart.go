@@ -22,7 +22,7 @@ func Generate(an *an.Analysis) []generator.Declaration {
 		Content: "typedef JSON = Map<String, dynamic>; // alias to shorten JSON convertors",
 	})
 
-	for _, typ := range an.Outline {
+	for _, typ := range an.Source {
 		out = append(out, generate(an.Types[typ], generateCache)...)
 	}
 

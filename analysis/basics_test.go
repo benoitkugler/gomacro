@@ -13,7 +13,7 @@ func TestBasicKind(t *testing.T) {
 	basic3 := testPkg.Types.Scope().Lookup("basic3").Type().(*types.Named)
 	basic4 := testPkg.Types.Scope().Lookup("basic4").Type().(*types.Named)
 
-	an := NewAnalysisFromTypes(testPkg, []*types.Named{basic1, basic2, basic3, basic4})
+	an := NewAnalysisFromTypes(testPkg, []types.Type{basic1, basic2, basic3, basic4})
 
 	b1 := an.Types[basic1].(*Named).Underlying.(*Basic)
 	b2 := an.Types[basic2].(*Named).Underlying.(*Basic)

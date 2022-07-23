@@ -20,7 +20,7 @@ func Generate(an *an.Analysis) []gen.Declaration {
 		generateCache = make(gen.Cache)
 	)
 
-	pkg := an.Outline[0].Obj().Pkg().Name()
+	pkg := an.Pkg().Name()
 
 	out = append(out, gen.Declaration{
 		ID: "aa_header",
@@ -33,7 +33,7 @@ func Generate(an *an.Analysis) []gen.Declaration {
 		Priority: true,
 	})
 
-	for _, typ := range an.Outline {
+	for _, typ := range an.Source {
 		out = append(out, generate(an.Types[typ], generateCache)...)
 	}
 
