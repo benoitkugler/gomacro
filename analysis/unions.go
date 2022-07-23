@@ -17,7 +17,8 @@ type Union struct {
 	name *types.Named // with underlying type *types.Interface
 
 	// The types implementing this interface, sorted by name.
-	// Name().Obj().Name() should be used as an idenfifier
+	// Name().Obj().Name() should be used as an identifier
+	// accros the generators.
 	Members []Type
 }
 

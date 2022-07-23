@@ -4,6 +4,8 @@ import (
 	"go/types"
 	"sort"
 	"strings"
+
+	"github.com/benoitkugler/gomacro/analysis"
 )
 
 // Declaration is a top level declaration to write to the generated file.
@@ -33,3 +35,16 @@ func WriteDeclarations(decls []Declaration) string {
 
 // Cache is a cache used to handled recursive types.
 type Cache map[*types.Named]bool
+
+// Check returns `true` is `typ` is already in the cache,
+// udpating it if not.
+// Non named types are ignored.
+func (c Cache) Check(typ analysis.Type) bool {
+	if named := typ.Name(); named != nil {
+		if c[named] {
+			return true
+		}
+		c[named] = true
+	}
+	return false
+}
