@@ -50,17 +50,17 @@ func selectPackage(rootPackage *packages.Package, target *types.Package) *packag
 	return nil
 }
 
-// expects an expression evaluable to a constant string URL
-func parseEndpointURL(arg ast.Expr, pkg *packages.Package) string {
+// expects an expression evaluable to a constant string
+func resolveConstString(arg ast.Expr, pkg *packages.Package) (string, error) {
 	exprString := types.ExprString(arg)
 	tv, err := types.Eval(pkg.Fset, pkg.Types, arg.Pos(), exprString)
 	if err != nil {
-		panic(fmt.Sprintf("can't resolved URL at %s: %s", pkg.Fset.Position(arg.Pos()), exprString))
+		return "", fmt.Errorf("can't resolve string at %s: %s", pkg.Fset.Position(arg.Pos()), exprString)
 	}
 	if tv.Value.Kind() != constant.String {
-		panic(fmt.Sprintf("expecting string for URL at %s, got %s", pkg.Fset.Position(arg.Pos()), exprString))
+		return "", fmt.Errorf("expecting string at %s, got %s", pkg.Fset.Position(arg.Pos()), exprString)
 	}
-	return constant.StringVal(tv.Value)
+	return constant.StringVal(tv.Value), nil
 }
 
 func resolveIdentifier(x *ast.Ident, pkg *types.Info) types.Object {
@@ -80,7 +80,7 @@ func selectMethod(named *types.Named, methodName string) *types.Func {
 	panic(fmt.Sprintf("method %s not found on type %s", methodName, named))
 }
 
-func resolveFunc(pkg *packages.Package, fn *types.Func) (body *ast.BlockStmt, name string, sourcePkg *types.Info) {
+func resolveFunc(pkg *packages.Package, fn *types.Func) (body *ast.BlockStmt, name string, sourcePkg *packages.Package) {
 	pos := fn.Pos()
 	fi := selectFileByPos(pkg, pos) // pos is at the begining of the name
 	if fi == nil {
@@ -104,10 +104,10 @@ func resolveFunc(pkg *packages.Package, fn *types.Func) (body *ast.BlockStmt, na
 	if body == nil {
 		panic(fmt.Sprintf("can't find body for %s", fn))
 	}
-	return body, fn.Name(), selectPackage(pkg, fn.Pkg()).TypesInfo
+	return body, fn.Name(), selectPackage(pkg, fn.Pkg())
 }
 
-func parseEndpointFunc(arg ast.Expr, pkg *packages.Package) (body *ast.BlockStmt, name string, sourcePkg *types.Info) {
+func parseEndpointFunc(arg ast.Expr, pkg *packages.Package) (body *ast.BlockStmt, name string, sourcePkg *packages.Package) {
 	if method, ok := arg.(*ast.SelectorExpr); ok { // <X>.<Sel>
 		if ident, ok := method.X.(*ast.Ident); ok {
 			xObj := resolveIdentifier(ident, pkg.TypesInfo)
@@ -130,7 +130,7 @@ func parseEndpointFunc(arg ast.Expr, pkg *packages.Package) (body *ast.BlockStmt
 			panic(fmt.Sprintf("unsupported identifier %s for %s", obj, ident))
 		}
 	} else if fnLitt, ok := arg.(*ast.FuncLit); ok {
-		return fnLitt.Body, fmt.Sprintf("Anonymous%d", arg.Pos()), pkg.TypesInfo
+		return fnLitt.Body, fmt.Sprintf("Anonymous%d", arg.Pos()), pkg
 	}
 
 	panic(fmt.Sprintf("unsupported handler function %s", arg))
@@ -142,8 +142,17 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 	// collect the required types
 	var required []types.Type
 	for _, endpoint := range endpoints {
-		required = append(required, endpoint.Contract.inputT, endpoint.Contract.returnT)
+		// TODO: should we enfore something about input and output ?
+		if ty := endpoint.Contract.inputT; ty != nil {
+			required = append(required, ty)
+		}
+		if ty := endpoint.Contract.returnT; ty != nil {
+			required = append(required, ty)
+		}
 		for _, param := range endpoint.Contract.QueryParams {
+			if param.type_ == nil {
+				panic(fmt.Sprint(param))
+			}
 			required = append(required, param.type_)
 		}
 	}
@@ -161,4 +170,17 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 			param.Type = an.Types[param.type_]
 		}
 	}
+}
+
+// parse applies the given parser to extract the endpoints, and resolves the types found.
+func parse(pkg *packages.Package, absFilePath string, parser func(pkg *packages.Package, fi *ast.File) []Endpoint) []Endpoint {
+	fi := selectFileByPath(pkg, absFilePath)
+	apis := parser(pkg, fi)
+	resolveTypes(pkg, apis)
+	return apis
+}
+
+// ParseEcho scans a file using the Echo framework.
+func ParseEcho(pkg *packages.Package, absFilePath string) []Endpoint {
+	return parse(pkg, absFilePath, echoExtractor)
 }

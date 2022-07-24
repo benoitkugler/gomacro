@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"go/types"
+	"log"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -66,7 +67,7 @@ func fetchPkgUnions(pa *packages.Package) unionsMap {
 		}
 
 		if len(members) == 0 {
-			panic("empty union type")
+			log.Printf("empty union type " + c.Obj().Pkg().Path() + "." + c.Obj().Name())
 		}
 
 		out[c] = members

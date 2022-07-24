@@ -214,8 +214,8 @@ func (an *Analysis) populateTypes(pa *packages.Package) {
 	ctx := context{enums: enums, unions: unions, rootPackage: pa}
 
 	an.Types = make(map[types.Type]Type)
-	for _, named := range an.Source {
-		an.handleType(named, ctx)
+	for _, typ := range an.Source {
+		an.handleType(typ, ctx)
 	}
 
 	for _, type_ := range an.Types {

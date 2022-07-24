@@ -20,12 +20,10 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := selectFileByPath(pack, abs)
 	ti := time.Now()
-	apis := Parse(pack, file)
-	if err != nil {
-		t.Fatal(err)
+	apis := ParseEcho(pack, abs)
+	fmt.Println("Resolved in ", time.Since(ti))
+	if len(apis) != 13 {
+		t.Fatal()
 	}
-	fmt.Println(time.Since(ti))
-	fmt.Println(apis)
 }
