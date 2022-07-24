@@ -2,18 +2,20 @@
 
 ### A go tool to analyze your code and generate boilerplate in various formats
 
-This module provides a tool taking Go code as input, and generating boilerplate code in the following formats :
+This module provides a tool taking Go code as input and generating boilerplate code in the following formats :
 
-- Go : JSON support for union types, SQL CRUD operations and utility data structure.
+- Go : JSON support for union types (`generator/gounions`), SQL CRUD operations and utility data structure.
 - SQL (Postgres) : creation statements and JSON validation functions
 - TypeScript : type definitions and Axios API
-- Dart : type definitions and JSON routines
+- Dart : type definitions and JSON routines (`generator/dart`)
 
 ## Module overview
 
 ### `analysis`
 
 This package provides an extension of the standard `go/types` package with support for enums, union types and time and date. It knows nothing about the output targets, but serves as a shared base.
+
+Package `analysis/httpapi` provides a scanner to extract API urls and types. It only supports the Echo framework, but is modular, so that adding support for other framework should be quick.
 
 ### `generator`
 
