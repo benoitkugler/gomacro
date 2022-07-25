@@ -4,9 +4,9 @@
 
 This module provides a tool taking Go code as input and generating boilerplate code in the following formats :
 
-- Go : JSON support for union types (`generator/gounions`), SQL CRUD operations and utility data structure.
+- Go : JSON support for union types (`generator/go/unions`), SQL CRUD operations and utility data structure.
 - SQL (Postgres) : creation statements and JSON validation functions
-- TypeScript : type definitions and Axios API
+- TypeScript : type definitions and Axios API (`generator/typescript`)
 - Dart : type definitions and JSON routines (`generator/dart`)
 
 ## Module overview
@@ -20,6 +20,9 @@ Package `analysis/httpapi` provides a scanner to extract API urls and types. It 
 ### `generator`
 
 This package uses the result provided by `analysis` to actually generate the code.
+
+The `generator/typescript` package only targets the Axios Javascript library, but the
+TypeScript types generator could be easily reused to support other methods.
 
 ## Code directives and conventions
 
