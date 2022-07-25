@@ -361,7 +361,7 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 		// simply resolve the indirection
 		return an.handleType(underlying.Elem(), ctx)
 	case *types.Basic:
-		return &Basic{typ: underlying}
+		return &Basic{B: underlying}
 
 	// to properly handle recursive types (for Array, Slice, Map, Struct), we first register
 	// an incomplete type so that handleType() returns early

@@ -36,10 +36,10 @@ type Named struct {
 func (na *Named) Name() *types.Named { return na.name }
 
 var (
-	String = &Basic{typ: types.Typ[types.String]}
-	Bool   = &Basic{typ: types.Typ[types.Bool]}
-	Int    = &Basic{typ: types.Typ[types.Int]}
-	Float  = &Basic{typ: types.Typ[types.Float64]}
+	String = &Basic{B: types.Typ[types.String]}
+	Bool   = &Basic{B: types.Typ[types.Bool]}
+	Int    = &Basic{B: types.Typ[types.Int]}
+	Float  = &Basic{B: types.Typ[types.Float64]}
 )
 
 // BasicKind is a simplified information of the kind
@@ -56,11 +56,11 @@ const (
 // Basic represents all simple types.
 // Enums are special cased, meaning they are not of type `Basic`.
 type Basic struct {
-	typ *types.Basic
+	B *types.Basic
 }
 
 func (b *Basic) Kind() BasicKind {
-	info := b.typ.Underlying().(*types.Basic).Info()
+	info := b.B.Underlying().(*types.Basic).Info()
 	if info&types.IsBoolean != 0 {
 		return BKBool
 	} else if info&types.IsInteger != 0 {
@@ -74,6 +74,8 @@ func (b *Basic) Kind() BasicKind {
 	}
 }
 
+// Time is a special case for *time.Time,
+// which is not handled like a regular "pointer to named struct"
 type Time struct {
 	// IsDate is true if only year/month/day are actually
 	// of interest for this type.

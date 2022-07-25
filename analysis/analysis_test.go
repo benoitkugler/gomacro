@@ -42,7 +42,7 @@ func TestPanics(t *testing.T) {
 
 	ShouldPanic(t, func() { newExternMap(`gomacro-extern:"context:dart"`) })
 
-	ShouldPanic(t, func() { (&Basic{typ: types.Typ[types.Complex128]}).Kind() })
+	ShouldPanic(t, func() { (&Basic{B: types.Typ[types.Complex128]}).Kind() })
 
 	ShouldPanic(t, func() { (&Analysis{}).createType(nil, context{}) })
 	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewStruct(nil, nil), context{}) })
@@ -53,7 +53,7 @@ func TestPanics(t *testing.T) {
 
 func TestMethodTags(t *testing.T) {
 	for _, v := range []Type{
-		&Basic{typ: &types.Basic{}},
+		&Basic{B: &types.Basic{}},
 		&Time{},
 		&Array{},
 		&Map{},
