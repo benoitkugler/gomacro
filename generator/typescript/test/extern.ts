@@ -1,0 +1,1 @@
+export type CancelFunc = Int16Array;

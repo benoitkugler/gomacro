@@ -35,6 +35,13 @@ type Named struct {
 
 func (na *Named) Name() *types.Named { return na.name }
 
+var (
+	String = &Basic{typ: types.Typ[types.String]}
+	Bool   = &Basic{typ: types.Typ[types.Bool]}
+	Int    = &Basic{typ: types.Typ[types.Int]}
+	Float  = &Basic{typ: types.Typ[types.Float64]}
+)
+
 // BasicKind is a simplified information of the kind
 // of a basic type, typically shared by Dart, JSON and TypeScript generator
 type BasicKind uint8

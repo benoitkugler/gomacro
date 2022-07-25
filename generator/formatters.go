@@ -20,7 +20,7 @@ const (
 	NoFormat Format = iota
 	Go
 	Dart
-	Ts
+	TypeScript
 	Psql
 )
 
@@ -100,7 +100,7 @@ func (fr *Formatters) FormatFile(format Format, filename string) error {
 		if fr.hasDart() {
 			return exec.Command("dart", "format", filename).Run()
 		}
-	case Ts:
+	case TypeScript:
 		if fr.hasTypescript() {
 			return exec.Command("npx", "prettier", "--write", filename).Run()
 		}

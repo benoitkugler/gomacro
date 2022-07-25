@@ -145,7 +145,7 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 	}
 	`, name, strings.Join(names, ", "), name, name, fromValue)
 
-	content := "// " + typ.Name().String() + "\n" + enumDecl
+	content := "// " + gen.Origin(typ.Name()) + "\n" + enumDecl
 	content += "\n" + jsonForEnum(typ)
 
 	return gen.Declaration{ID: name, Content: content}
@@ -158,8 +158,10 @@ func codeForUnion(typ *an.Union, cache gen.Cache) (out []gen.Declaration) {
 	}
 
 	name := typeName(typ)
-	content := fmt.Sprintf(`abstract class %s {}
-	`, name)
+	content := fmt.Sprintf(`
+	/// %s
+	abstract class %s {}
+	`, gen.Origin(typ.Name()), name)
 
 	content += jsonForUnion(typ)
 
@@ -210,7 +212,7 @@ func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 		}
 		
 		%s
-	`, typ.Name().String(), name, implementCode,
+	`, gen.Origin(typ.Name()), name, implementCode,
 			strings.Join(fields, "\n"), name, strings.Join(initFields, ", "),
 			name, strings.Join(interpolatedFields, ", "),
 			jsonForStruct(typ),

@@ -149,7 +149,7 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 		if ty := endpoint.Contract.returnT; ty != nil {
 			required = append(required, ty)
 		}
-		for _, param := range endpoint.Contract.QueryParams {
+		for _, param := range endpoint.Contract.InputQueryParams {
 			if param.type_ == nil {
 				panic(fmt.Sprint(param))
 			}
@@ -163,11 +163,10 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 	// update back the endpoints
 	for i := range endpoints {
 		ct := &endpoints[i].Contract
-		ct.Input = an.Types[ct.inputT]
+		ct.InputBody = an.Types[ct.inputT]
 		ct.Return = an.Types[ct.returnT]
-		for j := range ct.QueryParams {
-			param := &ct.QueryParams[j]
-			param.Type = an.Types[param.type_]
+		for j := range ct.InputQueryParams {
+			ct.InputQueryParams[j].resolveType(an)
 		}
 	}
 }

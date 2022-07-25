@@ -125,19 +125,19 @@ func parseAssignments(rhs []ast.Expr, pkg *packages.Package, out *Contract) {
 			out.inputT = typeIn
 		}
 		if queryParam := parseCallWithString(rh, "QueryParam", pkg); queryParam != "" {
-			out.QueryParams = append(out.QueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.String]})
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.String]})
 		}
 		if queryParam := parseCallWithString(rh, "QueryParamBool", pkg); queryParam != "" { // special converter
-			out.QueryParams = append(out.QueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Bool]})
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Bool]})
 		}
 		if queryParam := parseCallWithString(rh, "QueryParamInt64", pkg); queryParam != "" { // special converter
-			out.QueryParams = append(out.QueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Int]})
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Int]})
 		}
 		if formValue := parseCallWithString(rh, "FormValue", pkg); formValue != "" {
-			out.Form.Values = append(out.Form.Values, formValue)
+			out.InputForm.ValueNames = append(out.InputForm.ValueNames, formValue)
 		}
 		if formFile := parseCallWithString(rh, "FormFile", pkg); formFile != "" {
-			out.Form.File = formFile
+			out.InputForm.File = formFile
 		}
 	}
 }

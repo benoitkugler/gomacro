@@ -61,9 +61,9 @@ type complexStruct struct {
 type itfList []itfType
 
 type structWithExternalRef struct {
-	Field1 context.Context    `gomacro-extern:"context:dart:extern.dart"`
-	Field2 context.CancelFunc `gomacro-extern:"context:dart:extern2.dart:ts:extern.ts"`
-	Field3 map[int]big.Rat    `gomacro-extern:"big:dart:extern3.dart"`
+	field1 context.Context    `gomacro-extern:"context:dart:extern.dart"`
+	Field2 context.CancelFunc `gomacro-extern:"context:dart:extern2.dart:ts:./extern.ts"`
+	field3 map[int]big.Rat    `gomacro-extern:"big:dart:extern3.dart"`
 }
 
 type recursiveType struct {

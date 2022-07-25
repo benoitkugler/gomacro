@@ -14,26 +14,46 @@ type Endpoint struct {
 }
 
 type TypedParam struct {
-	type_ types.Type // used during parsing
-	Type  analysis.Type
+	type_ *types.Basic // used during parsing
+	Type  *analysis.Basic
 	Name  string
+}
+
+func (tp *TypedParam) resolveType(an *analysis.Analysis) {
+	tp.Type = an.Types[tp.type_].(*analysis.Basic)
 }
 
 // Contract describes the expected and returned
 // types for one endpoint.
 type Contract struct {
+	Name string
+
 	// field used during parsing
 	inputT  types.Type
 	returnT types.Type
 
-	Input, Return analysis.Type
+	InputBody analysis.Type
 
-	Form        Form
-	Name        string
-	QueryParams []TypedParam
+	Return analysis.Type
+
+	InputForm        Form
+	InputQueryParams []TypedParam
 }
 
 type Form struct {
-	File   string // empty means no file
-	Values []string
+	File       string // empty means no file
+	ValueNames []string
+}
+
+func (f Form) IsZero() bool {
+	return f.File == "" && len(f.ValueNames) == 0
+}
+
+// AsTypedValues returns the name of the form parameters with type String
+func (f Form) AsTypedValues() []TypedParam {
+	out := make([]TypedParam, len(f.ValueNames))
+	for i, v := range f.ValueNames {
+		out[i] = TypedParam{Name: v, Type: analysis.String}
+	}
+	return out
 }

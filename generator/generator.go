@@ -33,6 +33,12 @@ func WriteDeclarations(decls []Declaration) string {
 	return out.String()
 }
 
+// Origin return the file where the type is defined,
+// suitable to be included as comment.
+func Origin(named *types.Named) string {
+	return named.String()
+}
+
 // Cache is a cache used to handled recursive types.
 type Cache map[*types.Named]bool
 
