@@ -2,8 +2,227 @@
 
 import 'extern2.dart';
 
+// github.com/benoitkugler/gomacro/testutils/testsource.Basic1
+typedef Basic1 = int;
+
+// github.com/benoitkugler/gomacro/testutils/testsource.Basic2
+typedef Basic2 = bool;
+
+// github.com/benoitkugler/gomacro/testutils/testsource.Basic3
+typedef Basic3 = double;
+
+// github.com/benoitkugler/gomacro/testutils/testsource.Basic4
+typedef Basic4 = String;
+
+// github.com/benoitkugler/gomacro/testutils/testsource.ComplexStruct
+class ComplexStruct {
+  final Map<int, int> dict;
+  final DateTime time;
+  final String b;
+  final ItfType value;
+  final ItfList l;
+  final int a;
+  final EnumInt e;
+  final EnumUInt e2;
+  final MyDate date;
+  final List<int> f;
+  final StructWithComment imported;
+
+  const ComplexStruct(this.dict, this.time, this.b, this.value, this.l, this.a,
+      this.e, this.e2, this.date, this.f, this.imported);
+
+  @override
+  String toString() {
+    return "ComplexStruct($dict, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported)";
+  }
+}
+
+ComplexStruct complexStructFromJson(dynamic json_) {
+  final json = (json_ as JSON);
+  return ComplexStruct(
+      dictInt_IntFromJson(json['Dict']),
+      dateTimeFromJson(json['Time']),
+      stringFromJson(json['B']),
+      itfTypeFromJson(json['Value']),
+      listItfTypeFromJson(json['L']),
+      intFromJson(json['A']),
+      enumIntFromJson(json['E']),
+      enumUIntFromJson(json['E2']),
+      dateTimeFromJson(json['Date']),
+      listIntFromJson(json['F']),
+      structWithCommentFromJson(json['Imported']));
+}
+
+JSON complexStructToJson(ComplexStruct item) {
+  return {
+    "Dict": dictInt_IntToJson(item.dict),
+    "Time": dateTimeToJson(item.time),
+    "B": stringToJson(item.b),
+    "Value": itfTypeToJson(item.value),
+    "L": listItfTypeToJson(item.l),
+    "A": intToJson(item.a),
+    "E": enumIntToJson(item.e),
+    "E2": enumUIntToJson(item.e2),
+    "Date": dateTimeToJson(item.date),
+    "F": listIntToJson(item.f),
+    "Imported": structWithCommentToJson(item.imported)
+  };
+}
+
+// github.com/benoitkugler/gomacro/testutils/testsource.ConcretType1
+class ConcretType1 implements ItfType, ItfType2 {
+  final List<int> list2;
+  final int v;
+
+  const ConcretType1(this.list2, this.v);
+
+  @override
+  String toString() {
+    return "ConcretType1($list2, $v)";
+  }
+}
+
+ConcretType1 concretType1FromJson(dynamic json_) {
+  final json = (json_ as JSON);
+  return ConcretType1(listIntFromJson(json['List2']), intFromJson(json['V']));
+}
+
+JSON concretType1ToJson(ConcretType1 item) {
+  return {"List2": listIntToJson(item.list2), "V": intToJson(item.v)};
+}
+
+// github.com/benoitkugler/gomacro/testutils/testsource.ConcretType2
+class ConcretType2 implements ItfType {
+  final double d;
+
+  const ConcretType2(this.d);
+
+  @override
+  String toString() {
+    return "ConcretType2($d)";
+  }
+}
+
+ConcretType2 concretType2FromJson(dynamic json_) {
+  final json = (json_ as JSON);
+  return ConcretType2(doubleFromJson(json['D']));
+}
+
+JSON concretType2ToJson(ConcretType2 item) {
+  return {"D": doubleToJson(item.d)};
+}
+
+// github.com/benoitkugler/gomacro/testutils/testsource.EnumInt
+enum EnumInt { ai, bi, ci, di }
+
+extension _EnumIntExt on EnumInt {
+  static const _values = [0, 1, 2, 4];
+  static EnumInt fromValue(int s) {
+    return EnumInt.values[_values.indexOf(s)];
+  }
+
+  int toValue() {
+    return _values[index];
+  }
+}
+
+EnumInt enumIntFromJson(dynamic json) => _EnumIntExt.fromValue(json as int);
+
+dynamic enumIntToJson(EnumInt item) => item.toValue();
+
+// github.com/benoitkugler/gomacro/testutils/testsource.EnumUInt
+enum EnumUInt { a, b, c, d }
+
+extension _EnumUIntExt on EnumUInt {
+  static EnumUInt fromValue(int i) {
+    return EnumUInt.values[i];
+  }
+
+  int toValue() {
+    return index;
+  }
+}
+
+EnumUInt enumUIntFromJson(dynamic json) => _EnumUIntExt.fromValue(json as int);
+
+dynamic enumUIntToJson(EnumUInt item) => item.toValue();
+
+// github.com/benoitkugler/gomacro/testutils/testsource.ItfList
+typedef ItfList = List<ItfType>;
+
+/// github.com/benoitkugler/gomacro/testutils/testsource.ItfType
+abstract class ItfType {}
+
+ItfType itfTypeFromJson(dynamic json_) {
+  final json = json_ as JSON;
+  final kind = json['Kind'] as String;
+  final data = json['Data'];
+  switch (kind) {
+    case "ConcretType1":
+      return concretType1FromJson(data);
+    case "ConcretType2":
+      return concretType2FromJson(data);
+    default:
+      throw ("unexpected type");
+  }
+}
+
+JSON itfTypeToJson(ItfType item) {
+  if (item is ConcretType1) {
+    return {'Kind': "ConcretType1", 'Data': concretType1ToJson(item)};
+  } else if (item is ConcretType2) {
+    return {'Kind': "ConcretType2", 'Data': concretType2ToJson(item)};
+  } else {
+    throw ("unexpected type");
+  }
+}
+
+/// github.com/benoitkugler/gomacro/testutils/testsource.ItfType2
+abstract class ItfType2 {}
+
+ItfType2 itfType2FromJson(dynamic json_) {
+  final json = json_ as JSON;
+  final kind = json['Kind'] as String;
+  final data = json['Data'];
+  switch (kind) {
+    case "ConcretType1":
+      return concretType1FromJson(data);
+    default:
+      throw ("unexpected type");
+  }
+}
+
+JSON itfType2ToJson(ItfType2 item) {
+  if (item is ConcretType1) {
+    return {'Kind': "ConcretType1", 'Data': concretType1ToJson(item)};
+  } else {
+    throw ("unexpected type");
+  }
+}
+
 // github.com/benoitkugler/gomacro/testutils/testsource.MyDate
 typedef MyDate = DateTime;
+
+// github.com/benoitkugler/gomacro/testutils/testsource.RecursiveType
+class RecursiveType {
+  final List<RecursiveType> children;
+
+  const RecursiveType(this.children);
+
+  @override
+  String toString() {
+    return "RecursiveType($children)";
+  }
+}
+
+RecursiveType recursiveTypeFromJson(dynamic json_) {
+  final json = (json_ as JSON);
+  return RecursiveType(listRecursiveTypeFromJson(json['Children']));
+}
+
+JSON recursiveTypeToJson(RecursiveType item) {
+  return {"Children": listRecursiveTypeToJson(item.children)};
+}
 
 String stringFromJson(dynamic json) => json == null ? "" : json as String;
 
@@ -30,131 +249,35 @@ JSON structWithCommentToJson(StructWithComment item) {
   return {"A": intToJson(item.a)};
 }
 
+// github.com/benoitkugler/gomacro/testutils/testsource.StructWithExternalRef
+class StructWithExternalRef {
+  final CancelFunc field2;
+
+  const StructWithExternalRef(this.field2);
+
+  @override
+  String toString() {
+    return "StructWithExternalRef($field2)";
+  }
+}
+
+StructWithExternalRef structWithExternalRefFromJson(dynamic json_) {
+  final json = (json_ as JSON);
+  return StructWithExternalRef(cancelFuncFromJson(json['Field2']));
+}
+
+JSON structWithExternalRefToJson(StructWithExternalRef item) {
+  return {"Field2": cancelFuncToJson(item.field2)};
+}
+
 DateTime dateTimeFromJson(dynamic json) => DateTime.parse(json as String);
 
 dynamic dateTimeToJson(DateTime dt) => dt.toString();
 
 typedef JSON = Map<String, dynamic>; // alias to shorten JSON convertors
-
-// github.com/benoitkugler/gomacro/testutils/testsource.basic1
-typedef basic1 = int;
-
-// github.com/benoitkugler/gomacro/testutils/testsource.basic2
-typedef basic2 = bool;
-
-// github.com/benoitkugler/gomacro/testutils/testsource.basic3
-typedef basic3 = double;
-
-// github.com/benoitkugler/gomacro/testutils/testsource.basic4
-typedef basic4 = String;
-
 bool boolFromJson(dynamic json) => json as bool;
 
 bool boolToJson(bool item) => item;
-
-// github.com/benoitkugler/gomacro/testutils/testsource.complexStruct
-class complexStruct {
-  final Map<int, int> dict;
-  final int u;
-  final DateTime time;
-  final String b;
-  final itfType value;
-  final itfList l;
-  final int a;
-  final enumInt e;
-  final enumUInt e2;
-  final enumString e3;
-  final MyDate date;
-  final List<int> f;
-  final StructWithComment imported;
-
-  const complexStruct(this.dict, this.u, this.time, this.b, this.value, this.l,
-      this.a, this.e, this.e2, this.e3, this.date, this.f, this.imported);
-
-  @override
-  String toString() {
-    return "complexStruct($dict, $u, $time, $b, $value, $l, $a, $e, $e2, $e3, $date, $f, $imported)";
-  }
-}
-
-complexStruct complexStructFromJson(dynamic json_) {
-  final json = (json_ as JSON);
-  return complexStruct(
-      dictInt_IntFromJson(json['Dict']),
-      intFromJson(json['U']),
-      dateTimeFromJson(json['Time']),
-      stringFromJson(json['B']),
-      itfTypeFromJson(json['Value']),
-      listItfTypeFromJson(json['L']),
-      intFromJson(json['A']),
-      enumIntFromJson(json['E']),
-      enumUIntFromJson(json['E2']),
-      enumStringFromJson(json['E3']),
-      dateTimeFromJson(json['Date']),
-      listIntFromJson(json['F']),
-      structWithCommentFromJson(json['Imported']));
-}
-
-JSON complexStructToJson(complexStruct item) {
-  return {
-    "Dict": dictInt_IntToJson(item.dict),
-    "U": intToJson(item.u),
-    "Time": dateTimeToJson(item.time),
-    "B": stringToJson(item.b),
-    "Value": itfTypeToJson(item.value),
-    "L": listItfTypeToJson(item.l),
-    "A": intToJson(item.a),
-    "E": enumIntToJson(item.e),
-    "E2": enumUIntToJson(item.e2),
-    "E3": enumStringToJson(item.e3),
-    "Date": dateTimeToJson(item.date),
-    "F": listIntToJson(item.f),
-    "Imported": structWithCommentToJson(item.imported)
-  };
-}
-
-// github.com/benoitkugler/gomacro/testutils/testsource.concretType1
-class concretType1 implements itfType, itfType2 {
-  final List<int> list2;
-  final int v;
-
-  const concretType1(this.list2, this.v);
-
-  @override
-  String toString() {
-    return "concretType1($list2, $v)";
-  }
-}
-
-concretType1 concretType1FromJson(dynamic json_) {
-  final json = (json_ as JSON);
-  return concretType1(listIntFromJson(json['List2']), intFromJson(json['V']));
-}
-
-JSON concretType1ToJson(concretType1 item) {
-  return {"List2": listIntToJson(item.list2), "V": intToJson(item.v)};
-}
-
-// github.com/benoitkugler/gomacro/testutils/testsource.concretType2
-class concretType2 implements itfType {
-  final double d;
-
-  const concretType2(this.d);
-
-  @override
-  String toString() {
-    return "concretType2($d)";
-  }
-}
-
-concretType2 concretType2FromJson(dynamic json_) {
-  final json = (json_ as JSON);
-  return concretType2(doubleFromJson(json['D']));
-}
-
-JSON concretType2ToJson(concretType2 item) {
-  return {"D": doubleToJson(item.d)};
-}
 
 Map<int, int> dictInt_IntFromJson(dynamic json) {
   if (json == null) {
@@ -171,116 +294,9 @@ double doubleFromJson(dynamic json) => (json as num).toDouble();
 
 double doubleToJson(double item) => item;
 
-// github.com/benoitkugler/gomacro/testutils/testsource.enumInt
-enum enumInt { ai, bi, ci, di }
-
-extension _enumIntExt on enumInt {
-  static const _values = [0, 1, 2, 4];
-  static enumInt fromValue(int s) {
-    return enumInt.values[_values.indexOf(s)];
-  }
-
-  int toValue() {
-    return _values[index];
-  }
-}
-
-enumInt enumIntFromJson(dynamic json) => _enumIntExt.fromValue(json as int);
-
-dynamic enumIntToJson(enumInt item) => item.toValue();
-
-// github.com/benoitkugler/gomacro/testutils/testsource.enumString
-enum enumString { sA, sB, sC, sD }
-
-extension _enumStringExt on enumString {
-  static const _values = ["va", "vb", "vc", "vd"];
-  static enumString fromValue(String s) {
-    return enumString.values[_values.indexOf(s)];
-  }
-
-  String toValue() {
-    return _values[index];
-  }
-}
-
-enumString enumStringFromJson(dynamic json) =>
-    _enumStringExt.fromValue(json as String);
-
-dynamic enumStringToJson(enumString item) => item.toValue();
-
-// github.com/benoitkugler/gomacro/testutils/testsource.enumUInt
-enum enumUInt { a, b, c, d }
-
-extension _enumUIntExt on enumUInt {
-  static enumUInt fromValue(int i) {
-    return enumUInt.values[i];
-  }
-
-  int toValue() {
-    return index;
-  }
-}
-
-enumUInt enumUIntFromJson(dynamic json) => _enumUIntExt.fromValue(json as int);
-
-dynamic enumUIntToJson(enumUInt item) => item.toValue();
-
 int intFromJson(dynamic json) => json as int;
 
 int intToJson(int item) => item;
-
-// github.com/benoitkugler/gomacro/testutils/testsource.itfList
-typedef itfList = List<itfType>;
-
-/// github.com/benoitkugler/gomacro/testutils/testsource.itfType
-abstract class itfType {}
-
-itfType itfTypeFromJson(dynamic json_) {
-  final json = json_ as JSON;
-  final kind = json['Kind'] as String;
-  final data = json['Data'];
-  switch (kind) {
-    case "concretType1":
-      return concretType1FromJson(data);
-    case "concretType2":
-      return concretType2FromJson(data);
-    default:
-      throw ("unexpected type");
-  }
-}
-
-JSON itfTypeToJson(itfType item) {
-  if (item is concretType1) {
-    return {'Kind': "concretType1", 'Data': concretType1ToJson(item)};
-  } else if (item is concretType2) {
-    return {'Kind': "concretType2", 'Data': concretType2ToJson(item)};
-  } else {
-    throw ("unexpected type");
-  }
-}
-
-/// github.com/benoitkugler/gomacro/testutils/testsource.itfType2
-abstract class itfType2 {}
-
-itfType2 itfType2FromJson(dynamic json_) {
-  final json = json_ as JSON;
-  final kind = json['Kind'] as String;
-  final data = json['Data'];
-  switch (kind) {
-    case "concretType1":
-      return concretType1FromJson(data);
-    default:
-      throw ("unexpected type");
-  }
-}
-
-JSON itfType2ToJson(itfType2 item) {
-  if (item is concretType1) {
-    return {'Kind': "concretType1", 'Data': concretType1ToJson(item)};
-  } else {
-    throw ("unexpected type");
-  }
-}
 
 List<int> listIntFromJson(dynamic json) {
   if (json == null) {
@@ -293,130 +309,24 @@ List<dynamic> listIntToJson(List<int> item) {
   return item.map(intToJson).toList();
 }
 
-List<itfType> listItfTypeFromJson(dynamic json) {
+List<ItfType> listItfTypeFromJson(dynamic json) {
   if (json == null) {
     return [];
   }
   return (json as List<dynamic>).map(itfTypeFromJson).toList();
 }
 
-List<dynamic> listItfTypeToJson(List<itfType> item) {
+List<dynamic> listItfTypeToJson(List<ItfType> item) {
   return item.map(itfTypeToJson).toList();
 }
 
-List<recursiveType> listRecursiveTypeFromJson(dynamic json) {
+List<RecursiveType> listRecursiveTypeFromJson(dynamic json) {
   if (json == null) {
     return [];
   }
   return (json as List<dynamic>).map(recursiveTypeFromJson).toList();
 }
 
-List<dynamic> listRecursiveTypeToJson(List<recursiveType> item) {
+List<dynamic> listRecursiveTypeToJson(List<RecursiveType> item) {
   return item.map(recursiveTypeToJson).toList();
-}
-
-// github.com/benoitkugler/gomacro/testutils/testsource.notAnEnum
-typedef notAnEnum = String;
-
-// github.com/benoitkugler/gomacro/testutils/testsource.recursiveType
-class recursiveType {
-  final List<recursiveType> children;
-
-  const recursiveType(this.children);
-
-  @override
-  String toString() {
-    return "recursiveType($children)";
-  }
-}
-
-recursiveType recursiveTypeFromJson(dynamic json_) {
-  final json = (json_ as JSON);
-  return recursiveType(listRecursiveTypeFromJson(json['Children']));
-}
-
-JSON recursiveTypeToJson(recursiveType item) {
-  return {"Children": listRecursiveTypeToJson(item.children)};
-}
-
-// github.com/benoitkugler/gomacro/testutils/testsource.structWithExternalRef
-class structWithExternalRef {
-  final CancelFunc field2;
-
-  const structWithExternalRef(this.field2);
-
-  @override
-  String toString() {
-    return "structWithExternalRef($field2)";
-  }
-}
-
-structWithExternalRef structWithExternalRefFromJson(dynamic json_) {
-  final json = (json_ as JSON);
-  return structWithExternalRef(cancelFuncFromJson(json['Field2']));
-}
-
-JSON structWithExternalRefToJson(structWithExternalRef item) {
-  return {"Field2": cancelFuncToJson(item.field2)};
-}
-
-// github.com/benoitkugler/gomacro/testutils/testsource.withEmbeded
-class withEmbeded {
-  final Map<int, int> dict;
-  final int u;
-  final DateTime time;
-  final String b;
-  final itfType value;
-  final itfList l;
-  final int a;
-  final enumInt e;
-  final enumUInt e2;
-  final enumString e3;
-  final MyDate date;
-  final List<int> f;
-  final StructWithComment imported;
-
-  const withEmbeded(this.dict, this.u, this.time, this.b, this.value, this.l,
-      this.a, this.e, this.e2, this.e3, this.date, this.f, this.imported);
-
-  @override
-  String toString() {
-    return "withEmbeded($dict, $u, $time, $b, $value, $l, $a, $e, $e2, $e3, $date, $f, $imported)";
-  }
-}
-
-withEmbeded withEmbededFromJson(dynamic json_) {
-  final json = (json_ as JSON);
-  return withEmbeded(
-      dictInt_IntFromJson(json['Dict']),
-      intFromJson(json['U']),
-      dateTimeFromJson(json['Time']),
-      stringFromJson(json['B']),
-      itfTypeFromJson(json['Value']),
-      listItfTypeFromJson(json['L']),
-      intFromJson(json['A']),
-      enumIntFromJson(json['E']),
-      enumUIntFromJson(json['E2']),
-      enumStringFromJson(json['E3']),
-      dateTimeFromJson(json['Date']),
-      listIntFromJson(json['F']),
-      structWithCommentFromJson(json['Imported']));
-}
-
-JSON withEmbededToJson(withEmbeded item) {
-  return {
-    "Dict": dictInt_IntToJson(item.dict),
-    "U": intToJson(item.u),
-    "Time": dateTimeToJson(item.time),
-    "B": stringToJson(item.b),
-    "Value": itfTypeToJson(item.value),
-    "L": listItfTypeToJson(item.l),
-    "A": intToJson(item.a),
-    "E": enumIntToJson(item.e),
-    "E2": enumUIntToJson(item.e2),
-    "E3": enumStringToJson(item.e3),
-    "Date": dateTimeToJson(item.date),
-    "F": listIntToJson(item.f),
-    "Imported": structWithCommentToJson(item.imported)
-  };
 }

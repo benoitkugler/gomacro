@@ -107,9 +107,10 @@ func randtes_Basic4() testsource.Basic4 {
 func randtes_ComplexStruct() testsource.ComplexStruct {
 	return testsource.ComplexStruct{
 		Dict:     randMapintint(),
-		U:        randint(),
 		Time:     randtTime(),
 		B:        randstring(),
+		Value:    randtes_ItfType(),
+		L:        randtes_ItfList(),
 		A:        randint(),
 		E:        randtes_EnumInt(),
 		E2:       randtes_EnumUInt(),
@@ -178,20 +179,5 @@ func randtes_RecursiveType() testsource.RecursiveType {
 func randtes_StructWithExternalRef() testsource.StructWithExternalRef {
 	return testsource.StructWithExternalRef{
 		Field2: randcon_CancelFunc(),
-	}
-}
-
-func randtes_WithEmbeded() testsource.WithEmbeded {
-	return testsource.WithEmbeded{
-		Dict:     randMapintint(),
-		U:        randint(),
-		Time:     randtTime(),
-		B:        randstring(),
-		A:        randint(),
-		E:        randtes_EnumInt(),
-		E2:       randtes_EnumUInt(),
-		Date:     randtes_MyDate(),
-		F:        randArray5int(),
-		Imported: randsub_StructWithComment(),
 	}
 }

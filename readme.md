@@ -4,7 +4,7 @@
 
 This module provides a tool taking Go code as input and generating boilerplate code in the following formats :
 
-- Go : JSON support for union types (`generator/go/unions`), SQL CRUD operations and utility data structure.
+- Go : JSON support for union types (`generator/go/unions`), SQL CRUD operations and random data structure generation (`generator/go/randdata`).
 - SQL (Postgres) : creation statements and JSON validation functions
 - TypeScript : type definitions and Axios API (`generator/typescript`)
 - Dart : type definitions and JSON routines (`generator/dart`)

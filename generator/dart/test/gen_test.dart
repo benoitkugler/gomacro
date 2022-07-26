@@ -3,17 +3,15 @@ import 'dart:convert';
 import 'gen.dart';
 
 main(List<String> args) {
-  final m = complexStruct(
+  final m = ComplexStruct(
     {3: 4},
-    5,
     DateTime.now(),
     "dsds",
-    concretType1([1, 2, -1], 4),
-    [concretType2(0.4), concretType2(0.8)],
+    ConcretType1([1, 2, -1], 4),
+    [ConcretType2(0.4), ConcretType2(0.8)],
     789,
-    enumInt.bi,
-    enumUInt.c,
-    enumString.sB,
+    EnumInt.bi,
+    EnumUInt.c,
     DateTime.now(),
     [456, 456, 456],
     StructWithComment(5),

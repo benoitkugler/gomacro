@@ -44,11 +44,11 @@ type MyDate time.Time
 
 type ComplexStruct struct {
 	Dict     map[int]int
-	U        *int
+	u        *int
 	Time     time.Time
 	B        string
-	value    ItfType
-	l        ItfList
+	Value    ItfType
+	L        ItfList
 	A        int
 	E        EnumInt
 	E2       EnumUInt
@@ -68,12 +68,6 @@ type StructWithExternalRef struct {
 
 type RecursiveType struct {
 	Children []RecursiveType
-}
-
-type WithEmbeded struct {
-	notAnEnum
-
-	ComplexStruct
 }
 
 type (

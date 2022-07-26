@@ -61,3 +61,9 @@ type a struct {
 type notAnEnum string
 
 const SpecialValue notAnEnum = "dummy" // gomacro:no-enum
+
+type WithEmbeded struct {
+	notAnEnum
+
+	ComplexStruct
+}
