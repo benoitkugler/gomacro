@@ -8,7 +8,7 @@ import (
 	"github.com/benoitkugler/gomacro/testutils/testsource/subpackage"
 )
 
-type concretType1 struct {
+type ConcretType1 struct {
 	List2 []int
 	V     int
 }
@@ -16,73 +16,69 @@ type concretType1 struct {
 // A regular comment
 // gomacro:SQL special sql comment
 // gomacro:SQL another special sql comment
-type concretType2 struct {
+type ConcretType2 struct {
 	D float64
 }
 
-type itfType interface {
+type ItfType interface {
 	isI()
 }
 
-type itfType2 interface {
+type ItfType2 interface {
 	isI2()
 }
 
-func (concretType1) isI() {}
-func (concretType2) isI() {}
+func (ConcretType1) isI() {}
+func (ConcretType2) isI() {}
 
-func (concretType1) isI2() {}
+func (ConcretType1) isI2() {}
 
 var (
-	_ itfType = concretType1{}
-	_ itfType = concretType2{}
+	_ ItfType = ConcretType1{}
+	_ ItfType = ConcretType2{}
 
-	_ itfType2 = concretType1{}
+	_ ItfType2 = ConcretType1{}
 )
 
 type MyDate time.Time
 
-type complexStruct struct {
+type ComplexStruct struct {
 	Dict     map[int]int
 	U        *int
-	Time     *time.Time
+	Time     time.Time
 	B        string
-	Value    itfType
-	L        itfList
+	value    ItfType
+	l        ItfList
 	A        int
-	E        enumInt
-	E2       enumUInt
-	E3       enumString
+	E        EnumInt
+	E2       EnumUInt
+	e3       enumString
 	Date     MyDate
 	F        [5]int
 	Imported subpackage.StructWithComment
 }
 
-type itfList []itfType
+type ItfList []ItfType
 
-type structWithExternalRef struct {
+type StructWithExternalRef struct {
 	field1 context.Context    `gomacro-extern:"context:dart:extern.dart"`
 	Field2 context.CancelFunc `gomacro-extern:"context:dart:extern2.dart:ts:./extern.ts"`
 	field3 map[int]big.Rat    `gomacro-extern:"big:dart:extern3.dart"`
 }
 
-type recursiveType struct {
-	Children []recursiveType
+type RecursiveType struct {
+	Children []RecursiveType
 }
 
-type notAnEnum string
-
-const SpecialValue notAnEnum = "dummy" // gomacro:no-enum
-
-type withEmbeded struct {
+type WithEmbeded struct {
 	notAnEnum
 
-	complexStruct
+	ComplexStruct
 }
 
 type (
-	basic1 int
-	basic2 bool
-	basic3 float64
-	basic4 string
+	Basic1 int
+	Basic2 bool
+	Basic3 float64
+	Basic4 string
 )

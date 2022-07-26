@@ -163,6 +163,9 @@ type Analysis struct {
 	// Source is the list of top-level types
 	// defined in the analysis input file.
 	Source []types.Type
+
+	// Root is the root package used to query type information.
+	Root *packages.Package
 }
 
 // NewAnalysisFromFile calls `packages.Load` on the given `sourceFile`
@@ -206,9 +209,10 @@ func newAnalysisFromFile(pa *packages.Package, sourceFileAbs string) *Analysis {
 }
 
 // NewAnalysisFromTypes build the analysis for the given `types`.
-func NewAnalysisFromTypes(pa *packages.Package, source []types.Type) *Analysis {
-	out := &Analysis{Source: source}
-	out.populateTypes(pa)
+// `root` is the root package, required to query type information.
+func NewAnalysisFromTypes(root *packages.Package, source []types.Type) *Analysis {
+	out := &Analysis{Source: source, Root: root}
+	out.populateTypes(root)
 	return out
 }
 

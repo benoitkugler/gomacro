@@ -10,10 +10,10 @@ import (
 func TestImplements(t *testing.T) {
 	dict := fetchPkgUnions(testPkg)
 
-	concretType1 := testPkg.Types.Scope().Lookup("concretType1").Type().(*types.Named)
-	concretType2 := testPkg.Types.Scope().Lookup("concretType2").Type().(*types.Named)
-	itfType := testPkg.Types.Scope().Lookup("itfType").Type().(*types.Named)
-	itfType2 := testPkg.Types.Scope().Lookup("itfType2").Type().(*types.Named)
+	concretType1 := testPkg.Types.Scope().Lookup("ConcretType1").Type().(*types.Named)
+	concretType2 := testPkg.Types.Scope().Lookup("ConcretType2").Type().(*types.Named)
+	itfType := testPkg.Types.Scope().Lookup("ItfType").Type().(*types.Named)
+	itfType2 := testPkg.Types.Scope().Lookup("ItfType2").Type().(*types.Named)
 
 	an := NewAnalysisFromTypes(testPkg, []types.Type{itfType, itfType2})
 
@@ -28,8 +28,8 @@ func TestImplements(t *testing.T) {
 }
 
 func TestStructComments(t *testing.T) {
-	concretType1 := testPkg.Types.Scope().Lookup("concretType1").Type().(*types.Named)
-	concretType2 := testPkg.Types.Scope().Lookup("concretType2").Type().(*types.Named)
+	concretType1 := testPkg.Types.Scope().Lookup("ConcretType1").Type().(*types.Named)
+	concretType2 := testPkg.Types.Scope().Lookup("ConcretType2").Type().(*types.Named)
 
 	c1 := fetchStructComments(testPkg, concretType1)
 	c2 := fetchStructComments(testPkg, concretType2)

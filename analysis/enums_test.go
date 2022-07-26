@@ -13,8 +13,8 @@ func TestFetchEnums(t *testing.T) {
 		t.Fatal(dict)
 	}
 
-	enumInt := testPkg.Types.Scope().Lookup("enumInt").Type().(*types.Named)
-	enumUInt := testPkg.Types.Scope().Lookup("enumUInt").Type().(*types.Named)
+	enumInt := testPkg.Types.Scope().Lookup("EnumInt").Type().(*types.Named)
+	enumUInt := testPkg.Types.Scope().Lookup("EnumUInt").Type().(*types.Named)
 	enumString := testPkg.Types.Scope().Lookup("enumString").Type().(*types.Named)
 	enumOptionalBool := testPkg.Types.Scope().Lookup("enumOptionalBool").Type().(*types.Named)
 

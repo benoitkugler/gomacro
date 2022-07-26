@@ -10,10 +10,10 @@ const (
 
 // this is represented by int values,
 // but actually has only positive values
-type enumInt int
+type EnumInt int
 
 const (
-	Ai enumInt = iota // sdsd
+	Ai EnumInt = iota // sdsd
 	Bi                // sdsdB
 	Ci                // sdsdC
 	_                 // non exported
@@ -30,10 +30,10 @@ const (
 	Maybe
 )
 
-type enumUInt uint
+type EnumUInt uint
 
 const (
-	A enumUInt = iota // sdsd
+	A EnumUInt = iota // sdsd
 	B                 // sdsdB
 	C                 // sdsdC
 	D                 // sdsdD
@@ -57,3 +57,7 @@ const (
 type a struct {
 	value subpackage.Enum
 }
+
+type notAnEnum string
+
+const SpecialValue notAnEnum = "dummy" // gomacro:no-enum

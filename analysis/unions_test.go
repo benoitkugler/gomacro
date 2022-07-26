@@ -13,7 +13,7 @@ func TestFetchUnion(t *testing.T) {
 		t.Fatal(dict)
 	}
 
-	itf := testPkg.Types.Scope().Lookup("itfType").Type().(*types.Named)
+	itf := testPkg.Types.Scope().Lookup("ItfType").Type().(*types.Named)
 	members := dict[itf]
 
 	Assert(t, len(members) == 2)

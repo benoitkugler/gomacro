@@ -8,10 +8,10 @@ import (
 )
 
 func TestBasicKind(t *testing.T) {
-	basic1 := testPkg.Types.Scope().Lookup("basic1").Type().(*types.Named)
-	basic2 := testPkg.Types.Scope().Lookup("basic2").Type().(*types.Named)
-	basic3 := testPkg.Types.Scope().Lookup("basic3").Type().(*types.Named)
-	basic4 := testPkg.Types.Scope().Lookup("basic4").Type().(*types.Named)
+	basic1 := testPkg.Types.Scope().Lookup("Basic1").Type().(*types.Named)
+	basic2 := testPkg.Types.Scope().Lookup("Basic2").Type().(*types.Named)
+	basic3 := testPkg.Types.Scope().Lookup("Basic3").Type().(*types.Named)
+	basic4 := testPkg.Types.Scope().Lookup("Basic4").Type().(*types.Named)
 
 	an := NewAnalysisFromTypes(testPkg, []types.Type{basic1, basic2, basic3, basic4})
 
