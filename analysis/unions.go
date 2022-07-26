@@ -24,7 +24,7 @@ type Union struct {
 	Members []Type
 }
 
-func (u *Union) Name() *types.Named { return u.name }
+func (u *Union) Type() types.Type { return u.name }
 
 func allNamedTypes(pa *packages.Package) (out []*types.Named) {
 	scope := pa.Types.Scope()

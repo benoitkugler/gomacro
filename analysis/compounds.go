@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
+	"sort"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -52,7 +53,7 @@ type Struct struct {
 	Implements []*Union
 }
 
-func (cl *Struct) Name() *types.Named { return cl.name }
+func (cl *Struct) Type() types.Type { return cl.name }
 
 // setImplements set `Implements` with the union types this class implements,
 // among the ones given.
@@ -70,6 +71,9 @@ func (cl *Struct) setImplements(unions unionsMap, accu map[types.Type]Type) {
 			}
 		}
 	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].name.String() < out[j].name.String() })
+
 	cl.Implements = out
 }
 

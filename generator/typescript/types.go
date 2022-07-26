@@ -36,7 +36,7 @@ func typeName(ty an.Type) string {
 		}
 		return fmt.Sprintf("( %s[] | null)", typeName(ty.Elem))
 	case *an.Extern, *an.Named, *an.Enum, *an.Struct, *an.Union:
-		return ty.Name().Obj().Name()
+		return an.LocalName(ty)
 	default:
 		panic(an.ExhaustiveTypeSwitch)
 	}
@@ -108,7 +108,7 @@ func codeForTime(t *an.Time) gen.Declaration {
 func codeForExtern(ty *an.Extern) gen.Declaration {
 	// make sure .ts is stripped if provied
 	extern := strings.TrimSuffix(ty.ExternalFiles["ts"], ".ts")
-	importLine := fmt.Sprintf("import {%s} from %q;", ty.Name().Obj().Name(), extern)
+	importLine := fmt.Sprintf("import {%s} from %q;", an.LocalName(ty), extern)
 	return gen.Declaration{
 		ID:       importLine,
 		Content:  importLine,
@@ -120,7 +120,7 @@ func codeForNamed(named *an.Named, cache gen.Cache) []gen.Declaration {
 	deps := generate(named.Underlying, cache) // recurse
 
 	code := fmt.Sprintf(`// %s
-	export type %s = %s`, gen.Origin(named.Name()), typeName(named), typeName(named.Underlying))
+	export type %s = %s`, gen.Origin(named), typeName(named), typeName(named.Underlying))
 
 	deps = append(deps, gen.Declaration{ID: typeName(named), Content: code})
 	return deps
@@ -137,7 +137,7 @@ func codeForArray(ty *an.Array, cache gen.Cache) []gen.Declaration {
 }
 
 func codeForEnum(enum *an.Enum) gen.Declaration {
-	name := enum.Name().Obj().Name()
+	name := an.LocalName(enum)
 	var valueDefs, valueLabels []string
 	for _, val := range enum.Members {
 		varName := val.Const.Name()
@@ -154,7 +154,7 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 			export const %sLabels: { [key in %s]: string } = {
 				%s
 			};
-			`, gen.Origin(enum.Name()), name, strings.Join(valueDefs, "\n"),
+			`, gen.Origin(enum), name, strings.Join(valueDefs, "\n"),
 			name, name, strings.Join(valueLabels, "\n"),
 		),
 	}
@@ -173,7 +173,7 @@ func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 
 	name := typeName(t)
 
-	out := "// " + gen.Origin(t.Name()) + "\n"
+	out := "// " + gen.Origin(t) + "\n"
 	if isEmpty := len(t.Fields) == 0; isEmpty {
 		// TS does not like empty interface
 		out += fmt.Sprintf("export type %s = Record<string, never>", name)
@@ -197,7 +197,7 @@ func codeForUnion(u *an.Union, cache gen.Cache) (out []gen.Declaration) {
 	for _, m := range u.Members {
 		memberName := typeName(m)
 		members = append(members, memberName)
-		kindEnum = append(kindEnum, fmt.Sprintf("%s = %q", memberName, m.Name().Obj().Name()))
+		kindEnum = append(kindEnum, fmt.Sprintf("%s = %q", memberName, an.LocalName(m)))
 
 		out = append(out, generate(m, cache)...) // recurse
 	}
@@ -210,7 +210,7 @@ func codeForUnion(u *an.Union, cache gen.Cache) (out []gen.Declaration) {
 	export interface %s {
 		Kind: %s
 		Data: %s
-	}`, enumKindName, strings.Join(kindEnum, ",\n"), gen.Origin(u.Name()), name, enumKindName, strings.Join(members, " | "))
+	}`, enumKindName, strings.Join(kindEnum, ",\n"), gen.Origin(u), name, enumKindName, strings.Join(members, " | "))
 
 	out = append(out, gen.Declaration{ID: name, Content: code})
 

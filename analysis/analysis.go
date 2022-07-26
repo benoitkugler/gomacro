@@ -29,14 +29,17 @@ const (
 )
 
 // Type is the common interface for all the supported types.
-// All implementation must be valid map keys, so that
-// the can easily be mapped to output types.
+// All implementation are pointers, so that
+// they can easily be mapped to output types.
 type Type interface {
-	// Name returns nil for universal types, such as
-	// []bool, string, int, map[int]MyStruct, etc...
-	// It also returns nil for time.Time, since we consider
-	// it as a standard type.
-	Name() *types.Named
+	// Type returns the Go type corresponding to this tag.
+	Type() types.Type
+}
+
+// LocalName returns the local name of the type.
+// It will panic if `ty` is not named.
+func LocalName(ty Type) string {
+	return ty.Type().(*types.Named).Obj().Name()
 }
 
 // LoadSource returns the `packages.Package` containing the given file.

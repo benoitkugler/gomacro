@@ -35,8 +35,20 @@ func WriteDeclarations(decls []Declaration) string {
 
 // Origin return the file where the type is defined,
 // suitable to be included as comment.
-func Origin(named *types.Named) string {
-	return named.String()
+func Origin(ty analysis.Type) string { return ty.Type().String() }
+
+// NameRelativeTo is the same as types.Relative to, but
+// use the (shorter) package name instead of path.
+func NameRelativeTo(pkg *types.Package) types.Qualifier {
+	if pkg == nil {
+		return nil
+	}
+	return func(other *types.Package) string {
+		if pkg == other {
+			return "" // same package; unqualified
+		}
+		return other.Name()
+	}
 }
 
 // Cache is a cache used to handled recursive types.
@@ -46,7 +58,7 @@ type Cache map[*types.Named]bool
 // udpating it if not.
 // Non named types are ignored.
 func (c Cache) Check(typ analysis.Type) bool {
-	if named := typ.Name(); named != nil {
+	if named, isNamed := typ.Type().(*types.Named); isNamed {
 		if c[named] {
 			return true
 		}

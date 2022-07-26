@@ -161,7 +161,7 @@ func jsonForUnion(u *an.Union) string {
 	var casesFrom, casesTo []string
 
 	for i, member := range u.Members {
-		kindTag := member.Name().Obj().Name() // union members are always named
+		kindTag := an.LocalName(member) // union members are always named
 
 		memberName, memberID := typeName(member), jsonID(member)
 		casesFrom = append(casesFrom, fmt.Sprintf(`case %q:

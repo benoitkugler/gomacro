@@ -39,7 +39,7 @@ type Enum struct {
 	IsIota bool
 }
 
-func (e *Enum) Name() *types.Named { return e.name }
+func (e *Enum) Type() types.Type { return e.name }
 
 // IsInteger returns `true` is this enum is backed by
 // integers (which may be negative and not contiguous)

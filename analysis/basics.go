@@ -20,10 +20,20 @@ func (*Time) isAnonymous()  {}
 func (*Array) isAnonymous() {}
 func (*Map) isAnonymous()   {}
 
-func (*Basic) Name() *types.Named { return nil }
-func (*Time) Name() *types.Named  { return nil }
-func (*Array) Name() *types.Named { return nil }
-func (*Map) Name() *types.Named   { return nil }
+func (b *Basic) Type() types.Type { return b.B }
+
+func (*Time) Type() types.Type {
+	return types.NewNamed(types.NewTypeName(0, nil, "Time", nil), &types.Struct{}, nil)
+}
+
+func (ar *Array) Type() types.Type {
+	if ar.Len >= 0 {
+		return types.NewArray(ar.Elem.Type(), int64(ar.Len))
+	}
+	return types.NewSlice(ar.Elem.Type())
+}
+
+func (ma *Map) Type() types.Type { return types.NewMap(ma.Key.Type(), ma.Elem.Type()) }
 
 // Named is a named type pointing
 // to an `AnonymousType`. Structs, enums,
@@ -33,7 +43,7 @@ type Named struct {
 	Underlying AnonymousType
 }
 
-func (na *Named) Name() *types.Named { return na.name }
+func (na *Named) Type() types.Type { return na.name }
 
 var (
 	String = &Basic{B: types.Typ[types.String]}
@@ -123,4 +133,4 @@ type Extern struct {
 	ExternalFiles map[string]string
 }
 
-func (e *Extern) Name() *types.Named { return e.name }
+func (e *Extern) Type() types.Type { return e.name }

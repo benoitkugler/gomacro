@@ -39,7 +39,7 @@ func typeName(typ an.Type) string {
 	case *an.Map:
 		return fmt.Sprintf("Map<%s,%s>", typeName(typ.Key), typeName(typ.Elem))
 	case *an.Named, *an.Extern, *an.Struct, *an.Enum, *an.Union: // these types are always named
-		return typ.Name().Obj().Name()
+		return an.LocalName(typ)
 	default:
 		panic(an.ExhaustiveTypeSwitch + fmt.Sprintf(": %T", typ))
 	}
@@ -51,7 +51,7 @@ func codeForNamed(typ *an.Named, cache gen.Cache) (out []gen.Declaration) {
 	// %s
 	typedef %s = %s;
 	
-	`, typ.Name().String(), typeName(typ), typeName(typ.Underlying))
+	`, gen.Origin(typ), typeName(typ), typeName(typ.Underlying))
 	out = append(out, gen.Declaration{ID: typeName(typ), Content: code})
 
 	// recurse for the underlying code
@@ -145,7 +145,7 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 	}
 	`, name, strings.Join(names, ", "), name, name, fromValue)
 
-	content := "// " + gen.Origin(typ.Name()) + "\n" + enumDecl
+	content := "// " + gen.Origin(typ) + "\n" + enumDecl
 	content += "\n" + jsonForEnum(typ)
 
 	return gen.Declaration{ID: name, Content: content}
@@ -161,7 +161,7 @@ func codeForUnion(typ *an.Union, cache gen.Cache) (out []gen.Declaration) {
 	content := fmt.Sprintf(`
 	/// %s
 	abstract class %s {}
-	`, gen.Origin(typ.Name()), name)
+	`, gen.Origin(typ), name)
 
 	content += jsonForUnion(typ)
 
@@ -188,7 +188,7 @@ func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 
 	implements := make([]string, len(typ.Implements))
 	for i, imp := range typ.Implements {
-		implements[i] = imp.Name().Obj().Name()
+		implements[i] = an.LocalName(imp)
 	}
 	var implementCode string
 	if len(implements) != 0 {
@@ -212,7 +212,7 @@ func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 		}
 		
 		%s
-	`, gen.Origin(typ.Name()), name, implementCode,
+	`, gen.Origin(typ), name, implementCode,
 			strings.Join(fields, "\n"), name, strings.Join(initFields, ", "),
 			name, strings.Join(interpolatedFields, ", "),
 			jsonForStruct(typ),

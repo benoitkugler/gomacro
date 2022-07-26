@@ -55,14 +55,14 @@ func TestMethodTags(t *testing.T) {
 	for _, v := range []Type{
 		&Basic{B: &types.Basic{}},
 		&Time{},
-		&Array{},
-		&Map{},
+		&Array{&Time{}, 1},
+		&Map{&Time{}, &Time{}},
 		&Enum{name: &types.Named{}},
 		&Struct{},
 		&Union{},
 		&Extern{},
 	} {
-		v.Name()
+		v.Type()
 	}
 }
 

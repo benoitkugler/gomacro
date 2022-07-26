@@ -114,7 +114,7 @@ JSON complexStructToJson(complexStruct item) {
 }
 
 // github.com/benoitkugler/gomacro/testutils/testsource.concretType1
-class concretType1 implements itfType2, itfType {
+class concretType1 implements itfType, itfType2 {
   final List<int> list2;
   final int v;
 
