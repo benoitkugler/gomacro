@@ -32,3 +32,4 @@ desambiguation is required.
 - Definition of a constant which is not an enumeration: add `// gomacro:no-enum`
 - Rely on an external generated file: add the `gomacro-extern:"<pkg>:<mode1>:<targetFile1>:<mode2>:<targetFile2>"` tag to struct fields
 - Types with name containing "Date" and with underlying time.Time are considered as date
+- SQL foreign keys are detected with types following the ID<table> convention or tagged with `gomacro-sql-foreign:"<table>"`

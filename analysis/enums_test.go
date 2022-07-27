@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"go/types"
 	"testing"
 
 	. "github.com/benoitkugler/gomacro/testutils"
@@ -13,10 +12,10 @@ func TestFetchEnums(t *testing.T) {
 		t.Fatal(dict)
 	}
 
-	enumInt := testPkg.Types.Scope().Lookup("EnumInt").Type().(*types.Named)
-	enumUInt := testPkg.Types.Scope().Lookup("EnumUInt").Type().(*types.Named)
-	enumString := testPkg.Types.Scope().Lookup("enumString").Type().(*types.Named)
-	enumOptionalBool := testPkg.Types.Scope().Lookup("enumOptionalBool").Type().(*types.Named)
+	enumInt := Lookup(testPkg, "EnumInt")
+	enumUInt := Lookup(testPkg, "EnumUInt")
+	enumString := Lookup(testPkg, "enumString")
+	enumOptionalBool := Lookup(testPkg, "enumOptionalBool")
 
 	Assert(t, dict[enumInt].IsInteger())
 	Assert(t, !dict[enumInt].IsIota)

@@ -85,7 +85,7 @@ func TestFetch(t *testing.T) {
 }
 
 func TestAnalysFromTypes(t *testing.T) {
-	st := testPkg.Types.Scope().Lookup("StructWithExternalRef").Type().(*types.Named)
+	st := Lookup(testPkg, "StructWithExternalRef")
 
 	an := NewAnalysisFromTypes(testPkg, []types.Type{st})
 	Assert(t, len(an.Source) == 1)
@@ -97,7 +97,7 @@ func TestAnalysFromTypes(t *testing.T) {
 func TestAnalysisStruct(t *testing.T) {
 	an := newAnalysisFromFile(testPkg, testSource)
 
-	st := testPkg.Types.Scope().Lookup("StructWithExternalRef").Type().(*types.Named)
+	st := Lookup(testPkg, "StructWithExternalRef")
 	fields := an.Types[st].(*Struct).Fields
 	Assert(t, len(fields) == 3)
 

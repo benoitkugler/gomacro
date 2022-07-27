@@ -1,7 +1,10 @@
 package testutils
 
 import (
+	"go/types"
 	"testing"
+
+	"golang.org/x/tools/go/packages"
 )
 
 func ShouldPanic(t *testing.T, f func()) {
@@ -21,4 +24,8 @@ func Assert(t *testing.T, b bool, context ...interface{}) {
 			t.Fatalf("assertion error")
 		}
 	}
+}
+
+func Lookup(pkg *packages.Package, name string) *types.Named {
+	return pkg.Types.Scope().Lookup(name).Type().(*types.Named)
 }

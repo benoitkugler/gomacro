@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"go/types"
 	"testing"
 
 	. "github.com/benoitkugler/gomacro/testutils"
@@ -13,7 +12,7 @@ func TestFetchUnion(t *testing.T) {
 		t.Fatal(dict)
 	}
 
-	itf := testPkg.Types.Scope().Lookup("ItfType").Type().(*types.Named)
+	itf := Lookup(testPkg, "ItfType")
 	members := dict[itf]
 
 	Assert(t, len(members) == 2)
