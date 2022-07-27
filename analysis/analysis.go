@@ -71,9 +71,10 @@ func LoadSource(sourceFile string) (*packages.Package, error) {
 // nodeAt returns the node at `obj`,
 // or panics if not found
 func nodeAt(pa *packages.Package, pos token.Pos) ast.Node {
-	declFile := pa.Fset.File(pos).Pos(0)
+	declFile := pa.Fset.File(pos)
 	for _, file := range pa.Syntax { // select the right file
-		if file.Pos() == declFile {
+		tokenFile := pa.Fset.File(file.Pos())
+		if tokenFile == declFile {
 			out := nodeAtFile(pos, file)
 			if out == nil {
 				panic("node not found in *ast.File")
@@ -81,7 +82,7 @@ func nodeAt(pa *packages.Package, pos token.Pos) ast.Node {
 			return out
 		}
 	}
-	panic("missing source file in Package.Syntax")
+	panic("missing source file in Package.Syntax " + pa.String())
 }
 
 // nodeAtFile returns the node at `pos` in `file`
