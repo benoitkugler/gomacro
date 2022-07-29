@@ -61,6 +61,8 @@ func TestMethodTags(t *testing.T) {
 		&Struct{},
 		&Union{},
 		&Extern{},
+		&Pointer{&Time{}},
+		&Named{},
 	} {
 		v.Type()
 	}

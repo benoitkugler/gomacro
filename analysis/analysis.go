@@ -349,7 +349,7 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 			return out
 		} else if st, isStruct := typ.Underlying().(*types.Struct); isStruct {
 			out := &Struct{
-				name:     name,
+				Name:     name,
 				Comments: fetchStructComments(ctx.rootPackage, name),
 				// Implements are defered
 			}

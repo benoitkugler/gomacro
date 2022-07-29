@@ -63,14 +63,7 @@ const (
 	BKBool
 )
 
-// Basic represents all simple types.
-// Enums are special cased, meaning they are not of type `Basic`.
-type Basic struct {
-	B *types.Basic
-}
-
-func (b *Basic) Kind() BasicKind {
-	info := b.B.Underlying().(*types.Basic).Info()
+func NewBasicKind(info types.BasicInfo) BasicKind {
 	if info&types.IsBoolean != 0 {
 		return BKBool
 	} else if info&types.IsInteger != 0 {
@@ -82,6 +75,17 @@ func (b *Basic) Kind() BasicKind {
 	} else {
 		panic("unsupported basic kind")
 	}
+}
+
+// Basic represents all simple types.
+// Enums are special cased, meaning they are not of type `Basic`.
+type Basic struct {
+	B *types.Basic
+}
+
+func (b *Basic) Kind() BasicKind {
+	info := b.B.Underlying().(*types.Basic).Info()
+	return NewBasicKind(info)
 }
 
 // Time is a special case for *time.Time,

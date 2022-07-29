@@ -17,8 +17,8 @@ func TestImplements(t *testing.T) {
 
 	an := NewAnalysisFromTypes(testPkg, []types.Type{itfType, itfType2})
 
-	cl1 := Struct{name: concretType1}
-	cl2 := Struct{name: concretType2}
+	cl1 := Struct{Name: concretType1}
+	cl2 := Struct{Name: concretType2}
 
 	cl1.setImplements(dict, an.Types)
 	cl2.setImplements(dict, an.Types)

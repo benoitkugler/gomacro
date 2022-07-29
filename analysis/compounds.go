@@ -46,14 +46,14 @@ type StructField struct {
 }
 
 type Struct struct {
-	name *types.Named
+	Name *types.Named
 
 	Fields     []StructField
 	Comments   []SpecialComment
 	Implements []*Union
 }
 
-func (cl *Struct) Type() types.Type { return cl.name }
+func (cl *Struct) Type() types.Type { return cl.Name }
 
 // setImplements set `Implements` with the union types this class implements,
 // among the ones given.
@@ -65,7 +65,7 @@ func (cl *Struct) setImplements(unions unionsMap, accu map[types.Type]Type) {
 			continue // ignore the union if it was not required by the entry types
 		}
 		for _, member := range v {
-			if cl.name == member {
+			if cl.Name == member {
 				out = append(out, unionType)
 				break
 			}

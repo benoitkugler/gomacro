@@ -30,7 +30,8 @@ func (em EnumMember) int64() (int64, bool) {
 }
 
 type Enum struct {
-	name *types.Named // by construction Underlying is *types.Basic
+	// by construction Underlying is *types.Basic (see Underlying)
+	name *types.Named
 
 	// Members contains all the values, even the unexported one
 	Members []EnumMember
@@ -41,10 +42,15 @@ type Enum struct {
 
 func (e *Enum) Type() types.Type { return e.name }
 
+// Underlying returns the basic type used by this enum/
+func (e *Enum) Underlying() *types.Basic {
+	return e.Type().Underlying().(*types.Basic)
+}
+
 // IsInteger returns `true` is this enum is backed by
 // integers (which may be negative and not contiguous)
 func (e *Enum) IsInteger() bool {
-	info := e.name.Underlying().(*types.Basic).Info()
+	info := e.Underlying().Info()
 	return info&types.IsInteger != 0
 }
 

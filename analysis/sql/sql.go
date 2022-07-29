@@ -27,13 +27,13 @@ func isNullInt64(ty an.Type) bool {
 	if !ok {
 		return false
 	}
-	nullable := isNullable(named)
+	nullable := isNullXXX(named)
 	return nullable != nil && isInt64(nullable)
 }
 
 // return the type of a sql.NullXXX struct
 // or nil
-func isNullable(typ *types.Named) types.Type {
+func isNullXXX(typ *types.Named) types.Type {
 	isFieldValid := func(field *types.Var) bool {
 		typ, ok := field.Type().Underlying().(*types.Basic)
 		return ok && typ.Info() == types.IsBoolean && field.Name() == "Valid"
@@ -86,7 +86,7 @@ type ForeignKey struct {
 func (ta *Table) newForeignKey(field an.StructField) (ForeignKey, bool) {
 	out := ForeignKey{F: field, IsUnique: ta.uniqueColumns[field.Field.Name()]}
 	// look for an ID type
-	if table := isTableID(field.Type); table != "" && string(table) != an.LocalName(ta.S) {
+	if table := isTableID(field.Type); table != "" && string(table) != ta.Name.Obj().Name() {
 		out.Target = table
 		return out, true
 	}
@@ -108,23 +108,44 @@ func (fk ForeignKey) IsNullable() bool {
 	return !isInt64(fk.F.Field.Type())
 }
 
+type Column struct {
+	// SQLType is the resolved SQL type
+	SQLType Type
+
+	// Field is the Go struct field yielding this column
+	Field an.StructField
+}
+
 // Table is a Struct used as SQL table.
 type Table struct {
-	S *an.Struct
+	Name *types.Named
 
 	uniqueColumns map[string]bool
+
+	Columns []Column
 }
 
 func NewTable(s *an.Struct) Table {
-	out := Table{S: s}
-	out.processComments()
+	out := Table{
+		Name:    s.Name,
+		Columns: make([]Column, len(s.Fields)),
+	}
+	for i, fi := range s.Fields {
+		out.Columns[i] = Column{
+			Field:   fi,
+			SQLType: newType(fi.Type),
+		}
+	}
+
+	out.processComments(s.Comments)
+
 	return out
 }
 
-func (ta *Table) processComments() {
+func (ta *Table) processComments(comments []an.SpecialComment) {
 	ta.uniqueColumns = make(map[string]bool)
 
-	for _, comment := range ta.S.Comments {
+	for _, comment := range comments {
 		if comment.Kind != an.CommentSQL {
 			continue
 		}
@@ -135,23 +156,23 @@ func (ta *Table) processComments() {
 	}
 }
 
-// Primary returns a pointer to the slice element
-// which is the ID field, or nil if not found
-func (ta Table) Primary() *an.StructField {
-	for i, field := range ta.S.Fields {
-		if strings.ToLower(field.Field.Name()) == "id" {
-			return &ta.S.Fields[i]
+// Primary returns the index if the slice element
+// which is the ID field, or -1 if not found
+func (ta Table) Primary() int {
+	for i, field := range ta.Columns {
+		if strings.ToLower(field.Field.Field.Name()) == "id" {
+			return i
 		}
 	}
-	return nil
+	return -1
 }
 
 // ForeignKeys returns the columns which are references
 // into other tables (sorted by name).
 // They are identified by table ID types or with the gomacro-sql-foreign:"<table>" tag.
 func (ta Table) ForeignKeys() (out []ForeignKey) {
-	for _, field := range ta.S.Fields {
-		if fk, ok := ta.newForeignKey(field); ok {
+	for _, field := range ta.Columns {
+		if fk, ok := ta.newForeignKey(field.Field); ok {
 			out = append(out, fk)
 		}
 	}
