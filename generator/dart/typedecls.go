@@ -19,6 +19,8 @@ func lowerFirst(s string) string {
 // (not to be confused with the type declaration)
 func typeName(typ an.Type) string {
 	switch typ := typ.(type) {
+	case *an.Pointer:
+		panic("pointers not handled by the Dart generator")
 	case *an.Basic: // may be named or not
 		switch typ.Kind() {
 		case an.BKBool:

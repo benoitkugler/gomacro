@@ -51,6 +51,8 @@ func (ctx context) functionID(ty an.Type) string {
 		return ty.B.Name()
 	case *an.Time:
 		return "tTime"
+	case *an.Pointer:
+		return ctx.functionID(ty.Elem) + "Ptr"
 	case *an.Array:
 		if L := ty.Len; L != -1 {
 			return fmt.Sprintf("Array%d%s", L, ctx.functionID(ty.Elem))
@@ -82,6 +84,8 @@ func (ctx context) generate(ty an.Type) []gen.Declaration {
 		return []gen.Declaration{ctx.codeForBasic(ty)}
 	case *an.Time:
 		return []gen.Declaration{ctx.codeForTime(ty)}
+	case *an.Pointer:
+		return ctx.codeForPointer(ty)
 	case *an.Named:
 		return ctx.codeForNamed(ty)
 	case *an.Extern:
@@ -170,6 +174,22 @@ func (ctx context) codeForTime(ty *an.Time) gen.Declaration {
 		return time.Unix(int64(rand.Int31()), 5)
 	}
 	`, id)}
+}
+
+func (ctx context) codeForPointer(ty *an.Pointer) []gen.Declaration {
+	out := ctx.generate(ty.Elem) // recurse
+	elemName := ctx.typeName(ty.Elem)
+	id := ctx.functionID(ty)
+	decl := gen.Declaration{
+		ID: id, Content: fmt.Sprintf(`
+		func rand%s() *%s {
+			data := rand%s()
+			return &data
+		}`, id, elemName, ctx.functionID(ty.Elem)),
+	}
+
+	out = append(out, decl)
+	return out
 }
 
 func (ctx context) codeForArray(ty *an.Array) []gen.Declaration {

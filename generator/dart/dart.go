@@ -35,6 +35,8 @@ func generate(typ an.Type, cache generator.Cache) []generator.Declaration {
 	}
 
 	switch typ := typ.(type) {
+	case *an.Pointer:
+		panic("pointers not handled by the Dart generator")
 	case *an.Named:
 		return codeForNamed(typ, cache)
 	case *an.Basic:

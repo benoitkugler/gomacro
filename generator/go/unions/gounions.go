@@ -48,6 +48,8 @@ func generate(typ an.Type, cache gen.Cache) []gen.Declaration {
 	switch typ := typ.(type) {
 	case *an.Basic, *an.Time, *an.Extern:
 		return nil
+	case *an.Pointer:
+		return generate(typ.Elem, cache)
 	case *an.Array:
 		if _, isElemUnion := typ.Elem.(*an.Union); isElemUnion {
 			panic("anonymous arrays containing unions are not supported")

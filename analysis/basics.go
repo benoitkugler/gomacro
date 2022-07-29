@@ -134,3 +134,12 @@ type Extern struct {
 }
 
 func (e *Extern) Type() types.Type { return e.name }
+
+// Pointer is a pointer to a type
+type Pointer struct {
+	Elem Type
+}
+
+func (p *Pointer) Type() types.Type {
+	return types.NewPointer(p.Elem.Type())
+}

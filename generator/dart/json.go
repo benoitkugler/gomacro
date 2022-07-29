@@ -15,6 +15,8 @@ import (
 // for this type
 func jsonID(typ an.Type) string {
 	switch typ := typ.(type) {
+	case *an.Pointer:
+		panic("pointers not handled by the Dart generator")
 	case *an.Named: // directly call the underlying function
 		return jsonID(typ.Underlying)
 	case *an.Basic, *an.Time:

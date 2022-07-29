@@ -365,9 +365,8 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 
 	switch underlying := typ.Underlying().(type) {
 	case *types.Pointer:
-		// we do not distinguish between pointer vs regular values,
-		// simply resolve the indirection
-		return an.handleType(underlying.Elem(), ctx)
+		elem := an.handleType(underlying.Elem(), ctx) // recurse for the element
+		return &Pointer{Elem: elem}
 	case *types.Basic:
 		return &Basic{B: underlying}
 
