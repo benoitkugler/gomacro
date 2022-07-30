@@ -161,12 +161,12 @@ type Analysis struct {
 	// their dependencies.
 	Types map[types.Type]Type
 
+	// Root is the root package used to query type information.
+	Root *packages.Package
+
 	// Source is the list of top-level types
 	// defined in the analysis input file.
 	Source []types.Type
-
-	// Root is the root package used to query type information.
-	Root *packages.Package
 }
 
 // NewAnalysisFromFile calls `packages.Load` on the given `sourceFile`
@@ -271,8 +271,8 @@ type externMap struct {
 }
 
 // check for tag with the form gomacro-extern:"<pkg>:<mode1>:<targetFile1>:<mode2>:<targetFile2>"
-func newExternMap(tag string) *externMap {
-	de := reflect.StructTag(tag).Get("gomacro-extern")
+func newExternMap(tag reflect.StructTag) *externMap {
+	de := tag.Get("gomacro-extern")
 	if de == "" {
 		return nil
 	}
@@ -294,7 +294,7 @@ func (an *Analysis) handleStructFields(typ *types.Struct, ctx context) []StructF
 	var out []StructField
 	for i := 0; i < typ.NumFields(); i++ {
 		field := typ.Field(i)
-		tag := typ.Tag(i)
+		tag := reflect.StructTag(typ.Tag(i))
 
 		// handle extern definition
 		ctx.extern = newExternMap(tag)

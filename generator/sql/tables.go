@@ -34,6 +34,7 @@ func generateTable(ta sql.Table) []gen.Declaration {
 		CREATE TABLE %s (
 		%s
 		);`, tableName, strings.Join(colTypes, ",\n")),
+		Priority: true,
 	}
 
 	return append(decls, decl)
@@ -67,6 +68,9 @@ func createStmt(col sql.Column, isPrimary bool) (string, []gen.Declaration) {
 func typeConstraint(field sql.Column) string {
 	switch ty := field.SQLType.(type) {
 	case sql.Builtin:
+		if ty.IsNullable() {
+			return ""
+		}
 		return "NOT NULL"
 	case sql.Enum:
 		return fmt.Sprintf(" CHECK (%s IN %s) NOT NULL", field.Field.Field.Name(), enumTuple(ty.E))

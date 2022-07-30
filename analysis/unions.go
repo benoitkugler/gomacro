@@ -18,8 +18,8 @@ type Union struct {
 	name *types.Named // with underlying type *types.Interface
 
 	// The types implementing this interface, sorted by name.
-	// By construction, their Name() will always return a non nil *types.Named,
-	// and Name().Obj().Name() should be used as an identifier tag
+	// By construction, their Type() method will always return a *types.Named,
+	// and Obj().Name() should be used as an identifier tag
 	// accros the generators.
 	Members []Type
 }

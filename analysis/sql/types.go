@@ -12,6 +12,7 @@ const ExhaustiveSQLTypeSwitch = "ExhaustiveSQLTypeSwitch"
 // this file defines SQL helpers types
 // to handle the Go -> SQL type convertion
 // for instance a []byte is not an SQL array, but 'bytea'
+// or sql.NullInt64 is not a struct but a (nullable) integer
 
 type Type interface {
 	Type() an.Type
@@ -49,18 +50,26 @@ func isBinary(ty *an.Array) bool {
 // Builtin is a SQL type which does not require
 // additional definitions
 type Builtin struct {
-	name string
 	t    an.Type
+	name string
 }
 
 func (b Builtin) Name() string { return b.name }
+
+// IsNullable returns `true` if the type comes
+// from a sql.NullXXX type.
+func (b Builtin) IsNullable() bool {
+	named, ok := b.t.Type().(*types.Named)
+	return ok && isNullXXX(named) != nil
+}
 
 type Enum struct {
 	E *an.Enum
 }
 
 func (e Enum) Name() string {
-	return basicTypeName(an.NewBasicKind(e.E.Underlying().Info()))
+	kind, _ := an.NewBasicKind(e.E.Underlying().Info())
+	return basicTypeName(kind)
 }
 
 type Array struct {
@@ -100,7 +109,17 @@ func newType(ty an.Type) Type {
 		return JSON{t: ty}
 	case *an.Enum:
 		return Enum{E: ty}
-	case *an.Map, *an.Struct, *an.Union: // use the general JSON type
+	case *an.Map, *an.Union: // use the general JSON type
+		return JSON{t: ty}
+	case *an.Struct:
+		// special case for NullXXX types
+		if elem := isNullXXX(ty.Name); elem != nil {
+			if basic, isBasic := elem.Underlying().(*types.Basic); isBasic {
+				if kind, ok := an.NewBasicKind(basic.Info()); ok {
+					return Builtin{t: ty, name: basicTypeName(kind)}
+				}
+			}
+		}
 		return JSON{t: ty}
 	case *an.Extern:
 		panic("Extern types not supported in SQL generator")

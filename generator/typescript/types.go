@@ -167,12 +167,12 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 	var fields []string
 	for _, field := range t.Fields {
-		if !field.Field.Exported() {
+		if !field.JSONExported() {
 			continue
 		}
 
 		decls = append(decls, generate(field.Type, cache)...) // recurse
-		fields = append(fields, fmt.Sprintf("\t%s: %s,", field.Field.Name(), typeName(field.Type)))
+		fields = append(fields, fmt.Sprintf("\t%s: %s,", field.JSONName(), typeName(field.Type)))
 	}
 
 	name := typeName(t)

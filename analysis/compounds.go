@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"reflect"
 	"regexp"
 	"sort"
 
@@ -41,8 +42,26 @@ type SpecialComment struct {
 
 type StructField struct {
 	Type  Type
-	Field *types.Var // returned by Struct.Field()
-	Tag   string     // returned by Struct.Tag()
+	Field *types.Var        // returned by Struct.Field()
+	Tag   reflect.StructTag // returned by Struct.Tag()
+}
+
+// JSONName returns the field name used by Go json package,
+// that is, taking into account the json struct tag.
+func (st StructField) JSONName() string {
+	if name := st.Tag.Get("json"); name != "" {
+		return name
+	}
+	return st.Field.Name()
+}
+
+// JSONExported returns `true` is the field is exported
+// and not ignored by the json struct tag "-"
+func (st StructField) JSONExported() bool {
+	if name := st.Tag.Get("json"); name == "-" {
+		return false
+	}
+	return st.Field.Exported()
 }
 
 type Struct struct {

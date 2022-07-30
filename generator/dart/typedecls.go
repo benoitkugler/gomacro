@@ -174,14 +174,14 @@ func codeForUnion(typ *an.Union, cache gen.Cache) (out []gen.Declaration) {
 func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 	var fields, initFields, interpolatedFields []string
 	for _, field := range typ.Fields {
-		if !field.Field.Exported() {
+		if !field.JSONExported() {
 			continue
 		}
 
 		// recurse
 		out = append(out, generate(field.Type, cache)...)
 
-		dartFieldName := lowerFirst(field.Field.Name()) // convert to dart convention
+		dartFieldName := lowerFirst(field.JSONName()) // convert to dart convention
 
 		fields = append(fields, fmt.Sprintf("final %s %s;", typeName(field.Type), dartFieldName))
 		initFields = append(initFields, fmt.Sprintf("this.%s", dartFieldName))

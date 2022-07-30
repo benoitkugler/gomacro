@@ -63,17 +63,17 @@ const (
 	BKBool
 )
 
-func NewBasicKind(info types.BasicInfo) BasicKind {
+func NewBasicKind(info types.BasicInfo) (BasicKind, bool) {
 	if info&types.IsBoolean != 0 {
-		return BKBool
+		return BKBool, true
 	} else if info&types.IsInteger != 0 {
-		return BKInt
+		return BKInt, true
 	} else if info&types.IsFloat != 0 {
-		return BKFloat
+		return BKFloat, true
 	} else if info&types.IsString != 0 {
-		return BKString
+		return BKString, true
 	} else {
-		panic("unsupported basic kind")
+		return 0, false
 	}
 }
 
@@ -85,7 +85,11 @@ type Basic struct {
 
 func (b *Basic) Kind() BasicKind {
 	info := b.B.Underlying().(*types.Basic).Info()
-	return NewBasicKind(info)
+	out, ok := NewBasicKind(info)
+	if !ok {
+		panic("unsupported basic kind")
+	}
+	return out
 }
 
 // Time is a special case for *time.Time,
