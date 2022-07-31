@@ -37,3 +37,12 @@ func TestStructComments(t *testing.T) {
 	Assert(t, len(c1) == 0)
 	Assert(t, len(c2) == 2)
 }
+
+func TestJSONTag(t *testing.T) {
+	structT := Lookup(testPkg, "ComplexStruct")
+	an := NewAnalysisFromTypes(testPkg, []types.Type{structT})
+
+	st := an.Types[structT].(*Struct)
+	Assert(t, st.Fields[0].JSONName() == "with_tag")
+	Assert(t, !st.Fields[1].JSONExported())
+}

@@ -106,17 +106,18 @@ func randtes_Basic4() testsource.Basic4 {
 
 func randtes_ComplexStruct() testsource.ComplexStruct {
 	return testsource.ComplexStruct{
-		Dict:     randMapintint(),
-		Time:     randtTime(),
-		B:        randstring(),
-		Value:    randtes_ItfType(),
-		L:        randtes_ItfList(),
-		A:        randint(),
-		E:        randtes_EnumInt(),
-		E2:       randtes_EnumUInt(),
-		Date:     randtes_MyDate(),
-		F:        randArray5int(),
-		Imported: randsub_StructWithComment(),
+		DictWithTag: randMapintint(),
+		NoJSON:      randtes_EnumInt(),
+		Time:        randtTime(),
+		B:           randstring(),
+		Value:       randtes_ItfType(),
+		L:           randtes_ItfList(),
+		A:           randint(),
+		E:           randtes_EnumInt(),
+		E2:          randtes_EnumUInt(),
+		Date:        randtes_MyDate(),
+		F:           randArray5int(),
+		Imported:    randsub_StructWithComment(),
 	}
 }
 

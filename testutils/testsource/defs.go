@@ -43,19 +43,20 @@ var (
 type MyDate time.Time
 
 type ComplexStruct struct {
-	Dict     map[int]int
-	u        *int
-	Time     time.Time
-	B        string
-	Value    ItfType
-	L        ItfList
-	A        int
-	E        EnumInt
-	E2       EnumUInt
-	e3       enumString
-	Date     MyDate
-	F        [5]int
-	Imported subpackage.StructWithComment
+	DictWithTag map[int]int `json:"with_tag"`
+	NoJSON      EnumInt     `json:"-"`
+	u           *int
+	Time        time.Time
+	B           string
+	Value       ItfType
+	L           ItfList
+	A           int
+	E           EnumInt
+	E2          EnumUInt
+	e3          enumString
+	Date        MyDate
+	F           [5]int
+	Imported    subpackage.StructWithComment
 }
 
 type ItfList []ItfType
