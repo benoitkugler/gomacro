@@ -9,9 +9,71 @@ import (
 	gen "github.com/benoitkugler/gomacro/generator"
 )
 
+const (
+	prefixDeclCreate     = "aa_"
+	prefixDeclConstraint = "ab_"
+)
+
+// Generate returns the SQL statements required to create
+// the tables contained in `Source`, defined by Go structs.
+func Generate(ana *an.Analysis) []gen.Declaration {
+	var decls []gen.Declaration
+
+	tables := sql.SelectTables(ana)
+
+	nameReplacer := tableNameReplacer(tables)
+
+	var constraints []string
+	for _, ta := range tables {
+		// table creation / JSON validations
+		decls = append(decls, generateTable(ta)...)
+
+		// implicit constraints (like foreign keys)
+		for _, foreign := range ta.ForeignKeys() {
+			constraints = append(constraints, generateForeignConstraint(ta.TableName(), foreign))
+		}
+
+		// explicit (user provided) constraints
+		for _, constraint := range ta.CustomConstraints {
+			constraints = append(constraints, generateCustomConstraint(nameReplacer, ta.TableName(), constraint))
+		}
+	}
+
+	decls = append(decls, gen.Declaration{
+		ID:       prefixDeclConstraint + "constraints",
+		Content:  "-- constraints\n" + strings.Join(constraints, "\n"),
+		Priority: true,
+	})
+
+	return decls
+}
+
+func tableNameReplacer(tables []sql.Table) *strings.Replacer {
+	var reps []string
+	for _, ta := range tables {
+		name := ta.TableName()
+		reps = append(reps, string(name), convertTableName(name))
+	}
+	return strings.NewReplacer(reps...)
+}
+
+func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) string {
+	onDelete := ""
+	if action := fk.OnDelete(); action != "" {
+		onDelete = "ON DELETE " + action
+	}
+	return fmt.Sprintf("ALTER TABLE %s ADD FOREIGN KEY(%s) REFERENCES %s %s;",
+		convertTableName(sourceTable), fk.F.Field.Name(), convertTableName(fk.Target), onDelete)
+}
+
+func generateCustomConstraint(rep *strings.Replacer, sourceTable sql.TableName, content string) string {
+	content = rep.Replace(content)
+	return fmt.Sprintf("ALTER TABLE %s %s;", convertTableName(sourceTable), content)
+}
+
 // convertTableName uses a familiar SQL convention
-func convertTableName(name string) string {
-	return gen.ToSnakeCase(name) + "s"
+func convertTableName(name sql.TableName) string {
+	return gen.ToSnakeCase(string(name)) + "s"
 }
 
 func generateTable(ta sql.Table) []gen.Declaration {
@@ -26,10 +88,10 @@ func generateTable(ta sql.Table) []gen.Declaration {
 		decls = append(decls, colDecls...)
 	}
 
-	tableName := convertTableName(ta.Name.Obj().Name())
+	tableName := convertTableName(ta.TableName())
 
 	decl := gen.Declaration{
-		ID: ta.Name.Obj().String(),
+		ID: prefixDeclCreate + ta.Name.Obj().String(),
 		Content: fmt.Sprintf(`
 		CREATE TABLE %s (
 		%s
@@ -62,6 +124,7 @@ func createStmt(col sql.Column, isPrimary bool) (string, []gen.Declaration) {
 	}
 
 	// we defer foreign contraints in separate declaration
+	// including used provided constraints
 	return fmt.Sprintf("%s %s", colName, typeDecl), decls
 }
 

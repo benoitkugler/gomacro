@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/benoitkugler/gomacro/analysis"
-	"github.com/benoitkugler/gomacro/analysis/sql"
 	"github.com/benoitkugler/gomacro/generator"
 )
 
@@ -16,16 +15,7 @@ func TestCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var decls []generator.Declaration
-
-	for _, ty := range an.Source {
-		st, ok := an.Types[ty].(*analysis.Struct)
-		if !ok {
-			continue
-		}
-
-		decls = append(decls, generateTable(sql.NewTable(st))...)
-	}
+	decls := Generate(an)
 
 	out := generator.WriteDeclarations(decls)
 	generated := "test/create.sql"

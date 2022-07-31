@@ -10,6 +10,18 @@ import (
 	an "github.com/benoitkugler/gomacro/analysis"
 )
 
+// SelectTables returns the SQL tables found in the given analysis.
+func SelectTables(ana *an.Analysis) (out []Table) {
+	for _, ty := range ana.Source {
+		st, ok := ana.Types[ty].(*an.Struct)
+		if !ok {
+			continue
+		}
+		out = append(out, NewTable(st))
+	}
+	return out
+}
+
 // TableName is a singular name of a table entity,
 // as found in Go source.
 type TableName string
@@ -108,6 +120,12 @@ func (fk ForeignKey) IsNullable() bool {
 	return !isInt64(fk.F.Field.Type())
 }
 
+// OnDelete returns the action defined by the tag
+// `gomacro-sql-on-delete:"<action>"`, or an empty string.
+func (fk ForeignKey) OnDelete() string {
+	return fk.F.Tag.Get("gomacro-sql-on-delete")
+}
+
 type Column struct {
 	// SQLType is the resolved SQL type
 	SQLType Type
@@ -123,6 +141,10 @@ type Table struct {
 	uniqueColumns map[string]bool
 
 	Columns []Column
+
+	// CustomComments are the user provided constraints
+	// defined with `// gomacro:SQL <constraint>` comments
+	CustomConstraints []string
 }
 
 func NewTable(s *an.Struct) Table {
@@ -142,6 +164,10 @@ func NewTable(s *an.Struct) Table {
 	return out
 }
 
+func (ta *Table) TableName() TableName {
+	return TableName(ta.Name.Obj().Name())
+}
+
 func (ta *Table) processComments(comments []an.SpecialComment) {
 	ta.uniqueColumns = make(map[string]bool)
 
@@ -152,6 +178,8 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 
 		if column := isUniqueConstraint(comment.Content); column != "" {
 			ta.uniqueColumns[column] = true
+		} else {
+			ta.CustomConstraints = append(ta.CustomConstraints, comment.Content)
 		}
 	}
 }

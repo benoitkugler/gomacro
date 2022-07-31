@@ -9,6 +9,8 @@ import (
 	gen "github.com/benoitkugler/gomacro/generator"
 )
 
+// Generate generates the code for random data generation of
+// types defined in the analysis `Source`.
 func Generate(ana *an.Analysis, targetPackage *types.Package) []gen.Declaration {
 	var (
 		out []gen.Declaration

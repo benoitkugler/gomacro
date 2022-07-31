@@ -54,6 +54,43 @@ CREATE TABLE table1s (
     L integer
 );
 
+-- constraints
+ALTER TABLE exercice_questions
+    ADD PRIMARY KEY (Idexercices, INDEX);
+
+ALTER TABLE progressions
+    ADD UNIQUE (Id, Idexercices);
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (IdProgression) REFERENCES progressions ON DELETE CASCADE;
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (Idexercices, INDEX) REFERENCES exercice_questions ON DELETE CASCADE;
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (Idprogressions, Idexercices) REFERENCES progressions (Id, Idexercices) ON DELETE CASCADE;
+
+ALTER TABLE questions
+    ADD FOREIGN KEY (NeedExercice) REFERENCES exercices;
+
+ALTER TABLE question_tags
+    ADD FOREIGN KEY (IdQuestion) REFERENCES questions ON DELETE CASCADE;
+
+ALTER TABLE question_tags
+    ADD UNIQUE (Idquestions, Tag);
+
+ALTER TABLE table1s
+    ADD FOREIGN KEY (Ex1) REFERENCES repass;
+
+ALTER TABLE table1s
+    ADD FOREIGN KEY (Ex2) REFERENCES repass;
+
+ALTER TABLE table1s
+    ADD FOREIGN KEY (L) REFERENCES links;
+
 CREATE OR REPLACE FUNCTION gomacro_validate_json_array_5_number (data jsonb)
     RETURNS boolean
     AS $$
@@ -256,10 +293,10 @@ BEGIN
     END IF;
     is_valid := (
         SELECT
-            bool_and(key IN ('Dict', 'Time', 'B', 'Value', 'L', 'A', 'E', 'E2', 'Date', 'F', 'Imported'))
+            bool_and(key IN ('with_tag', 'Time', 'B', 'Value', 'L', 'A', 'E', 'E2', 'Date', 'F', 'Imported'))
         FROM
             jsonb_each(data))
-        AND gomacro_validate_json_map_number (data -> 'Dict')
+        AND gomacro_validate_json_map_number (data -> 'with_tag')
         AND gomacro_validate_json_string (data -> 'Time')
         AND gomacro_validate_json_string (data -> 'B')
         AND gomacro_validate_json_test_ItfType (data -> 'Value')
