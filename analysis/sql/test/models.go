@@ -22,7 +22,10 @@ type Repas struct {
 	Id    RepasID
 }
 
-type Link struct{}
+type Link struct {
+	Repas    RepasID
+	IdTable1 int64
+}
 
 // Question is a standalone question, used for instance in games.
 type Question struct {
@@ -47,6 +50,8 @@ type QuestionTag struct {
 // It is used to select question among implicit groups
 type DifficultyTag string
 
+type Map map[string]bool
+
 // Exercice is the data structure for a full exercice, composed of a list of questions.
 // There are two kinds of exercice :
 //	- parallel : all the questions are independant
@@ -58,7 +63,7 @@ type Exercice struct {
 	// Parameters are parameters shared by all the questions,
 	// which are added to the individual ones.
 	// It will be empty for parallel exercices
-	Parameters map[string]bool
+	Parameters Map
 	Flow       testsource.EnumInt
 	// IdTeacher is the owner of the exercice
 	IdTeacher int64 `json:"id_teacher"`
@@ -69,8 +74,8 @@ type Exercice struct {
 // All link items should be updated at once to preserve `Index` invariants
 // gomacro:SQL ADD PRIMARY KEY (IdExercice, Index)
 type ExerciceQuestion struct {
-	IdExercice int64 `json:"id_exercice" gomacro-sql-on-delete:"CASCADE"`
-	IdQuestion int64 `json:"id_question"`
+	IdExercice int64 `json:"id_exercice" gomacro-sql-foreign:"Exercice" gomacro-sql-on-delete:"CASCADE"`
+	IdQuestion int64 `json:"id_question" gomacro-sql-foreign:"Question"`
 	Bareme     int   `json:"bareme"`
 	Index      int   `json:"-" sql:"index"`
 }
@@ -90,12 +95,14 @@ type Progression struct {
 	IdExercice int64 `json:"id_exercice" gomacro-sql-on-delete:"CASCADE"`
 }
 
+type EnumArray []testsource.EnumUInt
+
 // We enforce consistency with the additional `id_exercice` field
 // gomacro:SQL ADD FOREIGN KEY (IdExercice, Index) REFERENCES exercice_questions ON DELETE CASCADE
 // gomacro:SQL ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressions (Id, IdExercice) ON DELETE CASCADE
 type ProgressionQuestion struct {
-	IdProgression IdProgression         `json:"id_progression" gomacro-sql-on-delete:"CASCADE"`
-	IdExercice    IdExercice            `json:"id_exercice" gomacro-sql-on-delete:"CASCADE"`
-	Index         int                   `json:"index"` // in the question list
-	History       []testsource.EnumUInt `json:"history"`
+	IdProgression IdProgression `json:"id_progression" gomacro-sql-on-delete:"CASCADE"`
+	IdExercice    IdExercice    `json:"id_exercice" gomacro-sql-on-delete:"CASCADE"`
+	Index         int           `json:"index"` // in the question list
+	History       EnumArray     `json:"history"`
 }

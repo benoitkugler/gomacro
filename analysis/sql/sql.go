@@ -140,6 +140,7 @@ type Table struct {
 
 	uniqueColumns map[string]bool
 
+	// Columns only exposes exported struct fields.
 	Columns []Column
 
 	// CustomComments are the user provided constraints
@@ -149,14 +150,17 @@ type Table struct {
 
 func NewTable(s *an.Struct) Table {
 	out := Table{
-		Name:    s.Name,
-		Columns: make([]Column, len(s.Fields)),
+		Name: s.Name,
 	}
-	for i, fi := range s.Fields {
-		out.Columns[i] = Column{
+	for _, fi := range s.Fields {
+		if !fi.Field.Exported() {
+			continue
+		}
+
+		out.Columns = append(out.Columns, Column{
 			Field:   fi,
 			SQLType: newType(fi.Type),
-		}
+		})
 	}
 
 	out.processComments(s.Comments)
@@ -164,6 +168,7 @@ func NewTable(s *an.Struct) Table {
 	return out
 }
 
+// TableName return the Go table name.
 func (ta *Table) TableName() TableName {
 	return TableName(ta.Name.Obj().Name())
 }
@@ -184,7 +189,7 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 	}
 }
 
-// Primary returns the index if the slice element
+// Primary returns the index of the slice element
 // which is the ID field, or -1 if not found
 func (ta Table) Primary() int {
 	for i, field := range ta.Columns {

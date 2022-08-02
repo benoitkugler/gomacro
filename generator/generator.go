@@ -5,8 +5,11 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/benoitkugler/gomacro/analysis"
+	"github.com/benoitkugler/gomacro/analysis/sql"
 )
 
 // Declaration is a top level declaration to write to the generated file.
@@ -61,6 +64,20 @@ func ToSnakeCase(str string) string {
 	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
 	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
 	return strings.ToLower(snake)
+}
+
+func ToLowerFirst(str string) string {
+	if str == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(str)
+	return string(unicode.ToLower(r)) + str[n:]
+}
+
+// SQLTableName uses a familiar SQL convention for table names,
+// shared by generator/sql and generator/go/sqlcrud
+func SQLTableName(name sql.TableName) string {
+	return ToSnakeCase(string(name)) + "s"
 }
 
 // Cache is a cache used to handled recursive types.

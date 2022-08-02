@@ -52,7 +52,7 @@ func tableNameReplacer(tables []sql.Table) *strings.Replacer {
 	var reps []string
 	for _, ta := range tables {
 		name := ta.TableName()
-		reps = append(reps, string(name), convertTableName(name))
+		reps = append(reps, string(name), gen.SQLTableName(name))
 	}
 	return strings.NewReplacer(reps...)
 }
@@ -63,17 +63,12 @@ func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) str
 		onDelete = "ON DELETE " + action
 	}
 	return fmt.Sprintf("ALTER TABLE %s ADD FOREIGN KEY(%s) REFERENCES %s %s;",
-		convertTableName(sourceTable), fk.F.Field.Name(), convertTableName(fk.Target), onDelete)
+		gen.SQLTableName(sourceTable), fk.F.Field.Name(), gen.SQLTableName(fk.Target), onDelete)
 }
 
 func generateCustomConstraint(rep *strings.Replacer, sourceTable sql.TableName, content string) string {
 	content = rep.Replace(content)
-	return fmt.Sprintf("ALTER TABLE %s %s;", convertTableName(sourceTable), content)
-}
-
-// convertTableName uses a familiar SQL convention
-func convertTableName(name sql.TableName) string {
-	return gen.ToSnakeCase(string(name)) + "s"
+	return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(sourceTable), content)
 }
 
 func generateTable(ta sql.Table) []gen.Declaration {
@@ -88,7 +83,7 @@ func generateTable(ta sql.Table) []gen.Declaration {
 		decls = append(decls, colDecls...)
 	}
 
-	tableName := convertTableName(ta.TableName())
+	tableName := gen.SQLTableName(ta.TableName())
 
 	decl := gen.Declaration{
 		ID: prefixDeclCreate + ta.Name.Obj().String(),
