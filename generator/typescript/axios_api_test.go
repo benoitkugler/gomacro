@@ -50,10 +50,12 @@ func TestGenerateMaps(t *testing.T) {
 }
 
 func TestGenerateTypes(t *testing.T) {
-	an, err := analysis.NewAnalysisFromFile("../../testutils/testsource/defs.go")
+	source := "../../testutils/testsource/defs.go"
+	pkg, err := analysis.LoadSource(source)
 	if err != nil {
 		t.Fatal(err)
 	}
+	an := analysis.NewAnalysisFromFile(pkg, source)
 
 	var (
 		decls []generator.Declaration

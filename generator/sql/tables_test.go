@@ -9,11 +9,12 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	fn := "../../analysis/sql/test/models.go"
-	an, err := analysis.NewAnalysisFromFile(fn)
+	source := "../../analysis/sql/test/models.go"
+	pkg, err := analysis.LoadSource(source)
 	if err != nil {
 		t.Fatal(err)
 	}
+	an := analysis.NewAnalysisFromFile(pkg, source)
 
 	decls := Generate(an)
 

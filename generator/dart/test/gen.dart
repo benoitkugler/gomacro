@@ -16,7 +16,7 @@ typedef Basic4 = String;
 
 // github.com/benoitkugler/gomacro/testutils/testsource.ComplexStruct
 class ComplexStruct {
-  final Map<int, int> dict;
+  final Map<int, int> with_tag;
   final DateTime time;
   final String b;
   final ItfType value;
@@ -28,19 +28,19 @@ class ComplexStruct {
   final List<int> f;
   final StructWithComment imported;
 
-  const ComplexStruct(this.dict, this.time, this.b, this.value, this.l, this.a,
-      this.e, this.e2, this.date, this.f, this.imported);
+  const ComplexStruct(this.with_tag, this.time, this.b, this.value, this.l,
+      this.a, this.e, this.e2, this.date, this.f, this.imported);
 
   @override
   String toString() {
-    return "ComplexStruct($dict, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported)";
+    return "ComplexStruct($with_tag, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported)";
   }
 }
 
 ComplexStruct complexStructFromJson(dynamic json_) {
   final json = (json_ as JSON);
   return ComplexStruct(
-      dictInt_IntFromJson(json['Dict']),
+      dictInt_IntFromJson(json['with_tag']),
       dateTimeFromJson(json['Time']),
       stringFromJson(json['B']),
       itfTypeFromJson(json['Value']),
@@ -55,7 +55,7 @@ ComplexStruct complexStructFromJson(dynamic json_) {
 
 JSON complexStructToJson(ComplexStruct item) {
   return {
-    "Dict": dictInt_IntToJson(item.dict),
+    "with_tag": dictInt_IntToJson(item.with_tag),
     "Time": dateTimeToJson(item.time),
     "B": stringToJson(item.b),
     "Value": itfTypeToJson(item.value),

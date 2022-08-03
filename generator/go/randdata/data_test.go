@@ -11,13 +11,15 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	an, err := analysis.NewAnalysisFromFile("../../../testutils/testsource/defs.go")
+	source := "../../../testutils/testsource/defs.go"
+	pkg, err := analysis.LoadSource(source)
 	if err != nil {
 		t.Fatal(err)
 	}
+	an := analysis.NewAnalysisFromFile(pkg, source)
 
 	testPath := strings.ReplaceAll(an.Root.PkgPath, "testutils/testsource", "generator/go/randdata")
-	decls := Generate(an, types.NewPackage(testPath, "test"))
+	decls := generateWithTarget(an, types.NewPackage(testPath, "test"))
 	out := generator.WriteDeclarations(decls)
 
 	fn := "test/data.go"

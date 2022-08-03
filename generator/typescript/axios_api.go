@@ -62,13 +62,6 @@ func funcArgsName(a httpapi.Endpoint) string {
 	return "params"
 }
 
-// func goToTs(enum enums.EnumTable, typ types.Type) tstypes.Type {
-// 	handler := tstypes.NewHandler(enum)
-// 	out := handler.AnalyseType(typ)
-// 	handler.ProcessInterfaces()
-// 	return out
-// }
-
 func typeIn(a httpapi.Endpoint) string {
 	if withFormData(a) { // form data mode
 		params := "params: " + paramsType(a.Contract.InputForm.AsTypedValues())

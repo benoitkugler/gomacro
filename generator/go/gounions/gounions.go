@@ -46,7 +46,7 @@ func generate(typ an.Type, cache gen.Cache) []gen.Declaration {
 	}
 
 	switch typ := typ.(type) {
-	case *an.Basic, *an.Time, *an.Extern:
+	case *an.Basic, *an.Time, *an.Extern, *an.Enum:
 		return nil
 	case *an.Pointer:
 		return generate(typ.Elem, cache)
@@ -67,6 +67,7 @@ func generate(typ an.Type, cache gen.Cache) []gen.Declaration {
 	case *an.Struct:
 		return codeForStruct(typ, cache)
 	default:
+		fmt.Println(typ)
 		panic(an.ExhaustiveTypeSwitch)
 	}
 }

@@ -19,11 +19,11 @@ func init() {
 	// automatically remove output file which may not typecheck during dev
 	_ = os.Remove(fileOut)
 	fn := "../../../analysis/sql/test/models.go"
-	var err error
-	ana, err = analysis.NewAnalysisFromFile(fn)
+	pkg, err := analysis.LoadSource(fn)
 	if err != nil {
 		panic(err)
 	}
+	ana = analysis.NewAnalysisFromFile(pkg, fn)
 
 	pqImportPath = "github.com/benoitkugler/gomacro/analysis/sql/test/pq"
 }

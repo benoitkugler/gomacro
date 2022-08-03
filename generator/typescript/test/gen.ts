@@ -9,7 +9,7 @@ export type Basic3 = number;
 export type Basic4 = string;
 // github.com/benoitkugler/gomacro/testutils/testsource.ComplexStruct
 export interface ComplexStruct {
-  Dict: { [key: number]: number } | null;
+  with_tag: { [key: number]: number } | null;
   Time: Time;
   B: string;
   Value: ItfType;

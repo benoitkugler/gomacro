@@ -68,6 +68,15 @@ func TestMethodTags(t *testing.T) {
 	}
 }
 
+func newAnalysisFromFile(sourceFile string) (*Analysis, error) {
+	pa, err := LoadSource(sourceFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewAnalysisFromFile(pa, sourceFile), nil
+}
+
 func TestLoadSource(t *testing.T) {
 	_, err := LoadSource("not existing")
 	Assert(t, err != nil)
@@ -75,8 +84,11 @@ func TestLoadSource(t *testing.T) {
 	_, err = LoadSource("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
 
-	_, err = NewAnalysisFromFile("../testutils/testsource/not_go/dummy.txt")
+	_, err = newAnalysisFromFile("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
+
+	_, err = LoadSources([]string{"analysis.go", "../testutils/utils.go", "basics.go"})
+	Assert(t, err == nil)
 }
 
 func TestFetch(t *testing.T) {
@@ -97,7 +109,7 @@ func TestAnalysFromTypes(t *testing.T) {
 }
 
 func TestAnalysisStruct(t *testing.T) {
-	an := newAnalysisFromFile(testPkg, testSource)
+	an := NewAnalysisFromFile(testPkg, testSource)
 
 	st := Lookup(testPkg, "StructWithExternalRef")
 	fields := an.Types[st].(*Struct).Fields

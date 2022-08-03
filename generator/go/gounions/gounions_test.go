@@ -9,10 +9,12 @@ import (
 )
 
 func TestUnions(t *testing.T) {
-	an, err := analysis.NewAnalysisFromFile("test/test.go")
+	source := "test/test.go"
+	pkg, err := analysis.LoadSource(source)
 	if err != nil {
 		t.Fatal(err)
 	}
+	an := analysis.NewAnalysisFromFile(pkg, source)
 
 	decls := Generate(an)
 	out := generator.WriteDeclarations(decls)

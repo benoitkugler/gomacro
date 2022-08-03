@@ -15,7 +15,10 @@ CREATE TABLE exercice_questions (
     Index integer NOT NULL
 );
 
-CREATE TABLE links ();
+CREATE TABLE links (
+    Repas integer NOT NULL,
+    IdTable1 integer NOT NULL
+);
 
 CREATE TABLE progressions (
     Id serial PRIMARY KEY,
@@ -56,7 +59,16 @@ CREATE TABLE table1s (
 
 -- constraints
 ALTER TABLE exercice_questions
+    ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
+
+ALTER TABLE exercice_questions
+    ADD FOREIGN KEY (IdQuestion) REFERENCES questions;
+
+ALTER TABLE exercice_questions
     ADD PRIMARY KEY (Idexercices, INDEX);
+
+ALTER TABLE links
+    ADD FOREIGN KEY (Repas) REFERENCES repass;
 
 ALTER TABLE progressions
     ADD UNIQUE (Id, Idexercices);

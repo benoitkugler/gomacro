@@ -11,7 +11,11 @@ import (
 
 // Generate generates the code for random data generation of
 // types defined in the analysis `Source`.
-func Generate(ana *an.Analysis, targetPackage *types.Package) []gen.Declaration {
+func Generate(ana *an.Analysis) []gen.Declaration {
+	return generateWithTarget(ana, ana.Root.Types)
+}
+
+func generateWithTarget(ana *an.Analysis, targetPackage *types.Package) []gen.Declaration {
 	var (
 		out []gen.Declaration
 		ctx = context{cache: make(gen.Cache), targetPackage: targetPackage}

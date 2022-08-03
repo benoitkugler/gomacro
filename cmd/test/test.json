@@ -1,0 +1,12 @@
+{
+    "test/source.go": [
+        {
+            "Mode": "dart",
+            "Output": "test/out.dart"
+        },
+        {
+            "Mode": "go/unions",
+            "Output": "test/out.go"
+        }
+    ]
+}

@@ -9,10 +9,10 @@ import (
 
 func TestSQL(t *testing.T) {
 	fn := "test/models.go"
-	an, err := analysis.NewAnalysisFromFile(fn)
-	if err != nil {
-		t.Fatal(err)
-	}
+	pkg, err := analysis.LoadSource(fn)
+	Assert(t, err == nil)
+
+	an := analysis.NewAnalysisFromFile(pkg, fn)
 
 	Assert(t, isTableID(an.Types[Lookup(an.Root, "RepasID")]) == "Repas")
 	Assert(t, isTableID(an.Types[Lookup(an.Root, "IDInvalid")]) == "")

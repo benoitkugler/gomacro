@@ -126,12 +126,12 @@ func jsonForMap(ma *an.Map) string {
 func jsonForStruct(st *an.Struct) string {
 	var fieldsFrom, fieldsTo []string
 	for _, field := range st.Fields {
-		if !field.Field.Exported() {
+		if !field.JSONExported() {
 			continue
 		}
 
 		fieldTypeID := jsonID(field.Type)
-		fieldName := field.Field.Name()
+		fieldName := field.JSONName()
 		dartFieldName := lowerFirst(fieldName) // convert to dart convention
 
 		fieldsFrom = append(fieldsFrom, fmt.Sprintf("%sFromJson(json['%s'])", fieldTypeID, fieldName))

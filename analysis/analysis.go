@@ -42,28 +42,71 @@ func LocalName(ty Type) string {
 	return ty.Type().(*types.Named).Obj().Name()
 }
 
-// LoadSource returns the `packages.Package` containing the given file.
-func LoadSource(sourceFile string) (*packages.Package, error) {
-	_, err := os.Stat(sourceFile)
-	if err != nil {
-		return nil, err
+func selectByFile(pkgs []*packages.Package, file string) *packages.Package {
+	for _, pkg := range pkgs {
+		for _, source := range pkg.GoFiles {
+			if source == file {
+				return pkg
+			}
+		}
+	}
+	return nil
+}
+
+// LoadSources returns for each source file, the `*packages.Package` containing it.
+// Since it only calls `packages.Load` once, it is a faster alternative
+// to repeated `LoadSource` calls.
+func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
+	patterns := make([]string, len(sourceFiles))
+	for i, sourceFile := range sourceFiles {
+		_, err := os.Stat(sourceFile)
+		if err != nil {
+			return nil, err
+		}
+		patterns[i] = "file=" + sourceFile
 	}
 
-	dir := filepath.Dir(sourceFile)
 	cfg := &packages.Config{
-		Dir: dir,
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax |
 			packages.NeedTypes | packages.NeedImports | packages.NeedDeps | packages.NeedTypesInfo,
 	}
-	pkgs, err := packages.Load(cfg, "file="+sourceFile)
+	// let packages handle the heavy lifting for us
+	pkgs, err := packages.Load(cfg, patterns...)
+	if err != nil {
+		return nil, err
+	}
+	for _, pkg := range pkgs {
+		if pkg.IllTyped || len(pkg.Errors) != 0 {
+			return nil, fmt.Errorf("go package %s contains error", pkg.Name)
+		}
+	}
+
+	// match back the packages
+	out := make([]*packages.Package, len(sourceFiles))
+	for i, sourceFile := range sourceFiles {
+		abs, err := filepath.Abs(sourceFile)
+		if err != nil {
+			return nil, err
+		}
+
+		selected := selectByFile(pkgs, abs)
+		if selected == nil {
+			return nil, fmt.Errorf("file %s not found in packages sources", abs)
+		}
+		out[i] = selected
+	}
+
+	return out, nil
+}
+
+// LoadSource returns the `packages.Package` containing the given file.
+func LoadSource(sourceFile string) (*packages.Package, error) {
+	pkgs, err := LoadSources([]string{sourceFile})
 	if err != nil {
 		return nil, err
 	}
 	if len(pkgs) != 1 {
 		return nil, fmt.Errorf("only one package expected, got %d", len(pkgs))
-	}
-	if pkgs[0].IllTyped || len(pkgs[0].Errors) != 0 {
-		return nil, fmt.Errorf("go package %s contains error", pkgs[0].Name)
 	}
 	return pkgs[0], nil
 }
@@ -169,24 +212,15 @@ type Analysis struct {
 	Source []types.Type
 }
 
-// NewAnalysisFromFile calls `packages.Load` on the given `sourceFile`
-// and then builds the analysis for the types defined in `sourceFile`.
-func NewAnalysisFromFile(sourceFile string) (*Analysis, error) {
-	pa, err := LoadSource(sourceFile)
-	if err != nil {
-		return nil, err
-	}
+// NewAnalysisFromFile uses the given Package
+// to build the analysis for the types defined in `sourceFile`.
+func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
+	var nameds []types.Type
 
 	sourceFileAbs, err := filepath.Abs(sourceFile)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-
-	return newAnalysisFromFile(pa, sourceFileAbs), nil
-}
-
-func newAnalysisFromFile(pa *packages.Package, sourceFileAbs string) *Analysis {
-	var nameds []types.Type
 
 	// walk the top level type declarations
 	scope := pa.Types.Scope()
