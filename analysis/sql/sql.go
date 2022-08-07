@@ -84,7 +84,7 @@ func isTableID(ty an.Type) TableName {
 
 // ForeignKey is a struct field used as (single) SQL foreign key.
 type ForeignKey struct {
-	// F has type int64 or sql.NullInt64
+	// F has underlying type int64 or sql.NullInt64
 	F an.StructField
 
 	// Target is the foreign table being referenced
