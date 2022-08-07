@@ -34,6 +34,7 @@ type Contract struct {
 
 	InputBody analysis.Type
 
+	// Return may be nil
 	Return analysis.Type
 
 	InputForm        Form

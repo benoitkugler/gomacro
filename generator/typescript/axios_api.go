@@ -81,6 +81,9 @@ func typeIn(a httpapi.Endpoint) string {
 
 // assume a named type as return value
 func typeOut(a httpapi.Endpoint) string {
+	if a.Contract.Return == nil {
+		return "never"
+	}
 	return typeName(a.Contract.Return)
 }
 
