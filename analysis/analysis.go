@@ -191,21 +191,29 @@ func nodeAtFile(pos token.Pos, file *ast.File) (out ast.Node) {
 	return bestNode
 }
 
-type pkgSelector struct {
+// PkgSelector allows to retrict the packages
+// import graph walk to the user written.
+type PkgSelector struct {
 	prefix string
 }
 
-func newPkgSelector(root *packages.Package) pkgSelector {
+func NewPkgSelector(root *packages.Package) PkgSelector {
 	chunks := strings.Split(root.PkgPath, "/")
 	var prefix string
 	if len(chunks) >= 3 {
 		prefix = strings.Join(chunks[:3], "/")
 	}
-	return pkgSelector{prefix: prefix}
+	return PkgSelector{prefix: prefix}
 }
 
-func (ps pkgSelector) ignore(pa *packages.Package) bool {
-	return ps.prefix != "" && !strings.HasPrefix(pa.PkgPath, ps.prefix)
+// Ignore returns true if the given package should not
+// be recursed on.
+func (ps PkgSelector) Ignore(pa *packages.Package) bool {
+	return ps.ignorePath(pa.PkgPath)
+}
+
+func (ps PkgSelector) ignorePath(path string) bool {
+	return ps.prefix != "" && !strings.HasPrefix(path, ps.prefix)
 }
 
 // fetchEnumsAndUnions fetches the enums and unions of the given package and
@@ -217,7 +225,7 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 	outEnums := make(enumsMap)
 	outUnions := make(unionsMap)
 
-	selector := newPkgSelector(pa)
+	selector := NewPkgSelector(pa)
 
 	var accuFunc func(*packages.Package)
 	accuFunc = func(p *packages.Package) {
@@ -231,7 +239,7 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 
 		// recurse if needed
 		for _, imp := range p.Imports {
-			if selector.ignore(imp) {
+			if selector.Ignore(imp) {
 				continue
 			}
 			accuFunc(imp)

@@ -22,32 +22,62 @@ func selectFileByPath(pkg *packages.Package, filePathAbs string) *ast.File {
 }
 
 // selectFileByPos returns the ast of the file containing `pos`
-func selectFileByPos(pkg *packages.Package, pos token.Pos) *ast.File {
-	for _, file := range pkg.Syntax {
-		if file.Pos() <= pos && pos <= file.End() {
-			return file
+func selectFileByPos(rootPackage *packages.Package, pos token.Pos) *ast.File {
+	sel := analysis.NewPkgSelector(rootPackage)
+
+	var aux func(pa *packages.Package) *ast.File
+	aux = func(pa *packages.Package) *ast.File {
+		for _, file := range pa.Syntax {
+			if file.Pos() <= pos && pos <= file.End() {
+				return file
+			}
 		}
-	}
-	// recurse
-	for _, imported := range pkg.Imports {
-		if fi := selectFileByPos(imported, pos); fi != nil {
-			return fi
+		// recurse
+		for _, imported := range pa.Imports {
+			if sel.Ignore(imported) {
+				continue
+			}
+
+			if fi := aux(imported); fi != nil {
+				return fi
+			}
 		}
+		return nil
 	}
-	return nil
+
+	fi := aux(rootPackage)
+	if fi == nil {
+		panic(fmt.Sprintf("file %s not found", rootPackage.Fset.Position(pos).Filename))
+	}
+	return fi
 }
 
 func selectPackage(rootPackage *packages.Package, target *types.Package) *packages.Package {
-	if rootPackage.Types.Path() == target.Path() {
-		return rootPackage
-	}
-	// recurse
-	for _, imported := range rootPackage.Imports {
-		if pa := selectPackage(imported, target); pa != nil {
+	sel := analysis.NewPkgSelector(rootPackage)
+
+	var aux func(pa *packages.Package) *packages.Package
+	aux = func(pa *packages.Package) *packages.Package {
+		if pa.Types.Path() == target.Path() {
 			return pa
 		}
+		// recurse
+		for _, imported := range pa.Imports {
+			if sel.Ignore(imported) {
+				continue
+			}
+
+			if out := aux(imported); out != nil {
+				return out
+			}
+		}
+		return nil
 	}
-	return nil
+
+	out := aux(rootPackage)
+	if out == nil {
+		panic(fmt.Sprintf("can't find package %s", target))
+	}
+	return out
 }
 
 // expects an expression evaluable to a constant string
@@ -80,12 +110,9 @@ func selectMethod(named *types.Named, methodName string) *types.Func {
 	panic(fmt.Sprintf("method %s not found on type %s", methodName, named))
 }
 
-func resolveFunc(pkg *packages.Package, fn *types.Func) (body *ast.BlockStmt, name string, sourcePkg *packages.Package) {
+func resolveFunc(rootPackage *packages.Package, fn *types.Func) (body *ast.BlockStmt, name string, sourcePkg *packages.Package) {
 	pos := fn.Pos()
-	fi := selectFileByPos(pkg, pos) // pos is at the begining of the name
-	if fi == nil {
-		panic(fmt.Sprintf("file %s not found", pkg.Fset.Position(pos).Filename))
-	}
+	fi := selectFileByPos(rootPackage, pos) // pos is at the begining of the name
 
 	ast.Inspect(fi, func(n ast.Node) bool {
 		if n == nil {
@@ -104,7 +131,7 @@ func resolveFunc(pkg *packages.Package, fn *types.Func) (body *ast.BlockStmt, na
 	if body == nil {
 		panic(fmt.Sprintf("can't find body for %s", fn))
 	}
-	return body, fn.Name(), selectPackage(pkg, fn.Pkg())
+	return body, fn.Name(), selectPackage(rootPackage, fn.Pkg())
 }
 
 func parseEndpointFunc(arg ast.Expr, pkg *packages.Package) (body *ast.BlockStmt, name string, sourcePkg *packages.Package) {

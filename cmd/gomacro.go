@@ -76,7 +76,7 @@ func runActions(source string, pkg *packages.Package, actions Actions) error {
 		return err
 	}
 
-	fmt.Printf("Running actions for %s\n", fullPath)
+	fmt.Printf("Running actions for %s\n", source)
 
 	ana := analysis.NewAnalysisFromFile(pkg, source)
 
