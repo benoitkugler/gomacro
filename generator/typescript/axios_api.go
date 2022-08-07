@@ -158,19 +158,16 @@ func generateMethod(a httpapi.Endpoint) string {
 }
 
 func renderTypes(s []httpapi.Endpoint) string {
-	var (
-		decls []generator.Declaration
-		cache = make(generator.Cache)
-	)
+	var allTypes []analysis.Type
 	for _, api := range s { // write top-level decl
 		if ty := api.Contract.InputBody; ty != nil {
-			decls = append(decls, generate(ty, cache)...)
+			allTypes = append(allTypes, ty)
 		}
 		if ty := api.Contract.Return; ty != nil {
-			decls = append(decls, generate(ty, cache)...)
+			allTypes = append(allTypes, ty)
 		}
 	}
-	return generator.WriteDeclarations(decls)
+	return generator.WriteDeclarations(generateTypes(allTypes))
 }
 
 // GenerateAxios generate a TS class using Axios for calling the

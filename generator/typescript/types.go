@@ -10,6 +10,26 @@ import (
 
 // This file defines how to print TS types.
 
+// Generate generates the code for the types in `ana.Source`.
+func Generate(ana *an.Analysis) []gen.Declaration {
+	var allTypes []an.Type
+	for _, ty := range ana.Source {
+		allTypes = append(allTypes, ana.Types[ty])
+	}
+	return generateTypes(allTypes)
+}
+
+func generateTypes(types []an.Type) []gen.Declaration {
+	var (
+		decls []gen.Declaration
+		cache = make(gen.Cache)
+	)
+	for _, ty := range types {
+		decls = append(decls, generate(ty, cache)...)
+	}
+	return decls
+}
+
 func typeName(ty an.Type) string {
 	switch ty := ty.(type) {
 	case *an.Pointer:
