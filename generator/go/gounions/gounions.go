@@ -67,7 +67,6 @@ func generate(typ an.Type, cache gen.Cache) []gen.Declaration {
 	case *an.Struct:
 		return codeForStruct(typ, cache)
 	default:
-		fmt.Println(typ)
 		panic(an.ExhaustiveTypeSwitch)
 	}
 }
@@ -213,7 +212,8 @@ func jsonForMap(typ *an.Named) string {
 	elem := ar.Elem.(*an.Union)
 
 	name := an.LocalName(typ)
-	keyName := an.LocalName(ar.Key)
+	// since we write methods, we can safely assume the output package is the same as `typ`
+	keyName := types.TypeString(ar.Key.Type(), gen.NameRelativeTo(typ.Type().(*types.Named).Obj().Pkg()))
 	elemName := an.LocalName(elem)
 
 	return fmt.Sprintf(`func (dict %[1]s) MarshalJSON() ([]byte, error) {
