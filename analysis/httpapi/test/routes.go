@@ -52,7 +52,7 @@ func (controller) handler8(c echo.Context) error {
 	return c.JSON(200, code)
 }
 
-func routes(e *echo.Echo, ct controller, ct2 inner.Controller) {
+func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.GET(route, handler)
 	const routeFunc = "const_local_url"
 	e.GET(routeFunc, ct.handle1)

@@ -116,7 +116,13 @@ func parseEndpointFunc(arg ast.Expr, pkg *packages.Package) (body *ast.BlockStmt
 				fn := xObj.Imported().Scope().Lookup(method.Sel.Name)
 				return resolveFunc(pkg, fn.(*types.Func))
 			case *types.Var: // method
-				ty := xObj.Type().(*types.Named)
+				// check for pointers
+				var ty *types.Named
+				if ptr, isPointer := xObj.Type().(*types.Pointer); isPointer {
+					ty = ptr.Elem().(*types.Named)
+				} else {
+					ty = xObj.Type().(*types.Named)
+				}
 				return resolveFunc(pkg, selectMethod(ty, method.Sel.Name))
 			default:
 				panic(fmt.Sprintf("unsupported identifier %s", xObj))
