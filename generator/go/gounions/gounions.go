@@ -5,7 +5,6 @@ package gounions
 import (
 	"fmt"
 	"go/types"
-	"reflect"
 	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
@@ -262,7 +261,7 @@ func requireWrapper(field an.StructField) bool {
 func (ctx context) codeForStruct(st *an.Struct) (out []gen.Declaration) {
 	var structRequireWrapper bool
 	for _, field := range st.Fields {
-		if reflect.StructTag(field.Tag).Get("gomacro") != "ignore" {
+		if field.Tag.Get("gomacro") != "ignore" {
 			// recurse
 			out = append(out, ctx.generate(field.Type)...)
 		}

@@ -254,7 +254,7 @@ func (ctx context) codeForMap(ty *an.Map) []gen.Declaration {
 func (ctx context) codeForStruct(ty *an.Struct) (decls []gen.Declaration) {
 	fieldsCode := ""
 	for _, field := range ty.Fields {
-		if !field.Field.Exported() {
+		if !field.Field.Exported() || field.Tag.Get("gomacro-data") == "ignore" {
 			continue
 		}
 

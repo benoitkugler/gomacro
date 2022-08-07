@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
@@ -10,8 +11,10 @@ import (
 )
 
 const (
-	prefixDeclCreate     = "aa_"
-	prefixDeclConstraint = "ab_"
+	prefixDeclHeader         = "aa_"
+	prefixDeclCreate         = "ab_"
+	prefixDeclConstraint     = "ac_"
+	prefixDeclJSONConstraint = "zz_"
 )
 
 // Generate returns the SQL statements required to create
@@ -39,22 +42,42 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 		}
 	}
 
-	decls = append(decls, gen.Declaration{
-		ID:       prefixDeclConstraint + "constraints",
-		Content:  "-- constraints\n" + strings.Join(constraints, "\n"),
-		Priority: true,
-	})
+	decls = append(decls,
+		gen.Declaration{
+			ID:       prefixDeclHeader + "header",
+			Content:  "-- Code genererated by gomacro/generator/sql. DO NOT EDIT.",
+			Priority: true,
+		},
+		gen.Declaration{
+			ID:       prefixDeclConstraint + "constraints",
+			Content:  "-- constraints\n" + strings.Join(constraints, "\n"),
+			Priority: true,
+		})
 
 	return decls
 }
 
-func tableNameReplacer(tables []sql.Table) *strings.Replacer {
-	var reps []string
+type replacer map[string]string
+
+func tableNameReplacer(tables []sql.Table) replacer {
+	out := make(replacer)
 	for _, ta := range tables {
 		name := ta.TableName()
-		reps = append(reps, string(name), gen.SQLTableName(name))
+		out[string(name)] = gen.SQLTableName(name)
 	}
-	return strings.NewReplacer(reps...)
+	return out
+}
+
+var reWords = regexp.MustCompile(`([\w]+)`)
+
+// Replace replace words occurences
+func (rp replacer) Replace(input string) string {
+	return reWords.ReplaceAllStringFunc(input, func(word string) string {
+		if subs, has := rp[word]; has {
+			return subs
+		}
+		return word
+	})
 }
 
 func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) string {
@@ -66,7 +89,7 @@ func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) str
 		gen.SQLTableName(sourceTable), fk.F.Field.Name(), gen.SQLTableName(fk.Target), onDelete)
 }
 
-func generateCustomConstraint(rep *strings.Replacer, sourceTable sql.TableName, content string) string {
+func generateCustomConstraint(rep replacer, sourceTable sql.TableName, content string) string {
 	content = rep.Replace(content)
 	return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(sourceTable), content)
 }
@@ -80,6 +103,20 @@ func generateTable(ta sql.Table) []gen.Declaration {
 		statement, colDecls := createStmt(f, ta.Primary() == i)
 
 		colTypes[i] = "\t" + statement
+
+		// add the eventual JSON validation function
+		if js, isJSON := f.SQLType.(sql.JSON); isJSON {
+			var jsonFuncName string
+			decls, jsonFuncName = jsonValidations(js)
+
+			colName := f.Field.Field.Name()
+			decls = append(decls, gen.Declaration{
+				ID:       prefixDeclJSONConstraint + jsonFuncName,
+				Content:  fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s_gomacro CHECK (%s(%s));", gen.SQLTableName(ta.TableName()), colName, jsonFuncName, colName),
+				Priority: false,
+			})
+		}
+
 		decls = append(decls, colDecls...)
 	}
 
@@ -111,14 +148,7 @@ func createStmt(col sql.Column, isPrimary bool) (string, []gen.Declaration) {
 
 	colName := col.Field.Field.Name()
 
-	// add the eventual JSON validation function
-	if js, isJSON := col.SQLType.(sql.JSON); isJSON {
-		var jsonFuncName string
-		decls, jsonFuncName = jsonValidations(js)
-		typeDecl += fmt.Sprintf(" CONSTRAINT %s_%s CHECK (%s(%s))", colName, jsonFuncName, jsonFuncName, colName)
-	}
-
-	// we defer foreign contraints in separate declaration
+	// we defer json and foreign contraints in separate declaration
 	// including used provided constraints
 	return fmt.Sprintf("%s %s", colName, typeDecl), decls
 }

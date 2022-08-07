@@ -20,9 +20,10 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 	)
 	for i, col := range ta.Columns {
 		fieldName := col.Field.Field.Name()
+		columnName := sqlColumnName(col.Field)
 		scanFields[i] = fmt.Sprintf("&item.%s,", fieldName)
 
-		quotedColumnNames[i] = fmt.Sprintf("%q,", fieldName)
+		quotedColumnNames[i] = fmt.Sprintf("%q,", columnName)
 		goFields[i] = fmt.Sprintf("item.%s", fieldName)
 	}
 
@@ -135,6 +136,7 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 	// generate "join like" queries
 	for _, key := range ta.ForeignKeys() {
 		fieldName := key.F.Field.Name()
+		columnName := sqlColumnName(key.F)
 		varName := gen.ToLowerFirst(fieldName)
 		keyTypeName := "int64"
 
@@ -184,19 +186,19 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 			content += fmt.Sprintf(`
 			// Select%[1]sBy%[2]s return zero or one item, thanks to a UNIQUE SQL constraint.
 			func Select%[1]sBy%[2]s(tx DB, %[3]s %[5]s) (item %[1]s, found bool, err error) {
-				row := tx.QueryRow("SELECT * FROM %[4]s WHERE %[2]s = $1", %[3]s)
+				row := tx.QueryRow("SELECT * FROM %[4]s WHERE %[6]s = $1", %[3]s)
 				item, err = Scan%[1]s(row)
 				if err == sql.ErrNoRows {
 					return item, false, nil
 				}
 				return item, true, err
 			}
-			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName)
+			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
 		}
 
 		content += fmt.Sprintf(`
 		func Select%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[5]s) (%[1]ss, error) {
-			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[2]s = ANY($1)", %[5]sArrayToPQ(%[3]ss))
+			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[6]s = ANY($1)", %[5]sArrayToPQ(%[3]ss))
 			if err != nil {
 				return nil, err
 			}
@@ -204,13 +206,13 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		}
 
 		func Delete%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[5]s) (%[1]ss, error)  {
-			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[2]s = ANY($1) RETURNING *", %[5]sArrayToPQ(%[3]ss))
+			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[6]s = ANY($1) RETURNING *", %[5]sArrayToPQ(%[3]ss))
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[1]ss(rows)
 		}	
-		`, goTypeName, fieldName, varName, sqlTableName, keyTypeName)
+		`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
 	}
 
 	return append(out, gen.Declaration{

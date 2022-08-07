@@ -75,7 +75,9 @@ func typeID(ty an.Type) string {
 		return as + typeID(ty.Elem)
 	case *an.Map:
 		return "map_" + typeID(ty.Elem) // JSON map keys are always strings
-	case *an.Named, *an.Extern, *an.Struct, *an.Enum, *an.Union: // these types are always named
+	case *an.Named: // shortcut to underlying
+		return typeID(ty.Underlying)
+	case *an.Extern, *an.Struct, *an.Enum, *an.Union: // these types are always named
 		return idFromNamed(ty.Type().(*types.Named))
 	default:
 		panic(an.ExhaustiveTypeSwitch + fmt.Sprintf(": %T", ty))

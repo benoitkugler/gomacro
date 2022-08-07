@@ -34,5 +34,6 @@ desambiguation is required.
 - Definition of a constant which is not an enumeration: add `// gomacro:no-enum`
 - Rely on an external generated file: add the `gomacro-extern:"<pkg>:<mode1>:<targetFile1>:<mode2>:<targetFile2>"` tag to struct fields
 - Types with name containing "Date" and with underlying time.Time are considered as date
+- Struct fields with `gomacro-data:"ignore"` are ignored from random data generation.
 - SQL foreign keys are detected with types following the ID<table> convention or tagged with `gomacro-sql-foreign:"<table>"`, and an implicit constraint is generated. The `gomacro-sql-on-delete:"<action>"` may be provided to add for instance a cascade.
 - Custom SQL constraints may be provided with struct comments of the form `// gomacro:SQL <constraint>`. The constraint is always prefixed by `ALTER TABLE <table>`. The Go struct names are replaced by their appropriate SQL equivalents.

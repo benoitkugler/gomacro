@@ -1,8 +1,9 @@
+-- Code genererated by gomacro/generator/sql. DO NOT EDIT.
 CREATE TABLE exercices (
     Id serial PRIMARY KEY,
     Title text NOT NULL,
     Description text NOT NULL,
-    Parameters jsonb NOT NULL CONSTRAINT Parameters_gomacro_validate_json_map_boolean CHECK (gomacro_validate_json_map_boolean (Parameters)),
+    Parameters jsonb NOT NULL,
     Flow integer CHECK (Flow IN (0, 1, 2, 4)) NOT NULL,
     IdTeacher integer NOT NULL,
     Public boolean NOT NULL
@@ -29,12 +30,12 @@ CREATE TABLE progression_questions (
     IdProgression integer NOT NULL,
     IdExercice integer NOT NULL,
     Index integer NOT NULL,
-    History jsonb NOT NULL CONSTRAINT History_gomacro_validate_json_array_test_EnumUInt CHECK (gomacro_validate_json_array_test_EnumUInt (History))
+    History jsonb NOT NULL
 );
 
 CREATE TABLE questions (
     Id serial PRIMARY KEY,
-    Page jsonb NOT NULL CONSTRAINT Page_gomacro_validate_json_test_ComplexStruct CHECK (gomacro_validate_json_test_ComplexStruct (Page)),
+    Page jsonb NOT NULL,
     Public boolean NOT NULL,
     IdTeacher integer NOT NULL,
     Description text NOT NULL,
@@ -65,13 +66,13 @@ ALTER TABLE exercice_questions
     ADD FOREIGN KEY (IdQuestion) REFERENCES questions;
 
 ALTER TABLE exercice_questions
-    ADD PRIMARY KEY (Idexercices, INDEX);
+    ADD PRIMARY KEY (IdExercice, INDEX);
 
 ALTER TABLE links
     ADD FOREIGN KEY (Repas) REFERENCES repass;
 
 ALTER TABLE progressions
-    ADD UNIQUE (Id, Idexercices);
+    ADD UNIQUE (Id, IdExercice);
 
 ALTER TABLE progression_questions
     ADD FOREIGN KEY (IdProgression) REFERENCES progressions ON DELETE CASCADE;
@@ -80,10 +81,10 @@ ALTER TABLE progression_questions
     ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
 
 ALTER TABLE progression_questions
-    ADD FOREIGN KEY (Idexercices, INDEX) REFERENCES exercice_questions ON DELETE CASCADE;
+    ADD FOREIGN KEY (IdExercice, INDEX) REFERENCES exercice_questions ON DELETE CASCADE;
 
 ALTER TABLE progression_questions
-    ADD FOREIGN KEY (Idprogressions, Idexercices) REFERENCES progressions (Id, Idexercices) ON DELETE CASCADE;
+    ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressions (Id, IdExercice) ON DELETE CASCADE;
 
 ALTER TABLE questions
     ADD FOREIGN KEY (NeedExercice) REFERENCES exercices;
@@ -92,7 +93,7 @@ ALTER TABLE question_tags
     ADD FOREIGN KEY (IdQuestion) REFERENCES questions ON DELETE CASCADE;
 
 ALTER TABLE question_tags
-    ADD UNIQUE (Idquestions, Tag);
+    ADD UNIQUE (IdQuestion, Tag);
 
 ALTER TABLE table1s
     ADD FOREIGN KEY (Ex1) REFERENCES repass;
@@ -312,11 +313,11 @@ BEGIN
         AND gomacro_validate_json_string (data -> 'Time')
         AND gomacro_validate_json_string (data -> 'B')
         AND gomacro_validate_json_test_ItfType (data -> 'Value')
-        AND gomacro_validate_json_test_ItfList (data -> 'L')
+        AND gomacro_validate_json_array_test_ItfType (data -> 'L')
         AND gomacro_validate_json_number (data -> 'A')
         AND gomacro_validate_json_test_EnumInt (data -> 'E')
         AND gomacro_validate_json_test_EnumUInt (data -> 'E2')
-        AND gomacro_validate_json_test_MyDate (data -> 'Date')
+        AND gomacro_validate_json_string (data -> 'Date')
         AND gomacro_validate_json_array_5_number (data -> 'F')
         AND gomacro_validate_json_subp_StructWithComment (data -> 'Imported');
     RETURN is_valid;
@@ -418,4 +419,13 @@ END;
 $$
 LANGUAGE 'plpgsql'
 IMMUTABLE;
+
+ALTER TABLE progression_questions
+    ADD CONSTRAINT History_gomacro CHECK (gomacro_validate_json_array_test_EnumUInt (History));
+
+ALTER TABLE exercices
+    ADD CONSTRAINT Parameters_gomacro CHECK (gomacro_validate_json_map_boolean (Parameters));
+
+ALTER TABLE questions
+    ADD CONSTRAINT Page_gomacro CHECK (gomacro_validate_json_test_ComplexStruct (Page));
 

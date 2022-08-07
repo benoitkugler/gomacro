@@ -102,7 +102,7 @@ func ScanExercices(rs *sql.Rows) (Exercices, error) {
 // Insert one Exercice in the database and returns the item with id filled.
 func (item Exercice) Insert(tx DB) (out Exercice, err error) {
 	row := tx.QueryRow(`INSERT INTO exercices (
-		Title, Description, Parameters, Flow, IdTeacher, Public
+		title, description, parameters, flow, idteacher, public
 		) VALUES (
 		$1, $2, $3, $4, $5, $6
 		) RETURNING *;
@@ -113,7 +113,7 @@ func (item Exercice) Insert(tx DB) (out Exercice, err error) {
 // Update Exercice in the database and returns the new version.
 func (item Exercice) Update(tx DB) (out Exercice, err error) {
 	row := tx.QueryRow(`UPDATE exercices SET (
-		Title, Description, Parameters, Flow, IdTeacher, Public
+		title, description, parameters, flow, idteacher, public
 		) = (
 		$1, $2, $3, $4, $5, $6
 		) WHERE id = $7 RETURNING *;
@@ -195,10 +195,10 @@ func InsertManyExerciceQuestions(tx *sql.Tx, items ...ExerciceQuestion) error {
 	}
 
 	stmt, err := tx.Prepare(pq.CopyIn("exercice_questions",
-		"IdExercice",
-		"IdQuestion",
-		"Bareme",
-		"Index",
+		"idexercice",
+		"idquestion",
+		"bareme",
+		"index",
 	))
 	if err != nil {
 		return err
@@ -249,7 +249,7 @@ func (items ExerciceQuestions) IdExercices() []int64 {
 }
 
 func SelectExerciceQuestionsByIdExercices(tx DB, idExercices ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE IdExercice = ANY($1)", int64ArrayToPQ(idExercices))
+	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE idexercice = ANY($1)", int64ArrayToPQ(idExercices))
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func SelectExerciceQuestionsByIdExercices(tx DB, idExercices ...int64) (Exercice
 }
 
 func DeleteExerciceQuestionsByIdExercices(tx DB, idExercices ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdExercice = ANY($1) RETURNING *", int64ArrayToPQ(idExercices))
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idexercice = ANY($1) RETURNING *", int64ArrayToPQ(idExercices))
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func (items ExerciceQuestions) IdQuestions() []int64 {
 }
 
 func SelectExerciceQuestionsByIdQuestions(tx DB, idQuestions ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE IdQuestion = ANY($1)", int64ArrayToPQ(idQuestions))
+	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE idquestion = ANY($1)", int64ArrayToPQ(idQuestions))
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func SelectExerciceQuestionsByIdQuestions(tx DB, idQuestions ...int64) (Exercice
 }
 
 func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = ANY($1) RETURNING *", int64ArrayToPQ(idQuestions))
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idquestion = ANY($1) RETURNING *", int64ArrayToPQ(idQuestions))
 	if err != nil {
 		return nil, err
 	}
@@ -355,8 +355,8 @@ func InsertManyLinks(tx *sql.Tx, items ...Link) error {
 	}
 
 	stmt, err := tx.Prepare(pq.CopyIn("links",
-		"Repas",
-		"IdTable1",
+		"repas",
+		"idtable1",
 	))
 	if err != nil {
 		return err
@@ -407,7 +407,7 @@ func (items Links) Repass() []RepasID {
 }
 
 func SelectLinksByRepass(tx DB, repass ...RepasID) (Links, error) {
-	rows, err := tx.Query("SELECT * FROM links WHERE Repas = ANY($1)", RepasIDArrayToPQ(repass))
+	rows, err := tx.Query("SELECT * FROM links WHERE repas = ANY($1)", RepasIDArrayToPQ(repass))
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +415,7 @@ func SelectLinksByRepass(tx DB, repass ...RepasID) (Links, error) {
 }
 
 func DeleteLinksByRepass(tx DB, repass ...RepasID) (Links, error) {
-	rows, err := tx.Query("DELETE FROM links WHERE Repas = ANY($1) RETURNING *", RepasIDArrayToPQ(repass))
+	rows, err := tx.Query("DELETE FROM links WHERE repas = ANY($1) RETURNING *", RepasIDArrayToPQ(repass))
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +495,7 @@ func ScanProgressions(rs *sql.Rows) (Progressions, error) {
 // Insert one Progression in the database and returns the item with id filled.
 func (item Progression) Insert(tx DB) (out Progression, err error) {
 	row := tx.QueryRow(`INSERT INTO progressions (
-		IdExercice
+		idexercice
 		) VALUES (
 		$1
 		) RETURNING *;
@@ -506,7 +506,7 @@ func (item Progression) Insert(tx DB) (out Progression, err error) {
 // Update Progression in the database and returns the new version.
 func (item Progression) Update(tx DB) (out Progression, err error) {
 	row := tx.QueryRow(`UPDATE progressions SET (
-		IdExercice
+		idexercice
 		) = (
 		$1
 		) WHERE id = $2 RETURNING *;
@@ -588,10 +588,10 @@ func InsertManyProgressionQuestions(tx *sql.Tx, items ...ProgressionQuestion) er
 	}
 
 	stmt, err := tx.Prepare(pq.CopyIn("progression_questions",
-		"IdProgression",
-		"IdExercice",
-		"Index",
-		"History",
+		"idprogression",
+		"idexercice",
+		"index",
+		"history",
 	))
 	if err != nil {
 		return err
@@ -642,7 +642,7 @@ func (items ProgressionQuestions) IdProgressions() []IdProgression {
 }
 
 func SelectProgressionQuestionsByIdProgressions(tx DB, idProgressions ...IdProgression) (ProgressionQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM progression_questions WHERE IdProgression = ANY($1)", IdProgressionArrayToPQ(idProgressions))
+	rows, err := tx.Query("SELECT * FROM progression_questions WHERE idprogression = ANY($1)", IdProgressionArrayToPQ(idProgressions))
 	if err != nil {
 		return nil, err
 	}
@@ -650,7 +650,7 @@ func SelectProgressionQuestionsByIdProgressions(tx DB, idProgressions ...IdProgr
 }
 
 func DeleteProgressionQuestionsByIdProgressions(tx DB, idProgressions ...IdProgression) (ProgressionQuestions, error) {
-	rows, err := tx.Query("DELETE FROM progression_questions WHERE IdProgression = ANY($1) RETURNING *", IdProgressionArrayToPQ(idProgressions))
+	rows, err := tx.Query("DELETE FROM progression_questions WHERE idprogression = ANY($1) RETURNING *", IdProgressionArrayToPQ(idProgressions))
 	if err != nil {
 		return nil, err
 	}
@@ -678,7 +678,7 @@ func (items ProgressionQuestions) IdExercices() []IdExercice {
 }
 
 func SelectProgressionQuestionsByIdExercices(tx DB, idExercices ...IdExercice) (ProgressionQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM progression_questions WHERE IdExercice = ANY($1)", IdExerciceArrayToPQ(idExercices))
+	rows, err := tx.Query("SELECT * FROM progression_questions WHERE idexercice = ANY($1)", IdExerciceArrayToPQ(idExercices))
 	if err != nil {
 		return nil, err
 	}
@@ -686,7 +686,7 @@ func SelectProgressionQuestionsByIdExercices(tx DB, idExercices ...IdExercice) (
 }
 
 func DeleteProgressionQuestionsByIdExercices(tx DB, idExercices ...IdExercice) (ProgressionQuestions, error) {
-	rows, err := tx.Query("DELETE FROM progression_questions WHERE IdExercice = ANY($1) RETURNING *", IdExerciceArrayToPQ(idExercices))
+	rows, err := tx.Query("DELETE FROM progression_questions WHERE idexercice = ANY($1) RETURNING *", IdExerciceArrayToPQ(idExercices))
 	if err != nil {
 		return nil, err
 	}
@@ -770,7 +770,7 @@ func ScanQuestions(rs *sql.Rows) (Questions, error) {
 // Insert one Question in the database and returns the item with id filled.
 func (item Question) Insert(tx DB) (out Question, err error) {
 	row := tx.QueryRow(`INSERT INTO questions (
-		Page, Public, IdTeacher, Description, NeedExercice
+		page, public, idteacher, description, needexercice
 		) VALUES (
 		$1, $2, $3, $4, $5
 		) RETURNING *;
@@ -781,7 +781,7 @@ func (item Question) Insert(tx DB) (out Question, err error) {
 // Update Question in the database and returns the new version.
 func (item Question) Update(tx DB) (out Question, err error) {
 	row := tx.QueryRow(`UPDATE questions SET (
-		Page, Public, IdTeacher, Description, NeedExercice
+		page, public, idteacher, description, needexercice
 		) = (
 		$1, $2, $3, $4, $5
 		) WHERE id = $6 RETURNING *;
@@ -804,16 +804,16 @@ func DeleteQuestionsByIDs(tx DB, ids ...int64) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectQuestionsByNeedExercices(tx DB, needExercices ...int64) (Questions, error) {
-	rows, err := tx.Query("SELECT * FROM questions WHERE NeedExercice = ANY($1)", int64ArrayToPQ(needExercices))
+func SelectQuestionsByneedexercices(tx DB, needexercices ...int64) (Questions, error) {
+	rows, err := tx.Query("SELECT * FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needexercices))
 	if err != nil {
 		return nil, err
 	}
 	return ScanQuestions(rows)
 }
 
-func DeleteQuestionsByNeedExercices(tx DB, needExercices ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM questions WHERE NeedExercice = ANY($1) RETURNING id", int64ArrayToPQ(needExercices))
+func DeleteQuestionsByneedexercices(tx DB, needexercices ...int64) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM questions WHERE needexercice = ANY($1) RETURNING id", int64ArrayToPQ(needexercices))
 	if err != nil {
 		return nil, err
 	}
@@ -875,8 +875,8 @@ func InsertManyQuestionTags(tx *sql.Tx, items ...QuestionTag) error {
 	}
 
 	stmt, err := tx.Prepare(pq.CopyIn("question_tags",
-		"Tag",
-		"IdQuestion",
+		"tag",
+		"idquestion",
 	))
 	if err != nil {
 		return err
@@ -927,7 +927,7 @@ func (items QuestionTags) IdQuestions() []int64 {
 }
 
 func SelectQuestionTagsByIdQuestions(tx DB, idQuestions ...int64) (QuestionTags, error) {
-	rows, err := tx.Query("SELECT * FROM question_tags WHERE IdQuestion = ANY($1)", int64ArrayToPQ(idQuestions))
+	rows, err := tx.Query("SELECT * FROM question_tags WHERE idquestion = ANY($1)", int64ArrayToPQ(idQuestions))
 	if err != nil {
 		return nil, err
 	}
@@ -935,7 +935,7 @@ func SelectQuestionTagsByIdQuestions(tx DB, idQuestions ...int64) (QuestionTags,
 }
 
 func DeleteQuestionTagsByIdQuestions(tx DB, idQuestions ...int64) (QuestionTags, error) {
-	rows, err := tx.Query("DELETE FROM question_tags WHERE IdQuestion = ANY($1) RETURNING *", int64ArrayToPQ(idQuestions))
+	rows, err := tx.Query("DELETE FROM question_tags WHERE idquestion = ANY($1) RETURNING *", int64ArrayToPQ(idQuestions))
 	if err != nil {
 		return nil, err
 	}
@@ -1015,7 +1015,7 @@ func ScanRepass(rs *sql.Rows) (Repass, error) {
 // Insert one Repas in the database and returns the item with id filled.
 func (item Repas) Insert(tx DB) (out Repas, err error) {
 	row := tx.QueryRow(`INSERT INTO repass (
-		Order
+		order
 		) VALUES (
 		$1
 		) RETURNING *;
@@ -1026,7 +1026,7 @@ func (item Repas) Insert(tx DB) (out Repas, err error) {
 // Update Repas in the database and returns the new version.
 func (item Repas) Update(tx DB) (out Repas, err error) {
 	row := tx.QueryRow(`UPDATE repass SET (
-		Order
+		order
 		) = (
 		$1
 		) WHERE id = $2 RETURNING *;
@@ -1124,7 +1124,7 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		Ex1, Ex2, L
+		ex1, ex2, l
 		) VALUES (
 		$1, $2, $3
 		) RETURNING *;
@@ -1135,7 +1135,7 @@ func (item Table1) Insert(tx DB) (out Table1, err error) {
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		Ex1, Ex2, L
+		ex1, ex2, l
 		) = (
 		$1, $2, $3
 		) WHERE id = $4 RETURNING *;
@@ -1158,48 +1158,48 @@ func DeleteTable1sByIDs(tx DB, ids ...int64) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectTable1sByEx1s(tx DB, ex1s ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE Ex1 = ANY($1)", int64ArrayToPQ(ex1s))
+func SelectTable1sByex1s(tx DB, ex1s ...RepasID) (Table1s, error) {
+	rows, err := tx.Query("SELECT * FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s))
 	if err != nil {
 		return nil, err
 	}
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByEx1s(tx DB, ex1s ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE Ex1 = ANY($1) RETURNING id", int64ArrayToPQ(ex1s))
+func DeleteTable1sByex1s(tx DB, ex1s ...RepasID) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE ex1 = ANY($1) RETURNING id", RepasIDArrayToPQ(ex1s))
 	if err != nil {
 		return nil, err
 	}
 	return Scanint64Array(rows)
 }
 
-func SelectTable1sByEx2s(tx DB, ex2s ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE Ex2 = ANY($1)", int64ArrayToPQ(ex2s))
+func SelectTable1sByex2s(tx DB, ex2s ...RepasID) (Table1s, error) {
+	rows, err := tx.Query("SELECT * FROM table1s WHERE ex2 = ANY($1)", RepasIDArrayToPQ(ex2s))
 	if err != nil {
 		return nil, err
 	}
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByEx2s(tx DB, ex2s ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE Ex2 = ANY($1) RETURNING id", int64ArrayToPQ(ex2s))
+func DeleteTable1sByex2s(tx DB, ex2s ...RepasID) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE ex2 = ANY($1) RETURNING id", RepasIDArrayToPQ(ex2s))
 	if err != nil {
 		return nil, err
 	}
 	return Scanint64Array(rows)
 }
 
-func SelectTable1sByLs(tx DB, ls ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE L = ANY($1)", int64ArrayToPQ(ls))
+func SelectTable1sByls(tx DB, ls ...int64) (Table1s, error) {
+	rows, err := tx.Query("SELECT * FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls))
 	if err != nil {
 		return nil, err
 	}
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByLs(tx DB, ls ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE L = ANY($1) RETURNING id", int64ArrayToPQ(ls))
+func DeleteTable1sByls(tx DB, ls ...int64) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE l = ANY($1) RETURNING id", int64ArrayToPQ(ls))
 	if err != nil {
 		return nil, err
 	}
@@ -1252,6 +1252,28 @@ func ScanIdExerciceArray(rs *sql.Rows) ([]IdExercice, error) {
 	return ints, nil
 }
 
+type IdExerciceSet map[IdExercice]bool
+
+func NewIdExerciceSetFrom(ids []IdExercice) IdExerciceSet {
+	out := make(IdExerciceSet, len(ids))
+	for _, key := range ids {
+		out[key] = true
+	}
+	return out
+}
+
+func (s IdExerciceSet) Add(id IdExercice) { s[id] = true }
+
+func (s IdExerciceSet) Has(id IdExercice) bool { return s[id] }
+
+func (s IdExerciceSet) Keys() []IdExercice {
+	out := make([]IdExercice, 0, len(s))
+	for k := range s {
+		out = append(out, k)
+	}
+	return out
+}
+
 func IdProgressionArrayToPQ(ids []IdProgression) pq.Int64Array {
 	out := make(pq.Int64Array, len(ids))
 	for i, v := range ids {
@@ -1277,6 +1299,28 @@ func ScanIdProgressionArray(rs *sql.Rows) ([]IdProgression, error) {
 		return nil, err
 	}
 	return ints, nil
+}
+
+type IdProgressionSet map[IdProgression]bool
+
+func NewIdProgressionSetFrom(ids []IdProgression) IdProgressionSet {
+	out := make(IdProgressionSet, len(ids))
+	for _, key := range ids {
+		out[key] = true
+	}
+	return out
+}
+
+func (s IdProgressionSet) Add(id IdProgression) { s[id] = true }
+
+func (s IdProgressionSet) Has(id IdProgression) bool { return s[id] }
+
+func (s IdProgressionSet) Keys() []IdProgression {
+	out := make([]IdProgression, 0, len(s))
+	for k := range s {
+		out = append(out, k)
+	}
+	return out
 }
 
 func RepasIDArrayToPQ(ids []RepasID) pq.Int64Array {
@@ -1306,6 +1350,28 @@ func ScanRepasIDArray(rs *sql.Rows) ([]RepasID, error) {
 	return ints, nil
 }
 
+type RepasIDSet map[RepasID]bool
+
+func NewRepasIDSetFrom(ids []RepasID) RepasIDSet {
+	out := make(RepasIDSet, len(ids))
+	for _, key := range ids {
+		out[key] = true
+	}
+	return out
+}
+
+func (s RepasIDSet) Add(id RepasID) { s[id] = true }
+
+func (s RepasIDSet) Has(id RepasID) bool { return s[id] }
+
+func (s RepasIDSet) Keys() []RepasID {
+	out := make([]RepasID, 0, len(s))
+	for k := range s {
+		out = append(out, k)
+	}
+	return out
+}
+
 func int64ArrayToPQ(ids []int64) pq.Int64Array { return ids }
 
 // Scanint64Array scans the result of a query returning a
@@ -1325,6 +1391,28 @@ func Scanint64Array(rs *sql.Rows) ([]int64, error) {
 		return nil, err
 	}
 	return ints, nil
+}
+
+type int64Set map[int64]bool
+
+func Newint64SetFrom(ids []int64) int64Set {
+	out := make(int64Set, len(ids))
+	for _, key := range ids {
+		out[key] = true
+	}
+	return out
+}
+
+func (s int64Set) Add(id int64) { s[id] = true }
+
+func (s int64Set) Has(id int64) bool { return s[id] }
+
+func (s int64Set) Keys() []int64 {
+	out := make([]int64, 0, len(s))
+	for k := range s {
+		out = append(out, k)
+	}
+	return out
 }
 
 func (s *EnumArray) Scan(src interface{}) error  { return loadJSON(s, src) }

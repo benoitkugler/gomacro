@@ -6,6 +6,7 @@ package sqlcrud
 import (
 	"fmt"
 	"go/types"
+	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
 	"github.com/benoitkugler/gomacro/analysis/sql"
@@ -104,7 +105,6 @@ func (ctx context) canImplementValuer(column sql.Column) (string, bool) {
 		panic(fmt.Sprintf("field %s, written as JSON in SQL, is not named: sql.Valuer interface can't be implemented", column.Field.Field.Name()))
 	}
 	goTypeName := named.Obj().Name()
-
 	return goTypeName, named.Obj().Pkg().Path() == ctx.target.Path()
 }
 
@@ -177,6 +177,14 @@ func (ctx context) idArrayConverters(idTypeName string) gen.Declaration {
 	return out
 }
 
+func isUnderlyingTime(ty an.Type) bool {
+	if named, isNamed := ty.(*an.Named); isNamed {
+		ty = named.Underlying
+	}
+	_, isTime := ty.(*an.Time)
+	return isTime
+}
+
 func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 	if ta.Primary() >= 0 { // we have an ID
 		decls = append(decls, ctx.generatePrimaryTable(ta)...)
@@ -186,7 +194,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 
 	// generate the value interface method
 	for _, col := range ta.Columns {
-		if _, isTime := col.Field.Type.(*an.Time); isTime {
+		if isUnderlyingTime(col.Field.Type) {
 			goTypeName, isLocal := ctx.canImplementValuer(col)
 			if isLocal {
 				decls = append(decls, gen.Declaration{
@@ -245,4 +253,8 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 	}
 
 	return decls
+}
+
+func sqlColumnName(fi an.StructField) string {
+	return strings.ToLower(fi.Field.Name())
 }
