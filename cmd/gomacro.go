@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/benoitkugler/gomacro/analysis"
@@ -154,6 +155,7 @@ func runFromConfig(configFile string) error {
 	for file := range conf {
 		files = append(files, file)
 	}
+	sort.Strings(files) // ensure deterministic execution order
 
 	pkgs, err := analysis.LoadSources(files)
 	if err != nil {
