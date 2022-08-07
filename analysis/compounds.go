@@ -97,23 +97,36 @@ func (cl *Struct) setImplements(unions unionsMap, accu map[types.Type]Type) {
 }
 
 // findPackage recurses through the imports to find the package `obj` belongs to
-func findPackage(rootPackage *packages.Package, obj types.Object) *packages.Package {
-	if obj.Pkg().Path() == rootPackage.PkgPath {
-		return rootPackage
-	}
-	for _, importPkg := range rootPackage.Imports {
-		if pa := findPackage(importPkg, obj); pa != nil {
+func (ps pkgSelector) findPackage(rootPackage *packages.Package, obj *types.TypeName) *packages.Package {
+	var aux func(pa *packages.Package) *packages.Package
+	aux = func(pa *packages.Package) *packages.Package {
+		if obj.Pkg().Path() == pa.PkgPath {
 			return pa
 		}
+		for _, importPkg := range pa.Imports {
+			if ps.ignore(importPkg) {
+				continue
+			}
+			// recurse
+			if out := aux(importPkg); out != nil {
+				return out
+			}
+		}
+
+		return nil
 	}
-	return nil
+
+	out := aux(rootPackage)
+	if out == nil {
+		panic(fmt.Sprintf("package %s not found", obj.Pkg()))
+	}
+	return out
 }
 
 func fetchStructComments(rootPackage *packages.Package, name *types.Named) (out []SpecialComment) {
-	pa := findPackage(rootPackage, name.Obj())
-	if pa == nil {
-		panic(fmt.Sprintf("package %s not found", name.Obj().Pkg()))
-	}
+	selector := newPkgSelector(rootPackage)
+	pa := selector.findPackage(rootPackage, name.Obj())
+
 	// make sure pa and name work with the same file set
 	name = pa.Types.Scope().Lookup(name.Obj().Name()).Type().(*types.Named)
 

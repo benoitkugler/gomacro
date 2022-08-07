@@ -47,8 +47,6 @@ func TestPanics(t *testing.T) {
 	ShouldPanic(t, func() { (&Analysis{}).createType(nil, context{}) })
 	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewStruct(nil, nil), context{}) })
 	ShouldPanic(t, func() { (&Analysis{}).createType(types.NewChan(types.RecvOnly, nil), context{}) })
-
-	ShouldPanic(t, func() { (&Analysis{}).Pkg() })
 }
 
 func TestMethodTags(t *testing.T) {
@@ -104,8 +102,6 @@ func TestAnalysFromTypes(t *testing.T) {
 	an := NewAnalysisFromTypes(testPkg, []types.Type{st})
 	Assert(t, len(an.Source) == 1)
 	Assert(t, len(an.Types) == 6)
-
-	Assert(t, an.Pkg() == st.Obj().Pkg())
 }
 
 func TestAnalysisStruct(t *testing.T) {

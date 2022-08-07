@@ -3,6 +3,7 @@ package generator
 import (
 	"log"
 	"os/exec"
+	"sync"
 )
 
 // utility wrappers around command line tools
@@ -11,6 +12,7 @@ import (
 // Formatters provides format commands for Go, Dart, TypeScript and SQL.
 // The zero value is a ready to use cache.
 type Formatters struct {
+	lock                                       sync.Mutex
 	hasGoFmt, hasDartFmt, hasTsFmt, hasPsqlFmt *bool
 }
 
@@ -27,12 +29,13 @@ const (
 // check if the goimports command is working
 // and caches the result
 func (fmts *Formatters) hasGo() bool {
+	fmts.lock.Lock()
+	defer fmts.lock.Unlock()
+
 	if fmts.hasGoFmt == nil {
 		err := exec.Command("which", "goimports").Run()
 		if err != nil {
 			log.Printf("No formatter for Go (%s)", err)
-		} else {
-			log.Println("Formatter for Go detected")
 		}
 		fmts.hasGoFmt = new(bool)
 		*fmts.hasGoFmt = err == nil
@@ -43,12 +46,13 @@ func (fmts *Formatters) hasGo() bool {
 // check if the dart command is working
 // and caches the result
 func (fmts *Formatters) hasDart() bool {
+	fmts.lock.Lock()
+	defer fmts.lock.Unlock()
+
 	if fmts.hasDartFmt == nil {
 		err := exec.Command("dart", "format", "--help").Run()
 		if err != nil {
 			log.Printf("No formatter for Dart (%s)", err)
-		} else {
-			log.Println("Formatter for Dart detected")
 		}
 		fmts.hasDartFmt = new(bool)
 		*fmts.hasDartFmt = err == nil
@@ -59,12 +63,13 @@ func (fmts *Formatters) hasDart() bool {
 // check if the prettier command is working
 // and caches the result
 func (fmts *Formatters) hasTypescript() bool {
+	fmts.lock.Lock()
+	defer fmts.lock.Unlock()
+
 	if fmts.hasTsFmt == nil {
 		err := exec.Command("npx", "prettier", "-v").Run()
 		if err != nil {
 			log.Printf("No formatter for Typescript (%s)", err)
-		} else {
-			log.Println("Formatter for Typescript detected")
 		}
 		fmts.hasTsFmt = new(bool)
 		*fmts.hasTsFmt = err == nil
@@ -75,12 +80,13 @@ func (fmts *Formatters) hasTypescript() bool {
 // check if the pg_format command is working
 // and caches the result
 func (fmts *Formatters) hasPsql() bool {
+	fmts.lock.Lock()
+	defer fmts.lock.Unlock()
+
 	if fmts.hasPsqlFmt == nil {
 		err := exec.Command("pg_format", "-v").Run()
 		if err != nil {
 			log.Printf("No formatter for Psql (%s)", err)
-		} else {
-			log.Println("Formatter for Psql detected")
 		}
 		fmts.hasPsqlFmt = new(bool)
 		*fmts.hasPsqlFmt = err == nil

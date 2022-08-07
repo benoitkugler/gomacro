@@ -53,20 +53,51 @@ func selectByFile(pkgs []*packages.Package, file string) *packages.Package {
 	return nil
 }
 
+func commonPrefix(paths []string) string {
+	index := 0
+	first := paths[0]
+	for ; index < len(first); index++ {
+		c := first[index]
+		for _, other := range paths {
+			if index >= len(other) || other[index] != c {
+				// no more prefix
+				return first[:index]
+			}
+		}
+	}
+
+	return first
+}
+
 // LoadSources returns for each source file, the `*packages.Package` containing it.
 // Since it only calls `packages.Load` once, it is a faster alternative
 // to repeated `LoadSource` calls.
 func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
 	patterns := make([]string, len(sourceFiles))
+	dirs := make([]string, len(sourceFiles))
+
 	for i, sourceFile := range sourceFiles {
 		_, err := os.Stat(sourceFile)
 		if err != nil {
 			return nil, err
 		}
 		patterns[i] = "file=" + sourceFile
+
+		abs, err := filepath.Abs(sourceFile)
+		if err != nil {
+			return nil, err
+		}
+		dirs[i] = filepath.Dir(abs)
+	}
+
+	// compute the common directory
+	dir := commonPrefix(dirs)
+	if dir == "" {
+		return nil, fmt.Errorf("invalid source directories: %v", dirs)
 	}
 
 	cfg := &packages.Config{
+		Dir: dir,
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax |
 			packages.NeedTypes | packages.NeedImports | packages.NeedDeps | packages.NeedTypesInfo,
 	}
@@ -75,10 +106,11 @@ func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, pkg := range pkgs {
-		if pkg.IllTyped || len(pkg.Errors) != 0 {
-			return nil, fmt.Errorf("go package %s contains error", pkg.Name)
-		}
+
+	nbErrors := packages.PrintErrors(pkgs)
+
+	if nbErrors > 0 {
+		return nil, fmt.Errorf("go packages have errors")
 	}
 
 	// match back the packages
@@ -159,6 +191,23 @@ func nodeAtFile(pos token.Pos, file *ast.File) (out ast.Node) {
 	return bestNode
 }
 
+type pkgSelector struct {
+	prefix string
+}
+
+func newPkgSelector(root *packages.Package) pkgSelector {
+	chunks := strings.Split(root.PkgPath, "/")
+	var prefix string
+	if len(chunks) >= 3 {
+		prefix = strings.Join(chunks[:3], "/")
+	}
+	return pkgSelector{prefix: prefix}
+}
+
+func (ps pkgSelector) ignore(pa *packages.Package) bool {
+	return ps.prefix != "" && !strings.HasPrefix(pa.PkgPath, ps.prefix)
+}
+
 // fetchEnumsAndUnions fetches the enums and unions of the given package and
 // all its imports, restricted to the same "root" folder,
 // which is <domain>/<org>/<root>.
@@ -168,11 +217,7 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 	outEnums := make(enumsMap)
 	outUnions := make(unionsMap)
 
-	chunks := strings.Split(pa.PkgPath, "/")
-	var prefix string
-	if len(chunks) >= 3 {
-		prefix = strings.Join(chunks[:3], "/")
-	}
+	selector := newPkgSelector(pa)
 
 	var accuFunc func(*packages.Package)
 	accuFunc = func(p *packages.Package) {
@@ -186,10 +231,10 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 
 		// recurse if needed
 		for _, imp := range p.Imports {
-			ignore := prefix != "" && !strings.HasPrefix(imp.PkgPath, prefix)
-			if !ignore {
-				accuFunc(imp)
+			if selector.ignore(imp) {
+				continue
 			}
+			accuFunc(imp)
 		}
 	}
 	accuFunc(pa)
@@ -253,6 +298,7 @@ func NewAnalysisFromTypes(root *packages.Package, source []types.Type) *Analysis
 
 func (an *Analysis) populateTypes(pa *packages.Package) {
 	enums, unions := fetchEnumsAndUnions(pa)
+
 	ctx := context{enums: enums, unions: unions, rootPackage: pa}
 
 	an.Types = make(map[types.Type]Type)
@@ -265,25 +311,6 @@ func (an *Analysis) populateTypes(pa *packages.Package) {
 			st.setImplements(ctx.unions, an.Types)
 		}
 	}
-}
-
-// Pkg is a best effort to find the package of the types in
-// `Source`.
-// It will panic if no types are named or if two packages are present.
-func (an *Analysis) Pkg() *types.Package {
-	var pkg *types.Package
-	for _, typ := range an.Source {
-		if named, ok := typ.(*types.Named); ok {
-			if pkg != nil && pkg != named.Obj().Pkg() {
-				panic("heterogenous source packages")
-			}
-			pkg = named.Obj().Pkg()
-		}
-	}
-	if pkg == nil {
-		panic("source package not found")
-	}
-	return pkg
 }
 
 // context stores the parameters need by the analysis,
@@ -383,12 +410,12 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 			return out
 		} else if st, isStruct := typ.Underlying().(*types.Struct); isStruct {
 			out := &Struct{
-				Name:     name,
-				Comments: fetchStructComments(ctx.rootPackage, name),
+				Name: name,
 				// Implements are defered
 			}
 			an.Types[typ] = out                         // register before recursing
 			out.Fields = an.handleStructFields(st, ctx) // recurse
+			out.Comments = fetchStructComments(ctx.rootPackage, name)
 			return out
 		}
 

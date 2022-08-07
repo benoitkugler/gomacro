@@ -76,7 +76,7 @@ func runActions(source string, pkg *packages.Package, actions Actions) error {
 		return err
 	}
 
-	log.Printf("running actions for %s", fullPath)
+	fmt.Printf("Running actions for %s\n", fullPath)
 
 	ana := analysis.NewAnalysisFromFile(pkg, source)
 
@@ -84,7 +84,9 @@ func runActions(source string, pkg *packages.Package, actions Actions) error {
 		var (
 			code   string
 			format generator.Format // format if true
+			output = m.Output
 		)
+
 		switch m.Mode {
 		case goUnionsGen:
 			code = generator.WriteDeclarations(gounions.Generate(ana))
@@ -109,17 +111,19 @@ func runActions(source string, pkg *packages.Package, actions Actions) error {
 			panic(m.Mode)
 		}
 
-		err := os.WriteFile(m.Output, []byte(code), os.ModePerm)
+		err := os.WriteFile(output, []byte(code), os.ModePerm)
 		if err != nil {
 			return err
 		}
 
-		err = fmts.FormatFile(format, m.Output)
+		fmt.Printf("\tCode for action <%s> written to %s. Formatting... \n", m.Mode, output)
+
+		err = fmts.FormatFile(format, output)
 		if err != nil {
-			return fmt.Errorf("formatting %s failed: generated code is probably incorrect: %s", m.Output, err)
+			panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
 		}
 
-		log.Printf("Code for action %s written in %s", m.Mode, m.Output)
+		fmt.Println("\tDone.")
 	}
 	return nil
 }
@@ -162,7 +166,7 @@ func runFromConfig(configFile string) error {
 		return err
 	}
 
-	log.Println("Source loading done.")
+	fmt.Println("Source loading done.")
 
 	for i, file := range files {
 		actions := conf[file]
@@ -200,5 +204,5 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	log.Println("Done.")
+	fmt.Println("Done.")
 }
