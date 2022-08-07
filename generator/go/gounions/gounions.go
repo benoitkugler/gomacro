@@ -166,7 +166,11 @@ func codeForNamed(typ *an.Named) (out []gen.Declaration) {
 		}
 		return out
 	case *an.Map:
-		panic("not implemented")
+		if elem, isElemUnion := under.Elem.(*an.Union); isElemUnion {
+			out = append(out, codeForUnion(elem))
+			out = append(out, gen.Declaration{ID: an.LocalName(typ), Content: jsonForMap(typ)})
+		}
+		return out
 	case *an.Basic, *an.Time: // nothing to do
 		return nil
 	default:
@@ -183,23 +187,57 @@ func jsonForArray(typ *an.Named) string {
 	name := an.LocalName(typ)
 	elemName := an.LocalName(elem)
 
-	return fmt.Sprintf(`func (ct %s) MarshalJSON() ([]byte, error) {
-		tmp := make([]%sWrapper, len(ct))
-		for i, v := range ct {
+	return fmt.Sprintf(`func (list %s) MarshalJSON() ([]byte, error) {
+		tmp := make([]%sWrapper, len(list))
+		for i, v := range list {
 			tmp[i].Data = v
 		}
 		return json.Marshal(tmp)
 	}
 	
-	func (ct *%s) UnmarshalJSON(data []byte) error {
+	func (list *%s) UnmarshalJSON(data []byte) error {
 		var tmp []%sWrapper
 		err := json.Unmarshal(data, &tmp)
-		*ct = make(%s, len(tmp))
+		*list = make(%s, len(tmp))
 		for i, v := range tmp {
-			(*ct)[i] = v.Data
+			(*list)[i] = v.Data
 		}
 		return err
 	}`, name, elemName, name, elemName, name)
+}
+
+// assume typ.Underlying is Map,
+// and map elements are union
+func jsonForMap(typ *an.Named) string {
+	ar := typ.Underlying.(*an.Map)
+	elem := ar.Elem.(*an.Union)
+
+	name := an.LocalName(typ)
+	keyName := an.LocalName(ar.Key)
+	elemName := an.LocalName(elem)
+
+	return fmt.Sprintf(`func (dict %[1]s) MarshalJSON() ([]byte, error) {
+		tmp := make(map[%[2]s]%[3]sWrapper)
+		for k, v := range dict {
+			tmp[k] = %[3]sWrapper{v}
+		}
+		return json.Marshal(tmp)
+	}
+
+	func (dict *%[1]s) UnmarshalJSON(src []byte) error {
+		var wr map[%[2]s]%[3]sWrapper
+		err := json.Unmarshal(src, &wr)
+		if err != nil {
+			return err
+		}
+
+		*dict = make(%[1]s)
+		for i, v := range wr {
+			(*dict)[i] = v.Data
+		}
+		return nil
+	}
+	`, name, keyName, elemName)
 }
 
 // returns true if the field type in an union
