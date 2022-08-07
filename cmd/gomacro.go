@@ -177,11 +177,11 @@ func runFromConfig(configFile string) error {
 	}
 	sort.Strings(files) // ensure deterministic execution order
 
+	fmt.Println("Type-cheking source files...")
 	pkgs, err := analysis.LoadSources(files)
 	if err != nil {
 		return err
 	}
-
 	fmt.Println("Source loading done.")
 
 	var wg sync.WaitGroup
