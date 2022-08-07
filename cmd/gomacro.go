@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/benoitkugler/gomacro/analysis"
 	"github.com/benoitkugler/gomacro/analysis/httpapi"
@@ -27,12 +28,13 @@ import (
 type mode string
 
 const (
-	goUnionsGen   = "go/unions"
-	goSqlcrudGen  = "go/sqlcrud"
-	goRanddataGen = "go/randdata"
-	sqlGen        = "sql"
-	typescriptGen = "typescript"
-	dartGen       = "dart"
+	goUnionsGen        = "go/unions"
+	goSqlcrudGen       = "go/sqlcrud"
+	goRanddataGen      = "go/randdata"
+	sqlGen             = "sql"
+	typescriptApiGen   = "typescript/api"
+	typescriptTypesGen = "typescript/types"
+	dartGen            = "dart"
 )
 
 var fmts generator.Formatters
@@ -59,7 +61,7 @@ func (i *Actions) Set(value string) error {
 	m := action{Mode: mode(chuncks[0]), Output: chuncks[1]}
 	switch m.Mode {
 	case goUnionsGen, goSqlcrudGen, goRanddataGen,
-		sqlGen, typescriptGen, dartGen:
+		sqlGen, typescriptApiGen, dartGen:
 	default:
 		return fmt.Errorf("invalid mode %s", m.Mode)
 	}
@@ -70,7 +72,7 @@ func (i *Actions) Set(value string) error {
 	return nil
 }
 
-func runActions(source string, pkg *packages.Package, actions Actions) error {
+func runActions(wg *sync.WaitGroup, source string, pkg *packages.Package, actions Actions) error {
 	fullPath, err := filepath.Abs(source)
 	if err != nil {
 		return err
@@ -100,7 +102,10 @@ func runActions(source string, pkg *packages.Package, actions Actions) error {
 		case sqlGen:
 			code = generator.WriteDeclarations(sql.Generate(ana))
 			format = generator.Psql
-		case typescriptGen:
+		case typescriptTypesGen:
+			code = generator.WriteDeclarations(typescript.Generate(ana))
+			format = generator.TypeScript
+		case typescriptApiGen:
 			api := httpapi.ParseEcho(ana.Root, fullPath)
 			code = typescript.GenerateAxios(api)
 			format = generator.TypeScript
@@ -116,14 +121,16 @@ func runActions(source string, pkg *packages.Package, actions Actions) error {
 			return err
 		}
 
-		fmt.Printf("\tCode for action <%s> written to %s. Formatting... \n", m.Mode, output)
+		fmt.Printf("\tCode for action <%s> written to %s (pending formatting).\n", m.Mode, output)
 
-		err = fmts.FormatFile(format, output)
-		if err != nil {
-			panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
-		}
+		go func() {
+			err = fmts.FormatFile(format, output)
+			if err != nil {
+				panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
+			}
+			wg.Done()
+		}()
 
-		fmt.Println("\tDone.")
 	}
 	return nil
 }
@@ -133,7 +140,12 @@ func runFromArgs(source string, actions Actions) error {
 	if err != nil {
 		return err
 	}
-	err = runActions(source, pkg, actions)
+
+	var wg sync.WaitGroup
+	wg.Add(len(actions))
+	err = runActions(&wg, source, pkg, actions)
+	wg.Wait()
+
 	return err
 }
 
@@ -155,9 +167,13 @@ func runFromConfig(configFile string) error {
 	}
 
 	// fetch the packages for each file in one call
-	var files []string
-	for file := range conf {
+	var (
+		files     []string
+		nbActions int
+	)
+	for file, actions := range conf {
 		files = append(files, file)
+		nbActions += len(actions)
 	}
 	sort.Strings(files) // ensure deterministic execution order
 
@@ -168,14 +184,18 @@ func runFromConfig(configFile string) error {
 
 	fmt.Println("Source loading done.")
 
+	var wg sync.WaitGroup
+	wg.Add(nbActions)
 	for i, file := range files {
 		actions := conf[file]
 		pkg := pkgs[i]
-		err = runActions(file, pkg, actions)
+		err = runActions(&wg, file, pkg, actions)
 		if err != nil {
 			return err
 		}
 	}
+	fmt.Println("Waiting for formatters...")
+	wg.Wait()
 
 	return nil
 }
