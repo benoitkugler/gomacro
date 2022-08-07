@@ -153,7 +153,17 @@ func (ctx context) idArrayConverters(idTypeName string) gen.Declaration {
 	out.Content += fmt.Sprintf(`
 	type %[1]sSet map[%[1]s]bool 
 
+	func New%[1]sSetFrom(ids []%[1]s) %[1]sSet { 
+		out := make(%[1]sSet, len(ids))
+		for _, key := range ids {
+			out[key] = true
+		}
+		return out
+	}
+
 	func (s %[1]sSet) Add(id %[1]s) { s[id] = true }
+
+	func (s %[1]sSet) Has(id %[1]s) bool { return s[id] }
 
 	func (s %[1]sSet) Keys() []%[1]s {
 		out := make([]%[1]s, 0, len(s))
