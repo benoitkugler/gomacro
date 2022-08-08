@@ -148,10 +148,16 @@ func codeForExtern(ty *an.Extern) gen.Declaration {
 func codeForNamed(named *an.Named, cache gen.Cache) []gen.Declaration {
 	deps := generate(named.Underlying, cache) // recurse
 
-	code := fmt.Sprintf(`// %s
-	export type %s = %s`, gen.Origin(named), typeName(named), typeName(named.Underlying))
+	name, target := typeName(named), typeName(named.Underlying)
+	// do not add decl if the names are the same
+	if name == target {
+		return deps
+	}
 
-	deps = append(deps, gen.Declaration{ID: typeName(named), Content: code})
+	code := fmt.Sprintf(`// %s
+	export type %s = %s`, gen.Origin(named), name, target)
+
+	deps = append(deps, gen.Declaration{ID: name, Content: code})
 	return deps
 }
 
