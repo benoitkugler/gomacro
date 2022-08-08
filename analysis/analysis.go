@@ -285,7 +285,7 @@ func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
 		}
 
 		typeName, isTypeName := object.(*types.TypeName)
-		if !isTypeName || typeName.IsAlias() {
+		if !isTypeName {
 			// ignore non-type declarations
 			continue
 		}
