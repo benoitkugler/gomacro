@@ -804,16 +804,16 @@ func DeleteQuestionsByIDs(tx DB, ids ...int64) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectQuestionsByneedexercices(tx DB, needexercices ...int64) (Questions, error) {
-	rows, err := tx.Query("SELECT * FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needexercices))
+func SelectQuestionsByNeedExercices(tx DB, needExercices ...int64) (Questions, error) {
+	rows, err := tx.Query("SELECT * FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needExercices))
 	if err != nil {
 		return nil, err
 	}
 	return ScanQuestions(rows)
 }
 
-func DeleteQuestionsByneedexercices(tx DB, needexercices ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM questions WHERE needexercice = ANY($1) RETURNING id", int64ArrayToPQ(needexercices))
+func DeleteQuestionsByNeedExercices(tx DB, needExercices ...int64) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM questions WHERE needexercice = ANY($1) RETURNING id", int64ArrayToPQ(needExercices))
 	if err != nil {
 		return nil, err
 	}
@@ -1158,7 +1158,7 @@ func DeleteTable1sByIDs(tx DB, ids ...int64) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectTable1sByex1s(tx DB, ex1s ...RepasID) (Table1s, error) {
+func SelectTable1sByEx1s(tx DB, ex1s ...RepasID) (Table1s, error) {
 	rows, err := tx.Query("SELECT * FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s))
 	if err != nil {
 		return nil, err
@@ -1166,7 +1166,7 @@ func SelectTable1sByex1s(tx DB, ex1s ...RepasID) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByex1s(tx DB, ex1s ...RepasID) ([]int64, error) {
+func DeleteTable1sByEx1s(tx DB, ex1s ...RepasID) ([]int64, error) {
 	rows, err := tx.Query("DELETE FROM table1s WHERE ex1 = ANY($1) RETURNING id", RepasIDArrayToPQ(ex1s))
 	if err != nil {
 		return nil, err
@@ -1174,7 +1174,7 @@ func DeleteTable1sByex1s(tx DB, ex1s ...RepasID) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectTable1sByex2s(tx DB, ex2s ...RepasID) (Table1s, error) {
+func SelectTable1sByEx2s(tx DB, ex2s ...RepasID) (Table1s, error) {
 	rows, err := tx.Query("SELECT * FROM table1s WHERE ex2 = ANY($1)", RepasIDArrayToPQ(ex2s))
 	if err != nil {
 		return nil, err
@@ -1182,7 +1182,7 @@ func SelectTable1sByex2s(tx DB, ex2s ...RepasID) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByex2s(tx DB, ex2s ...RepasID) ([]int64, error) {
+func DeleteTable1sByEx2s(tx DB, ex2s ...RepasID) ([]int64, error) {
 	rows, err := tx.Query("DELETE FROM table1s WHERE ex2 = ANY($1) RETURNING id", RepasIDArrayToPQ(ex2s))
 	if err != nil {
 		return nil, err
@@ -1190,7 +1190,7 @@ func DeleteTable1sByex2s(tx DB, ex2s ...RepasID) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectTable1sByls(tx DB, ls ...int64) (Table1s, error) {
+func SelectTable1sByLs(tx DB, ls ...int64) (Table1s, error) {
 	rows, err := tx.Query("SELECT * FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls))
 	if err != nil {
 		return nil, err
@@ -1198,7 +1198,7 @@ func SelectTable1sByls(tx DB, ls ...int64) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByls(tx DB, ls ...int64) ([]int64, error) {
+func DeleteTable1sByLs(tx DB, ls ...int64) ([]int64, error) {
 	rows, err := tx.Query("DELETE FROM table1s WHERE l = ANY($1) RETURNING id", int64ArrayToPQ(ls))
 	if err != nil {
 		return nil, err
