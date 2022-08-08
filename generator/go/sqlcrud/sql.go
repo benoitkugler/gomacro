@@ -88,8 +88,13 @@ func (ctx context) typeName(ty types.Type) string {
 	return types.TypeString(ty, generator.NameRelativeTo(ctx.target))
 }
 
-// returns true if `ty` is named and defined the target package
-func (ctx context) isNamedLocal(ty types.Type) bool {
+// returns true if `ty` is named and defined the target package,
+// or is int64
+func (ctx context) generateArrayConverter(key sql.ForeignKey) bool {
+	ty := key.F.Type.Type()
+	if ctx.typeName(ty) == "int64" {
+		return true
+	}
 	if named, isNamed := ty.(*types.Named); isNamed {
 		return named.Obj().Pkg() == ctx.target
 	}

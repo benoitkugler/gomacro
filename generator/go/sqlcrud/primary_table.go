@@ -157,7 +157,7 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 		}
 
 		// add int array converter if required
-		if keyTypeName == "int64" || ctx.isNamedLocal(key.F.Field.Type()) {
+		if ctx.generateArrayConverter(key) {
 			out = append(out, ctx.idArrayConverters(keyTypeName))
 		}
 
