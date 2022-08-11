@@ -139,6 +139,9 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		columnName := sqlColumnName(key.F)
 		varName := gen.ToLowerFirst(fieldName)
 		keyTypeName := "int64"
+		if !key.IsNullable() {
+			keyTypeName = ctx.typeName(key.F.Field.Type())
+		}
 
 		if ctx.generateArrayConverter(key) {
 			out = append(out, ctx.idArrayConverters(keyTypeName)) // add the converter
@@ -146,8 +149,6 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 
 		// lookup methods
 		if !key.IsNullable() {
-			keyTypeName = ctx.typeName(key.F.Field.Type())
-
 			if key.IsUnique {
 				content += fmt.Sprintf(`
 				// By%[1]s returns a map with '%[1]s' as keys.

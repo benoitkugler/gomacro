@@ -222,18 +222,28 @@ func (ta Table) ForeignKeys() (out []ForeignKey) {
 // UNIQUE constraint.
 // The columns returned by `ForeignKeys` are not included,
 // since they usually require additional handling.
-func (ta Table) AdditionalUniqueCols() [][]string {
+func (ta Table) AdditionalUniqueCols() [][]Column {
 	foreignKeys := make(map[string]bool)
 	for _, key := range ta.ForeignKeys() {
 		foreignKeys[key.F.Field.Name()] = true
 	}
 
-	var out [][]string
-	for _, cols := range ta.uniquesCols {
+	colsByName := make(map[string]Column)
+	for _, col := range ta.Columns {
+		colsByName[col.Field.Field.Name()] = col
+	}
+
+	var out [][]Column
+	for _, colNames := range ta.uniquesCols {
 		// ignore foreign keys
-		if len(cols) == 1 && foreignKeys[cols[0]] {
+		if len(colNames) == 1 && foreignKeys[colNames[0]] {
 			continue
 		}
+		cols := make([]Column, len(colNames))
+		for i, name := range colNames {
+			cols[i] = colsByName[name]
+		}
+
 		out = append(out, cols)
 	}
 	return out

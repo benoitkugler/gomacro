@@ -300,6 +300,16 @@ func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions ...int64) (Exercice
 	return ScanExerciceQuestions(rows)
 }
 
+// SelectExerciceQuestionByIdExerciceAndIndex return zero or one item, thanks to a UNIQUE SQL constraint.
+func SelectExerciceQuestionByIdExerciceAndIndex(tx DB, idExercice int64, index int) (item ExerciceQuestion, found bool, err error) {
+	row := tx.QueryRow("SELECT * FROM exercice_questions WHERE IdExercice = $1 AND Index = $2", idExercice, index)
+	item, err = ScanExerciceQuestion(row)
+	if err == sql.ErrNoRows {
+		return item, false, nil
+	}
+	return item, true, err
+}
+
 func scanOneLink(row scanner) (Link, error) {
 	var item Link
 	err := row.Scan(
@@ -693,6 +703,26 @@ func DeleteProgressionQuestionsByIdExercices(tx DB, idExercices ...IdExercice) (
 	return ScanProgressionQuestions(rows)
 }
 
+// SelectProgressionQuestionByIdProgressionAndIndex return zero or one item, thanks to a UNIQUE SQL constraint.
+func SelectProgressionQuestionByIdProgressionAndIndex(tx DB, idProgression IdProgression, index int) (item ProgressionQuestion, found bool, err error) {
+	row := tx.QueryRow("SELECT * FROM progression_questions WHERE IdProgression = $1 AND Index = $2", idProgression, index)
+	item, err = ScanProgressionQuestion(row)
+	if err == sql.ErrNoRows {
+		return item, false, nil
+	}
+	return item, true, err
+}
+
+// SelectProgressionByIdAndIdExercice return zero or one item, thanks to a UNIQUE SQL constraint.
+func SelectProgressionByIdAndIdExercice(tx DB, id IdProgression, idExercice int64) (item Progression, found bool, err error) {
+	row := tx.QueryRow("SELECT * FROM progressions WHERE Id = $1 AND IdExercice = $2", id, idExercice)
+	item, err = ScanProgression(row)
+	if err == sql.ErrNoRows {
+		return item, false, nil
+	}
+	return item, true, err
+}
+
 func scanOneQuestion(row scanner) (Question, error) {
 	var item Question
 	err := row.Scan(
@@ -940,6 +970,16 @@ func DeleteQuestionTagsByIdQuestions(tx DB, idQuestions ...int64) (QuestionTags,
 		return nil, err
 	}
 	return ScanQuestionTags(rows)
+}
+
+// SelectQuestionTagByIdQuestionAndTag return zero or one item, thanks to a UNIQUE SQL constraint.
+func SelectQuestionTagByIdQuestionAndTag(tx DB, idQuestion int64, tag string) (item QuestionTag, found bool, err error) {
+	row := tx.QueryRow("SELECT * FROM question_tags WHERE IdQuestion = $1 AND Tag = $2", idQuestion, tag)
+	item, err = ScanQuestionTag(row)
+	if err == sql.ErrNoRows {
+		return item, false, nil
+	}
+	return item, true, err
 }
 
 func scanOneRepas(row scanner) (Repas, error) {

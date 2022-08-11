@@ -197,6 +197,8 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 		decls = append(decls, ctx.generateLinkTable(ta)...)
 	}
 
+	decls = append(decls, ctx.generateSelectByUniques(ta))
+
 	// generate the value interface method
 	for _, col := range ta.Columns {
 		if isUnderlyingTime(col.Field.Type) {
@@ -262,4 +264,60 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 
 func sqlColumnName(fi an.StructField) string {
 	return strings.ToLower(fi.Field.Name())
+}
+
+func (ctx context) generateSelectByUniques(ta sql.Table) gen.Declaration {
+	var content string
+	goTypeName := ta.TableName()
+	sqlTableName := gen.SQLTableName(goTypeName)
+	for _, cols := range ta.AdditionalUniqueCols() {
+		comparison := columsComparison(cols)
+		funcTitle := columsFuncTitle(cols)
+		varNames, varDecls := ctx.columsVarDecls(cols)
+
+		content += fmt.Sprintf(`
+		// Select%[1]sBy%[2]s return zero or one item, thanks to a UNIQUE SQL constraint.
+		func Select%[1]sBy%[2]s(tx DB, %[3]s) (item %[1]s, found bool, err error) {
+			row := tx.QueryRow("SELECT * FROM %[4]s WHERE %[5]s", %[6]s)
+			item, err = Scan%[1]s(row)
+			if err == sql.ErrNoRows {
+				return item, false, nil
+			}
+			return item, true, err
+		}
+		`, goTypeName, funcTitle, varDecls, sqlTableName, comparison, varNames)
+	}
+
+	return gen.Declaration{
+		ID:      string(goTypeName) + "_unique_selects",
+		Content: content,
+	}
+}
+
+// assume placholders are $1, $2, etc...
+func columsComparison(cols []sql.Column) string {
+	chunks := make([]string, len(cols))
+	for i, c := range cols {
+		chunks[i] = fmt.Sprintf("%s = $%d", c.Field.Field.Name(), i+1)
+	}
+	return strings.Join(chunks, " AND ")
+}
+
+func columsFuncTitle(cols []sql.Column) string {
+	chunks := make([]string, len(cols))
+	for i, c := range cols {
+		chunks[i] = c.Field.Field.Name()
+	}
+	return strings.Join(chunks, "And")
+}
+
+func (ctx context) columsVarDecls(cols []sql.Column) (string, string) {
+	varNames := make([]string, len(cols))
+	varDecls := make([]string, len(cols))
+	for i, c := range cols {
+		varName := gen.ToLowerFirst(c.Field.Field.Name())
+		varNames[i] = varName
+		varDecls[i] = fmt.Sprintf("%s %s", varName, ctx.typeName(c.Field.Field.Type()))
+	}
+	return strings.Join(varNames, ", "), strings.Join(varDecls, ", ")
 }

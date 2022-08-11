@@ -98,6 +98,7 @@ type Progression struct {
 type EnumArray []testsource.EnumUInt
 
 // We enforce consistency with the additional `id_exercice` field
+// gomacro:SQL ADD UNIQUE(IdProgression, Index)
 // gomacro:SQL ADD FOREIGN KEY (IdExercice, Index) REFERENCES exercice_questions ON DELETE CASCADE
 // gomacro:SQL ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressions (Id, IdExercice) ON DELETE CASCADE
 type ProgressionQuestion struct {
