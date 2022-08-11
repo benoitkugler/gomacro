@@ -1198,6 +1198,31 @@ func DeleteTable1sByIDs(tx DB, ids ...int64) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
+// ByEx1 returns a map with 'Ex1' as keys.
+func (items Table1s) ByEx1() map[RepasID]Table1s {
+	out := make(map[RepasID]Table1s)
+	for _, target := range items {
+		dict := out[target.Ex1]
+		if dict == nil {
+			dict = make(Table1s)
+		}
+		dict[target.Id] = target
+		out[target.Ex1] = dict
+	}
+	return out
+}
+
+// Ex1s returns the list of ids of Ex1
+// contained in this table.
+// They are not garanteed to be distinct.
+func (items Table1s) Ex1s() []RepasID {
+	out := make([]RepasID, len(items))
+	for index, target := range items {
+		out[index] = target.Ex1
+	}
+	return out
+}
+
 func SelectTable1sByEx1s(tx DB, ex1s ...RepasID) (Table1s, error) {
 	rows, err := tx.Query("SELECT * FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s))
 	if err != nil {
@@ -1212,6 +1237,31 @@ func DeleteTable1sByEx1s(tx DB, ex1s ...RepasID) ([]int64, error) {
 		return nil, err
 	}
 	return Scanint64Array(rows)
+}
+
+// ByEx2 returns a map with 'Ex2' as keys.
+func (items Table1s) ByEx2() map[RepasID]Table1s {
+	out := make(map[RepasID]Table1s)
+	for _, target := range items {
+		dict := out[target.Ex2]
+		if dict == nil {
+			dict = make(Table1s)
+		}
+		dict[target.Id] = target
+		out[target.Ex2] = dict
+	}
+	return out
+}
+
+// Ex2s returns the list of ids of Ex2
+// contained in this table.
+// They are not garanteed to be distinct.
+func (items Table1s) Ex2s() []RepasID {
+	out := make([]RepasID, len(items))
+	for index, target := range items {
+		out[index] = target.Ex2
+	}
+	return out
 }
 
 func SelectTable1sByEx2s(tx DB, ex2s ...RepasID) (Table1s, error) {

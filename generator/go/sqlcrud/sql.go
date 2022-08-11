@@ -92,7 +92,7 @@ func (ctx context) typeName(ty types.Type) string {
 // or is int64
 func (ctx context) generateArrayConverter(key sql.ForeignKey) bool {
 	ty := key.F.Type.Type()
-	if ctx.typeName(ty) == "int64" {
+	if key.IsNullable() || ctx.typeName(ty) == "int64" {
 		return true
 	}
 	if named, isNamed := ty.(*types.Named); isNamed {

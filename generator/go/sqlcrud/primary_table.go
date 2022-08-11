@@ -175,6 +175,49 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
 		}
 
+		if !key.IsNullable() {
+			if key.IsUnique {
+				content += fmt.Sprintf(`
+				// By%[1]s returns a map with '%[1]s' as keys.
+				func (items %[2]ss) By%[1]s() map[%[3]s]%[2]s {
+					out := make(map[%[3]s]%[2]s, len(items))
+					for _, target := range items {
+						out[target.%[1]s] = target
+					}
+					return out
+				}`, fieldName, goTypeName, keyTypeName)
+			} else {
+				content += fmt.Sprintf(`
+				// By%[1]s returns a map with '%[1]s' as keys.
+				func (items %[2]ss) By%[1]s() map[%[3]s]%[2]ss {
+					out := make(map[%[3]s]%[2]ss)
+					for _, target := range items {
+						dict := out[target.%[1]s]
+						if dict == nil {
+							dict = make(%[2]ss)
+						}
+						dict[target.Id] = target
+						out[target.%[1]s] = dict
+					}
+					return out
+				}	
+				`, fieldName, goTypeName, keyTypeName)
+			}
+
+			content += fmt.Sprintf(`
+			// %[1]ss returns the list of ids of %[1]s
+			// contained in this table.
+			// They are not garanteed to be distinct.
+			func (items %[2]ss) %[1]ss() []%[3]s {
+				out := make([]%[3]s, 0, len(items))
+				for _, target := range items {
+					out = append(out, target.%[1]s)
+				}
+				return out
+			}
+			`, fieldName, goTypeName, keyTypeName)
+		}
+
 		content += fmt.Sprintf(`
 		func Select%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[6]s) (%[1]ss, error) {
 			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[7]s = ANY($1)", %[6]sArrayToPQ(%[3]ss))

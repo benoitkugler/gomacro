@@ -31,14 +31,14 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 		// table creation / JSON validations
 		decls = append(decls, generateTable(ta)...)
 
-		// implicit constraints (like foreign keys)
-		for _, foreign := range ta.ForeignKeys() {
-			constraints = append(constraints, generateForeignConstraint(ta.TableName(), foreign))
-		}
-
 		// explicit (user provided) constraints
 		for _, constraint := range ta.CustomConstraints {
 			constraints = append(constraints, generateCustomConstraint(nameReplacer, ta.TableName(), constraint))
+		}
+
+		// implicit constraints (like foreign keys)
+		for _, foreign := range ta.ForeignKeys() {
+			constraints = append(constraints, generateForeignConstraint(ta.TableName(), foreign))
 		}
 	}
 
