@@ -146,6 +146,8 @@ type Table struct {
 	// CustomComments are the user provided constraints
 	// defined with `// gomacro:SQL <constraint>` comments
 	CustomConstraints []string
+
+	uniquesCols [][]string // not filtered
 }
 
 func NewTable(s *an.Struct) Table {
@@ -183,9 +185,13 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 
 		if column := isUniqueConstraint(comment.Content); column != "" {
 			ta.uniqueColumns[column] = true
-		} else {
-			ta.CustomConstraints = append(ta.CustomConstraints, comment.Content)
 		}
+
+		if columns := isUniquesConstraint(comment.Content); len(columns) != 0 {
+			ta.uniquesCols = append(ta.uniquesCols, columns)
+		}
+
+		ta.CustomConstraints = append(ta.CustomConstraints, comment.Content)
 	}
 }
 
@@ -208,6 +214,27 @@ func (ta Table) ForeignKeys() (out []ForeignKey) {
 		if fk, ok := ta.newForeignKey(field.Field); ok {
 			out = append(out, fk)
 		}
+	}
+	return out
+}
+
+// `AdditionalUniqueCols` returns the columns which have a
+// UNIQUE constraint.
+// The columns returned by `ForeignKeys` are not included,
+// since they usually require additional handling.
+func (ta Table) AdditionalUniqueCols() [][]string {
+	foreignKeys := make(map[string]bool)
+	for _, key := range ta.ForeignKeys() {
+		foreignKeys[key.F.Field.Name()] = true
+	}
+
+	var out [][]string
+	for _, cols := range ta.uniquesCols {
+		// ignore foreign keys
+		if len(cols) == 1 && foreignKeys[cols[0]] {
+			continue
+		}
+		out = append(out, cols)
 	}
 	return out
 }
