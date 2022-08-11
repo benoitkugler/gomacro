@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -268,14 +269,13 @@ type Analysis struct {
 // NewAnalysisFromFile uses the given Package
 // to build the analysis for the types defined in `sourceFile`.
 func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
-	var nameds []types.Type
-
 	sourceFileAbs, err := filepath.Abs(sourceFile)
 	if err != nil {
 		panic(err)
 	}
 
 	// walk the top level type declarations
+	var objs []*types.TypeName
 	scope := pa.Types.Scope()
 	for _, name := range scope.Names() {
 		object := scope.Lookup(name)
@@ -290,7 +290,16 @@ func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
 			continue
 		}
 
-		nameds = append(nameds, typeName.Type())
+		objs = append(objs, typeName)
+	}
+
+	// order according to source, so that for instance SQL constraints
+	// are kept in correct order
+	sort.Slice(objs, func(i, j int) bool { return objs[i].Pos() < objs[j].Pos() })
+
+	nameds := make([]types.Type, len(objs))
+	for i, obj := range objs {
+		nameds[i] = obj.Type()
 	}
 
 	return NewAnalysisFromTypes(pa, nameds)
