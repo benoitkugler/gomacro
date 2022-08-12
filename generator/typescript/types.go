@@ -105,7 +105,7 @@ var (
 		ID: "__time_def",
 		Content: `
 	class TimeTag {
-		private _ :"T" = "T"
+		private _ :"T" as const;
 	}
 	
 	// ISO date-time string
@@ -117,7 +117,7 @@ var (
 		ID: "__date_def",
 		Content: `
 	class DateTag {
-		private _ :"D" = "D"
+		private _ :"D" as const;
 	}
 	
 	// AAAA-MM-YY date format
