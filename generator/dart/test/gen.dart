@@ -40,7 +40,7 @@ class ComplexStruct {
 ComplexStruct complexStructFromJson(dynamic json_) {
   final json = (json_ as JSON);
   return ComplexStruct(
-      dictInt_IntFromJson(json['with_tag']),
+      dictIntToIntFromJson(json['with_tag']),
       dateTimeFromJson(json['Time']),
       stringFromJson(json['B']),
       itfTypeFromJson(json['Value']),
@@ -55,7 +55,7 @@ ComplexStruct complexStructFromJson(dynamic json_) {
 
 JSON complexStructToJson(ComplexStruct item) {
   return {
-    "with_tag": dictInt_IntToJson(item.with_tag),
+    "with_tag": dictIntToIntToJson(item.with_tag),
     "Time": dateTimeToJson(item.time),
     "B": stringToJson(item.b),
     "Value": itfTypeToJson(item.value),
@@ -279,14 +279,14 @@ bool boolFromJson(dynamic json) => json as bool;
 
 bool boolToJson(bool item) => item;
 
-Map<int, int> dictInt_IntFromJson(dynamic json) {
+Map<int, int> dictIntToIntFromJson(dynamic json) {
   if (json == null) {
     return {};
   }
   return (json as JSON).map((k, v) => MapEntry(int.parse(k), intFromJson(v)));
 }
 
-Map<String, dynamic> dictInt_IntToJson(Map<int, int> item) {
+Map<String, dynamic> dictIntToIntToJson(Map<int, int> item) {
   return item.map((k, v) => MapEntry(intToJson(k).toString(), intToJson(v)));
 }
 

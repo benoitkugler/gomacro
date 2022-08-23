@@ -101,14 +101,14 @@ export interface StructWithExternalRef {
 }
 
 class DateTag {
-  private _: "D" = "D";
+  private _ = "D" as const;
 }
 
 // AAAA-MM-YY date format
 export type Date_ = string & DateTag;
 
 class TimeTag {
-  private _: "T" = "T";
+  private _ = "T" as const;
 }
 
 // ISO date-time string

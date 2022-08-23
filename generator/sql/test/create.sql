@@ -55,46 +55,11 @@ CREATE TABLE table1s (
     Id serial PRIMARY KEY,
     Ex1 integer NOT NULL,
     Ex2 integer NOT NULL,
-    L integer
+    L integer,
+    Other integer
 );
 
 -- constraints
-ALTER TABLE exercice_questions
-    ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
-
-ALTER TABLE exercice_questions
-    ADD FOREIGN KEY (IdQuestion) REFERENCES questions;
-
-ALTER TABLE exercice_questions
-    ADD PRIMARY KEY (IdExercice, INDEX);
-
-ALTER TABLE links
-    ADD FOREIGN KEY (Repas) REFERENCES repass;
-
-ALTER TABLE progressions
-    ADD UNIQUE (Id, IdExercice);
-
-ALTER TABLE progression_questions
-    ADD FOREIGN KEY (IdProgression) REFERENCES progressions ON DELETE CASCADE;
-
-ALTER TABLE progression_questions
-    ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
-
-ALTER TABLE progression_questions
-    ADD FOREIGN KEY (IdExercice, INDEX) REFERENCES exercice_questions ON DELETE CASCADE;
-
-ALTER TABLE progression_questions
-    ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressions (Id, IdExercice) ON DELETE CASCADE;
-
-ALTER TABLE questions
-    ADD FOREIGN KEY (NeedExercice) REFERENCES exercices;
-
-ALTER TABLE question_tags
-    ADD FOREIGN KEY (IdQuestion) REFERENCES questions ON DELETE CASCADE;
-
-ALTER TABLE question_tags
-    ADD UNIQUE (IdQuestion, Tag);
-
 ALTER TABLE table1s
     ADD FOREIGN KEY (Ex1) REFERENCES repass;
 
@@ -103,6 +68,48 @@ ALTER TABLE table1s
 
 ALTER TABLE table1s
     ADD FOREIGN KEY (L) REFERENCES links;
+
+ALTER TABLE table1s
+    ADD FOREIGN KEY (Other) REFERENCES repass;
+
+ALTER TABLE links
+    ADD FOREIGN KEY (Repas) REFERENCES repass;
+
+ALTER TABLE questions
+    ADD FOREIGN KEY (NeedExercice) REFERENCES exercices;
+
+ALTER TABLE question_tags
+    ADD UNIQUE (IdQuestion, Tag);
+
+ALTER TABLE question_tags
+    ADD FOREIGN KEY (IdQuestion) REFERENCES questions ON DELETE CASCADE;
+
+ALTER TABLE exercice_questions
+    ADD PRIMARY KEY (IdExercice, INDEX);
+
+ALTER TABLE exercice_questions
+    ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
+
+ALTER TABLE exercice_questions
+    ADD FOREIGN KEY (IdQuestion) REFERENCES questions;
+
+ALTER TABLE progressions
+    ADD UNIQUE (Id, IdExercice);
+
+ALTER TABLE progression_questions
+    ADD UNIQUE (IdProgression, INDEX);
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (IdExercice, INDEX) REFERENCES exercice_questions ON DELETE CASCADE;
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressions (Id, IdExercice) ON DELETE CASCADE;
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (IdProgression) REFERENCES progressions ON DELETE CASCADE;
+
+ALTER TABLE progression_questions
+    ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
 
 CREATE OR REPLACE FUNCTION gomacro_validate_json_array_5_number (data jsonb)
     RETURNS boolean
