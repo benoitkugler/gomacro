@@ -190,6 +190,20 @@ func isUnderlyingTime(ty an.Type) bool {
 	return isTime
 }
 
+// return the field name of sql.NullInt64 like types
+func isLocalNullInt64(col sql.Column) *types.Var {
+	named, ok := col.Field.Type.Type().(*types.Named)
+	if !ok {
+		return nil
+	}
+
+	if field := sql.IsNullXXX(named); field != nil && sql.IsInt64(field.Type()) {
+		return field
+	}
+
+	return nil
+}
+
 func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 	if ta.Primary() >= 0 { // we have an ID
 		decls = append(decls, ctx.generatePrimaryTable(ta)...)
@@ -254,6 +268,33 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						func (s *%s) Scan(src interface{}) error { return loadJSON(s, src) }
 						func (s %s) Value() (driver.Value, error) { return dumpJSON(s) }
 						`, goTypeName, goTypeName),
+				}, jsonValuer)
+			}
+		} else if field := isLocalNullInt64(col); field != nil {
+			goTypeName, isLocal := ctx.canImplementValuer(col)
+			if isLocal {
+				decls = append(decls, gen.Declaration{
+					ID: "nullable_valuer" + goTypeName,
+					Content: fmt.Sprintf(`
+						func (s *%[1]s) Scan(src interface{}) error {
+							var tmp pq.NullInt64
+							err := tmp.Scan(src)
+							if err != nil {
+								return err
+							}
+							*s = %[1]s{
+								Valid: tmp.Valid,
+								%[2]s: %[3]s(tmp.Int64),
+							}
+							return nil
+						}
+						
+						func (s %[1]s) Value() (driver.Value, error) {
+							return pq.NullInt64{
+								Int64: int64(s.%[2]s), 
+								Valid: s.Valid}.Value()
+						}
+						`, goTypeName, field.Name(), ctx.typeName(field.Type())),
 				}, jsonValuer)
 			}
 		}

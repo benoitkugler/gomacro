@@ -60,7 +60,7 @@ func (b Builtin) Name() string { return b.name }
 // from a sql.NullXXX type.
 func (b Builtin) IsNullable() bool {
 	named, ok := b.t.Type().(*types.Named)
-	return ok && isNullXXX(named) != nil
+	return ok && IsNullXXX(named) != nil
 }
 
 type Enum struct {
@@ -113,8 +113,8 @@ func newType(ty an.Type) Type {
 		return JSON{t: ty}
 	case *an.Struct:
 		// special case for NullXXX types
-		if elem := isNullXXX(ty.Name); elem != nil {
-			if basic, isBasic := elem.Underlying().(*types.Basic); isBasic {
+		if elem := IsNullXXX(ty.Name); elem != nil {
+			if basic, isBasic := elem.Type().Underlying().(*types.Basic); isBasic {
 				if kind, ok := an.NewBasicKind(basic.Info()); ok {
 					return Builtin{t: ty, name: basicTypeName(kind)}
 				}

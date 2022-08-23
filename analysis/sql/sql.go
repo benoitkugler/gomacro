@@ -26,8 +26,8 @@ func SelectTables(ana *an.Analysis) (out []Table) {
 // as found in Go source.
 type TableName string
 
-// returns true if the underlying type is int64
-func isInt64(ty types.Type) bool {
+// IsInt64 returns true if the underlying type of `ty` is int64
+func IsInt64(ty types.Type) bool {
 	basic, ok := ty.Underlying().(*types.Basic)
 	if !ok {
 		return false
@@ -40,17 +40,18 @@ func isNullInt64(ty an.Type) bool {
 	if !ok {
 		return false
 	}
-	nullable := isNullXXX(named)
-	return nullable != nil && isInt64(nullable)
+	nullable := IsNullXXX(named)
+	return nullable != nil && IsInt64(nullable.Type())
 }
 
-// isNullXXX matches types whose underlying type is a struct
+// IsNullXXX matches types whose underlying type is a struct
 // similar to sql.NullInt64, that is, a struct of the form
 // 	struct {
 // 		Valid bool
 //  	<Field> <Type>
 // 	}
-func isNullXXX(typ *types.Named) types.Type {
+// If so, it returns the data field declaration.
+func IsNullXXX(typ *types.Named) *types.Var {
 	isFieldValid := func(field *types.Var) bool {
 		typ, ok := field.Type().Underlying().(*types.Basic)
 		return ok && typ.Info() == types.IsBoolean && field.Name() == "Valid"
@@ -62,9 +63,9 @@ func isNullXXX(typ *types.Named) types.Type {
 	}
 	// we accept both order
 	if isFieldValid(str.Field(0)) {
-		return str.Field(1).Type()
+		return str.Field(1)
 	} else if isFieldValid(str.Field(1)) {
-		return str.Field(0).Type()
+		return str.Field(0)
 	}
 	return nil
 }
@@ -76,7 +77,7 @@ func isTableID(ty an.Type) TableName {
 	if !ok {
 		return ""
 	}
-	if ok := isInt64(named.Underlying.Type()); !ok {
+	if ok := IsInt64(named.Underlying.Type()); !ok {
 		return ""
 	}
 	name := an.LocalName(ty)
@@ -111,7 +112,7 @@ func (ta *Table) newForeignKey(field an.StructField) (ForeignKey, bool) {
 
 	// look for a tag
 	if table := reflect.StructTag(field.Tag).Get("gomacro-sql-foreign"); table != "" {
-		if !(isInt64(field.Type.Type()) || isNullInt64(field.Type)) {
+		if !(IsInt64(field.Type.Type()) || isNullInt64(field.Type)) {
 			panic("invalid type for foreign key " + field.Field.Name())
 		}
 		out.Target = TableName(table)
@@ -123,7 +124,7 @@ func (ta *Table) newForeignKey(field an.StructField) (ForeignKey, bool) {
 
 // IsNullable returns true if the key is optional.
 func (fk ForeignKey) IsNullable() bool {
-	return !isInt64(fk.F.Field.Type())
+	return !IsInt64(fk.F.Field.Type())
 }
 
 // TargetIDType returns the type used for the IDs of
@@ -132,8 +133,8 @@ func (fk ForeignKey) IsNullable() bool {
 func (fk ForeignKey) TargetIDType() types.Type {
 	ty := fk.F.Field.Type()
 	if named, isNamed := ty.(*types.Named); isNamed {
-		if wrapped := isNullXXX(named); wrapped != nil {
-			return wrapped
+		if wrapped := IsNullXXX(named); wrapped != nil {
+			return wrapped.Type()
 		}
 	}
 	return ty
