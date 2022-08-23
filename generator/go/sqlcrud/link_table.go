@@ -138,10 +138,7 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		fieldName := key.F.Field.Name()
 		columnName := sqlColumnName(key.F)
 		varName := gen.ToLowerFirst(fieldName)
-		keyTypeName := "int64"
-		if !key.IsNullable() {
-			keyTypeName = ctx.typeName(key.F.Field.Type())
-		}
+		keyTypeName := ctx.typeName(key.TargetIDType())
 
 		if ctx.generateArrayConverter(key) {
 			out = append(out, ctx.idArrayConverters(keyTypeName)) // add the converter

@@ -26,6 +26,7 @@ func SelectTables(ana *an.Analysis) (out []Table) {
 // as found in Go source.
 type TableName string
 
+// returns true if the underlying type is int64
 func isInt64(ty types.Type) bool {
 	basic, ok := ty.Underlying().(*types.Basic)
 	if !ok {
@@ -43,8 +44,12 @@ func isNullInt64(ty an.Type) bool {
 	return nullable != nil && isInt64(nullable)
 }
 
-// return the type of a sql.NullXXX struct
-// or nil
+// isNullXXX matches types whose underlying type is a struct
+// similar to sql.NullInt64, that is, a struct of the form
+// 	struct {
+// 		Valid bool
+//  	<Field> <Type>
+// 	}
 func isNullXXX(typ *types.Named) types.Type {
 	isFieldValid := func(field *types.Var) bool {
 		typ, ok := field.Type().Underlying().(*types.Basic)
@@ -55,6 +60,7 @@ func isNullXXX(typ *types.Named) types.Type {
 	if !ok || str.NumFields() != 2 { // not a possible struct
 		return nil
 	}
+	// we accept both order
 	if isFieldValid(str.Field(0)) {
 		return str.Field(1).Type()
 	} else if isFieldValid(str.Field(1)) {
@@ -84,7 +90,7 @@ func isTableID(ty an.Type) TableName {
 
 // ForeignKey is a struct field used as (single) SQL foreign key.
 type ForeignKey struct {
-	// F has underlying type int64 or sql.NullInt64
+	// F has underlying type int64, sql.NullInt64 or similar
 	F an.StructField
 
 	// Target is the foreign table being referenced
@@ -118,6 +124,19 @@ func (ta *Table) newForeignKey(field an.StructField) (ForeignKey, bool) {
 // IsNullable returns true if the key is optional.
 func (fk ForeignKey) IsNullable() bool {
 	return !isInt64(fk.F.Field.Type())
+}
+
+// TargetIDType returns the type used for the IDs of
+// the target table. For nullable fields, it is
+// the wrapped type, not the wrapper struct.
+func (fk ForeignKey) TargetIDType() types.Type {
+	ty := fk.F.Field.Type()
+	if named, isNamed := ty.(*types.Named); isNamed {
+		if wrapped := isNullXXX(named); wrapped != nil {
+			return wrapped
+		}
+	}
+	return ty
 }
 
 // OnDelete returns the action defined by the tag

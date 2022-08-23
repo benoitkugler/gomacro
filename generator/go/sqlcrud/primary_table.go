@@ -151,10 +151,8 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 		fieldName := key.F.Field.Name()
 		columnName := sqlColumnName(key.F)
 		varName := gen.ToLowerFirst(fieldName)
-		keyTypeName := "int64"
-		if !key.IsNullable() {
-			keyTypeName = ctx.typeName(key.F.Field.Type())
-		}
+
+		keyTypeName := ctx.typeName(key.TargetIDType())
 
 		// add int array converter if required
 		if ctx.generateArrayConverter(key) {

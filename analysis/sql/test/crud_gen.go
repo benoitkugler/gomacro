@@ -1096,6 +1096,7 @@ func scanOneTable1(row scanner) (Table1, error) {
 		&item.Ex1,
 		&item.Ex2,
 		&item.L,
+		&item.Other,
 	)
 	return item, err
 }
@@ -1164,22 +1165,22 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		ex1, ex2, l
+		ex1, ex2, l, other
 		) VALUES (
-		$1, $2, $3
+		$1, $2, $3, $4
 		) RETURNING *;
-		`, item.Ex1, item.Ex2, item.L)
+		`, item.Ex1, item.Ex2, item.L, item.Other)
 	return ScanTable1(row)
 }
 
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		ex1, ex2, l
+		ex1, ex2, l, other
 		) = (
-		$1, $2, $3
-		) WHERE id = $4 RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Id)
+		$1, $2, $3, $4
+		) WHERE id = $5 RETURNING *;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.Id)
 	return ScanTable1(row)
 }
 
@@ -1216,9 +1217,9 @@ func (items Table1s) ByEx1() map[RepasID]Table1s {
 // contained in this table.
 // They are not garanteed to be distinct.
 func (items Table1s) Ex1s() []RepasID {
-	out := make([]RepasID, len(items))
-	for index, target := range items {
-		out[index] = target.Ex1
+	out := make([]RepasID, 0, len(items))
+	for _, target := range items {
+		out = append(out, target.Ex1)
 	}
 	return out
 }
@@ -1257,9 +1258,9 @@ func (items Table1s) ByEx2() map[RepasID]Table1s {
 // contained in this table.
 // They are not garanteed to be distinct.
 func (items Table1s) Ex2s() []RepasID {
-	out := make([]RepasID, len(items))
-	for index, target := range items {
-		out[index] = target.Ex2
+	out := make([]RepasID, 0, len(items))
+	for _, target := range items {
+		out = append(out, target.Ex2)
 	}
 	return out
 }
@@ -1290,6 +1291,22 @@ func SelectTable1sByLs(tx DB, ls ...int64) (Table1s, error) {
 
 func DeleteTable1sByLs(tx DB, ls ...int64) ([]int64, error) {
 	rows, err := tx.Query("DELETE FROM table1s WHERE l = ANY($1) RETURNING id", int64ArrayToPQ(ls))
+	if err != nil {
+		return nil, err
+	}
+	return Scanint64Array(rows)
+}
+
+func SelectTable1sByOthers(tx DB, others ...RepasID) (Table1s, error) {
+	rows, err := tx.Query("SELECT * FROM table1s WHERE other = ANY($1)", RepasIDArrayToPQ(others))
+	if err != nil {
+		return nil, err
+	}
+	return ScanTable1s(rows)
+}
+
+func DeleteTable1sByOthers(tx DB, others ...RepasID) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE other = ANY($1) RETURNING id", RepasIDArrayToPQ(others))
 	if err != nil {
 		return nil, err
 	}
