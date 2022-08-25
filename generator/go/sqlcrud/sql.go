@@ -277,7 +277,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 					ID: "nullable_valuer" + goTypeName,
 					Content: fmt.Sprintf(`
 						func (s *%[1]s) Scan(src interface{}) error {
-							var tmp pq.NullInt64
+							var tmp sql.NullInt64
 							err := tmp.Scan(src)
 							if err != nil {
 								return err
@@ -290,7 +290,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						}
 						
 						func (s %[1]s) Value() (driver.Value, error) {
-							return pq.NullInt64{
+							return sql.NullInt64{
 								Int64: int64(s.%[2]s), 
 								Valid: s.Valid}.Value()
 						}

@@ -1529,7 +1529,7 @@ func (s *Map) Scan(src interface{}) error  { return loadJSON(s, src) }
 func (s Map) Value() (driver.Value, error) { return dumpJSON(s) }
 
 func (s *optionalID) Scan(src interface{}) error {
-	var tmp pq.NullInt64
+	var tmp sql.NullInt64
 	err := tmp.Scan(src)
 	if err != nil {
 		return err
@@ -1542,7 +1542,7 @@ func (s *optionalID) Scan(src interface{}) error {
 }
 
 func (s optionalID) Value() (driver.Value, error) {
-	return pq.NullInt64{
+	return sql.NullInt64{
 		Int64: int64(s.ID),
 		Valid: s.Valid}.Value()
 }
