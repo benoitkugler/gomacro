@@ -348,14 +348,15 @@ type externMap struct {
 	goPackage     string
 }
 
-// check for tag with the form gomacro-extern:"<pkg>:<mode1>:<targetFile1>:<mode2>:<targetFile2>"
+// check for tag with the form gomacro-extern:"<pkg>#<mode1>#<targetFile1>#<mode2>#<targetFile2>"
 func newExternMap(tag reflect.StructTag) *externMap {
 	de := tag.Get("gomacro-extern")
 	if de == "" {
 		return nil
 	}
 
-	chunks := strings.Split(de, ":")
+	const separator = "#"
+	chunks := strings.Split(de, separator)
 	goPackage := chunks[0]
 	chunks = chunks[1:]
 	if len(chunks)%2 != 0 {

@@ -40,7 +40,7 @@ func TestPanics(t *testing.T) {
 
 	ShouldPanic(t, func() { isSpecialComment("// gomacro:XXX a") })
 
-	ShouldPanic(t, func() { newExternMap(`gomacro-extern:"context:dart"`) })
+	ShouldPanic(t, func() { newExternMap(`gomacro-extern:"context#dart"`) })
 
 	ShouldPanic(t, func() { (&Basic{B: types.Typ[types.Complex128]}).Kind() })
 
