@@ -29,7 +29,7 @@ func TestGenerate1(t *testing.T) {
 					{Name: "arg2bis", Type: analysis.Float},
 					{Name: "arg3", Type: analysis.Bool},
 				},
-				Return: &analysis.Array{Elem: analysis.Int, Len: -1},
+				Return: nil,
 			},
 		},
 	}

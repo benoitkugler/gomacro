@@ -130,31 +130,36 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 
 func generateMethod(a httpapi.Endpoint) string {
 	const template = `
-	protected async raw%s(%s) {
-		const fullUrl = %s;
-		%s;
-		return rep.data;
+	protected async raw%[1]s(%[2]s) {
+		const fullUrl = %[3]s;
+		%[4]s;
+		return %[7]s;
 	}
 	
-	/** %s wraps raw%s and handles the error */
-	async %s(%s) {
+	/** %[1]s wraps raw%[1]s and handles the error */
+	async %[1]s(%[2]s) {
 		this.startRequest();
 		try {
-			const out = await this.raw%s(%s);
-			this.onSuccess%s(out);
+			const out = await this.raw%[1]s(%[5]s);
+			this.onSuccess%[1]s(out);
 			return out
 		} catch (error) {
 			this.handleError(error);
 		}
 	}
 
-	protected abstract onSuccess%s(data: %s): void 
+	protected abstract onSuccess%[1]s(data: %[6]s): void 
 	`
 	fnName := a.Contract.Name
 	in := typeIn(a)
+	out := typeOut(a)
+	returnValue := "rep.data"
+	if out == "never" {
+		returnValue = "true"
+	}
 	return fmt.Sprintf(template,
-		fnName, in, fullUrl(a), generateAxiosCall(a), fnName, fnName, fnName, in,
-		fnName, funcArgsName(a), fnName, fnName, typeOut(a))
+		fnName, in, fullUrl(a),
+		generateAxiosCall(a), funcArgsName(a), out, returnValue)
 }
 
 func renderTypes(s []httpapi.Endpoint) string {
