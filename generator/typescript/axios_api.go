@@ -79,9 +79,11 @@ func typeIn(a httpapi.Endpoint) string {
 	return "params: " + paramsType(a.Contract.InputQueryParams)
 }
 
+func hasNoReturn(a httpapi.Endpoint) bool { return a.Contract.Return == nil }
+
 // assume a named type as return value
 func typeOut(a httpapi.Endpoint) string {
-	if a.Contract.Return == nil {
+	if hasNoReturn(a) {
 		return "never"
 	}
 	return typeName(a.Contract.Return)
@@ -105,35 +107,43 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 		callParams = fmt.Sprintf("{ params: %s, headers : this.getHeaders() }", convertTypedQueryParams(a.Contract))
 	}
 
-	var template string
-	if withFormData(a) { // add the creation of FormData
-		template += "const formData = new FormData()\n"
-		if fi := a.Contract.InputForm.File; fi != "" {
-			template += fmt.Sprintf("formData.append(%q, file, file.name)\n", fi)
-		}
-		for _, param := range a.Contract.InputForm.ValueNames {
-			template += fmt.Sprintf("formData.append(%q, params[%q])\n", param, param)
-		}
-		template += "const rep:AxiosResponse<%s> = await Axios.%s(fullUrl, formData, %s)"
-	} else if hasBodyInput(a) {
-		template = "const rep:AxiosResponse<%s> = await Axios.%s(fullUrl, params, %s)"
-	} else if !hasBodyInput(a) && expectBodyParam(a) {
-		template = "const rep:AxiosResponse<%s> = await Axios.%s(fullUrl, null, %s)"
-	} else {
-		template = "const rep:AxiosResponse<%s> = await Axios.%s(fullUrl, %s)"
+	returnAssignment := ""
+	if !hasNoReturn(a) {
+		returnAssignment = fmt.Sprintf("const rep:AxiosResponse<%s> = ", typeOut(a))
 	}
 
 	methodLower := strings.ToLower(a.Method)
 
-	return fmt.Sprintf(template, typeOut(a), methodLower, callParams)
+	if withFormData(a) { // add the creation of FormData
+		form := "const formData = new FormData()\n"
+		if fi := a.Contract.InputForm.File; fi != "" {
+			form += fmt.Sprintf("formData.append(%q, file, file.name)\n", fi)
+		}
+		for _, param := range a.Contract.InputForm.ValueNames {
+			form += fmt.Sprintf("formData.append(%q, params[%q])\n", param, param)
+		}
+		return fmt.Sprintf("%s %s await Axios.%s(fullUrl, formData, %s)", form, returnAssignment, methodLower, callParams)
+	} else if hasBodyInput(a) {
+		return fmt.Sprintf("%s await Axios.%s(fullUrl, params, %s)", returnAssignment, methodLower, callParams)
+	} else if !hasBodyInput(a) && expectBodyParam(a) {
+		return fmt.Sprintf("%s await Axios.%s(fullUrl, null, %s)", returnAssignment, methodLower, callParams)
+	} else {
+		return fmt.Sprintf("%s await Axios.%s(fullUrl, %s)", returnAssignment, methodLower, callParams)
+	}
 }
 
 func generateMethod(a httpapi.Endpoint) string {
+	outData, dataDecl := "out", fmt.Sprintf("data: %s", typeOut(a))
+	if hasNoReturn(a) {
+		outData = ""
+		dataDecl = ""
+	}
+
 	const template = `
 	protected async raw%[1]s(%[2]s) {
 		const fullUrl = %[3]s;
 		%[4]s;
-		return %[7]s;
+		return %[6]s;
 	}
 	
 	/** %[1]s wraps raw%[1]s and handles the error */
@@ -141,25 +151,25 @@ func generateMethod(a httpapi.Endpoint) string {
 		this.startRequest();
 		try {
 			const out = await this.raw%[1]s(%[5]s);
-			this.onSuccess%[1]s(out);
+			this.onSuccess%[1]s(%[7]s);
 			return out
 		} catch (error) {
 			this.handleError(error);
 		}
 	}
 
-	protected abstract onSuccess%[1]s(data: %[6]s): void 
+	protected abstract onSuccess%[1]s(%[8]s): void 
 	`
 	fnName := a.Contract.Name
 	in := typeIn(a)
-	out := typeOut(a)
 	returnValue := "rep.data"
-	if out == "never" {
+	if hasNoReturn(a) {
 		returnValue = "true"
 	}
 	return fmt.Sprintf(template,
 		fnName, in, fullUrl(a),
-		generateAxiosCall(a), funcArgsName(a), out, returnValue)
+		generateAxiosCall(a), funcArgsName(a),
+		returnValue, outData, dataDecl)
 }
 
 func renderTypes(s []httpapi.Endpoint) string {
