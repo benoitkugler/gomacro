@@ -23,7 +23,11 @@ type Union struct {
 	Members []Type
 }
 
+// Type always return a *types.Named
 func (u *Union) Type() types.Type { return u.name }
+
+// IsExported returns `true` is the interface is exported.
+func (u *Union) IsExported() bool { return u.name.Obj().Exported() }
 
 func allNamedTypes(pa *packages.Package) (out []*types.Named) {
 	scope := pa.Types.Scope()

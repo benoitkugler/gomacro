@@ -188,9 +188,12 @@ func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 		interpolatedFields = append(interpolatedFields, fmt.Sprintf("$%s", dartFieldName))
 	}
 
-	implements := make([]string, len(typ.Implements))
-	for i, imp := range typ.Implements {
-		implements[i] = an.LocalName(imp)
+	implements := make([]string, 0, len(typ.Implements))
+	for _, imp := range typ.Implements {
+		if !imp.IsExported() {
+			continue
+		}
+		implements = append(implements, an.LocalName(imp))
 	}
 	var implementCode string
 	if len(implements) != 0 {
