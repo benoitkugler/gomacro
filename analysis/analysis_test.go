@@ -125,3 +125,10 @@ func TestAnalysisStruct(t *testing.T) {
 	Assert(t, ok)
 	Assert(t, len(ext.ExternalFiles) == 1)
 }
+
+func TestGetByName(t *testing.T) {
+	an := NewAnalysisFromFile(testPkg, testSource)
+
+	st := Lookup(testPkg, "StructWithExternalRef")
+	fmt.Println(an.GetByName(st, "Basic2").Type().String())
+}

@@ -18,9 +18,11 @@ type Table1 struct {
 	Other optionalID    `gomacro-sql-foreign:"Repas"`
 }
 
+// gomacro:SQL ADD CHECK (V = #[LocalEnum.A] OR V = #[LocalEnum.B])
 type Repas struct {
 	Order string
 	Id    RepasID
+	V     LocalEnum
 }
 
 type Link struct {
@@ -55,8 +57,8 @@ type Map map[string]bool
 
 // Exercice is the data structure for a full exercice, composed of a list of questions.
 // There are two kinds of exercice :
-//	- parallel : all the questions are independant
-//	- progression : the questions are linked together by a shared Parameters set
+//   - parallel : all the questions are independant
+//   - progression : the questions are linked together by a shared Parameters set
 type Exercice struct {
 	Id          int64
 	Title       string // displayed to the students
@@ -108,3 +110,11 @@ type ProgressionQuestion struct {
 	Index         int           `json:"index"` // in the question list
 	History       EnumArray     `json:"history"`
 }
+
+type LocalEnum uint8
+
+const (
+	A LocalEnum = iota
+	B
+	c
+)

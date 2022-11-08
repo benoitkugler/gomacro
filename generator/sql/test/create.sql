@@ -48,7 +48,8 @@ CREATE TABLE question_tags (
 );
 
 CREATE TABLE repass ( Order text NOT NULL,
-    Id serial PRIMARY KEY
+    Id serial PRIMARY KEY,
+    V integer CHECK (V IN (0, 1, 2)) NOT NULL
 );
 
 CREATE TABLE table1s (
@@ -71,6 +72,12 @@ ALTER TABLE table1s
 
 ALTER TABLE table1s
     ADD FOREIGN KEY (Other) REFERENCES repass;
+
+ALTER TABLE repass
+    ADD CHECK (V = 0
+    /* LocalEnum.A */
+        OR V = 1
+        /* LocalEnum.B */);
 
 ALTER TABLE links
     ADD FOREIGN KEY (Repas) REFERENCES repass;

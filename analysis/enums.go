@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"fmt"
 	"go/ast"
 	"go/constant"
 	"go/types"
@@ -52,6 +53,17 @@ func (e *Enum) Underlying() *types.Basic {
 func (e *Enum) IsInteger() bool {
 	info := e.Underlying().Info()
 	return info&types.IsInteger != 0
+}
+
+// Get return the enum value with Go name [name].
+// It panics if [name] is not found
+func (e *Enum) Get(name string) EnumMember {
+	for _, m := range e.Members {
+		if m.Const.Name() == name {
+			return m
+		}
+	}
+	panic(fmt.Sprintf("enum value %s not found", name))
 }
 
 type sortBy struct {

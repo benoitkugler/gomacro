@@ -26,4 +26,6 @@ func TestFetchEnums(t *testing.T) {
 	Assert(t, !dict[enumOptionalBool].IsIota)
 
 	Assert(t, len(dict[enumInt].Members) == 4)
+
+	_ = dict[enumInt].Get("Ai")
 }

@@ -28,12 +28,13 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 
 	var constraints []string
 	for _, ta := range tables {
+
 		// table creation / JSON validations
 		decls = append(decls, generateTable(ta)...)
 
 		// explicit (user provided) constraints
 		for _, constraint := range ta.CustomConstraints {
-			constraints = append(constraints, generateCustomConstraint(nameReplacer, ta.TableName(), constraint))
+			constraints = append(constraints, generateCustomConstraint(ana, ta, nameReplacer, constraint))
 		}
 
 		// implicit constraints (like foreign keys)
@@ -89,9 +90,19 @@ func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) str
 		gen.SQLTableName(sourceTable), fk.F.Field.Name(), gen.SQLTableName(fk.Target), onDelete)
 }
 
-func generateCustomConstraint(rep replacer, sourceTable sql.TableName, content string) string {
+var reEnums = regexp.MustCompile(`#\[(\w+)\.(\w+)\]`)
+
+func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep replacer, content string) string {
 	content = rep.Replace(content)
-	return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(sourceTable), content)
+	// replace enum values
+	content = reEnums.ReplaceAllStringFunc(content, func(s string) string {
+		s = s[2 : len(s)-1] // trim starting #[ and leading ]
+		typeName, varName, _ := strings.Cut(s, ".")
+		enum := ana.GetByName(ta.Name, typeName).(*an.Enum)
+		enumValue := enum.Get(varName)
+		return fmt.Sprintf("%s /* %s.%s */", enumValue.Const.Val().ExactString(), typeName, varName)
+	})
+	return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(ta.TableName()), content)
 }
 
 func generateTable(ta sql.Table) []gen.Declaration {
@@ -180,7 +191,7 @@ func typeConstraint(field sql.Column) string {
 func enumTuple(e *an.Enum) string {
 	chunks := make([]string, len(e.Members))
 	for i, val := range e.Members {
-		chunks[i] = val.Const.Val().String()
+		chunks[i] = val.Const.Val().ExactString()
 	}
 	out := fmt.Sprintf("(%s)", strings.Join(chunks, ", "))
 	return strings.ReplaceAll(out, `"`, `'`) // SQL uses single quote

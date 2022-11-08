@@ -987,6 +987,7 @@ func scanOneRepas(row scanner) (Repas, error) {
 	err := row.Scan(
 		&item.Order,
 		&item.Id,
+		&item.V,
 	)
 	return item, err
 }
@@ -1055,22 +1056,22 @@ func ScanRepass(rs *sql.Rows) (Repass, error) {
 // Insert one Repas in the database and returns the item with id filled.
 func (item Repas) Insert(tx DB) (out Repas, err error) {
 	row := tx.QueryRow(`INSERT INTO repass (
-		order
+		order, v
 		) VALUES (
-		$1
+		$1, $2
 		) RETURNING *;
-		`, item.Order)
+		`, item.Order, item.V)
 	return ScanRepas(row)
 }
 
 // Update Repas in the database and returns the new version.
 func (item Repas) Update(tx DB) (out Repas, err error) {
 	row := tx.QueryRow(`UPDATE repass SET (
-		order
+		order, v
 		) = (
-		$1
-		) WHERE id = $2 RETURNING *;
-		`, item.Order, item.Id)
+		$1, $2
+		) WHERE id = $3 RETURNING *;
+		`, item.Order, item.V, item.Id)
 	return ScanRepas(row)
 }
 

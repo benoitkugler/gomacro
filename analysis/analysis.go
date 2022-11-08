@@ -492,3 +492,11 @@ func (an *Analysis) handleType(typ types.Type, ctx context) Type {
 
 	return type_
 }
+
+// GetByName returns the type [name], which must be in the same scope
+// as [source]
+func (an *Analysis) GetByName(source *types.Named, name string) Type {
+	scope := source.Obj().Pkg().Scope()
+	ty := scope.Lookup(name).Type()
+	return an.Types[ty]
+}
