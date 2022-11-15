@@ -1,4 +1,4 @@
-import { Enum } from "./extern";
+import { NamedSlice } from "./extern";
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic1
 export type Basic1 = number;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic2
@@ -97,7 +97,7 @@ export interface StructWithComment {
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.StructWithExternalRef
 export interface StructWithExternalRef {
-  Field2: Enum;
+  Field2: NamedSlice;
 }
 
 class DateTag {

@@ -61,9 +61,9 @@ type ComplexStruct struct {
 type ItfList []ItfType
 
 type StructWithExternalRef struct {
-	field1 big.Rat         `gomacro-extern:"big#dart#extern.dart"`
-	Field2 subpackage.Enum `gomacro-extern:"subpackage#dart#extern2.dart#ts#./extern.ts"`
-	field3 map[int]big.Rat `gomacro-extern:"big#dart#extern3.dart"`
+	field1 big.Int               `gomacro-extern:"big#dart#extern.dart"`
+	Field2 subpackage.NamedSlice `gomacro-extern:"subpackage#dart#extern2.dart#ts#./extern.ts"`
+	field3 map[int]big.Rat       `gomacro-extern:"big#dart#extern3.dart"`
 }
 
 type RecursiveType struct {

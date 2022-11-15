@@ -58,7 +58,7 @@ func TestMethodTags(t *testing.T) {
 		&Enum{name: &types.Named{}},
 		&Struct{},
 		&Union{},
-		&Extern{Origin: &Named{}},
+		&Extern{},
 		&Pointer{&Time{}},
 		&Named{},
 	} {

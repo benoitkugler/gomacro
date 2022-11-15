@@ -340,7 +340,8 @@ type context struct {
 	enums  enumsMap
 	unions unionsMap
 
-	extern *externMap // optional
+	extern     *externMap // optional
+	isInExtern bool
 }
 
 type externMap struct {
@@ -410,18 +411,31 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 
 	name, isNamed := typ.(*types.Named)
 	if isNamed {
-		var out Type
+		// check for external refs
+		isExtern := ctx.extern != nil && name.Obj().Pkg().Name() == ctx.extern.goPackage
+
+		// if extern, only recurse for AnoymousType
+
 		// look for enums, unions and structs
 		if enum, isEnum := ctx.enums[name]; isEnum {
-			out = enum
+			if isExtern {
+				return &Extern{origin: name, ExternalFiles: ctx.extern.externalFiles}
+			}
+			return enum
 		} else if members, isUnion := ctx.unions[name]; isUnion {
+			if isExtern {
+				return &Extern{origin: name, ExternalFiles: ctx.extern.externalFiles}
+			}
 			// add the member to the type to analyze
 			un := &Union{name: name}
 			for _, member := range members {
 				un.Members = append(un.Members, an.handleType(member, ctx))
 			}
-			out = un
+			return un
 		} else if st, isStruct := typ.Underlying().(*types.Struct); isStruct {
+			if isExtern {
+				return &Extern{origin: name, ExternalFiles: ctx.extern.externalFiles}
+			}
 			str := &Struct{
 				Name: name,
 				// Implements are defered
@@ -429,22 +443,18 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 			an.Types[typ] = str                         // register before recursing
 			str.Fields = an.handleStructFields(st, ctx) // recurse
 			str.Comments = fetchStructComments(ctx.rootPackage, name)
-			out = str
+			return str
 		} else {
 			// otherwise, analyze the underlying type
 			under := an.handleType(typ.Underlying(), ctx).(AnonymousType)
-			named := &Named{name: name, Underlying: under}
-			out = named
-		}
 
-		if ctx.extern != nil { // check for external refs
-			if name.Obj().Pkg().Name() == ctx.extern.goPackage {
+			if isExtern {
 				// wrap the type into Extern
-				return &Extern{Origin: out, ExternalFiles: ctx.extern.externalFiles}
+				return &Extern{origin: name, Underlying: under, ExternalFiles: ctx.extern.externalFiles}
 			}
-		}
 
-		return out
+			return &Named{name: name, Underlying: under}
+		}
 	}
 
 	switch underlying := typ.Underlying().(type) {
@@ -491,9 +501,10 @@ func (an *Analysis) handleType(typ types.Type, ctx context) Type {
 
 	// resolve the type
 	type_ := an.createType(typ, ctx)
-
-	// register it
-	an.Types[typ] = type_
+	// register it if not extern
+	if !ctx.isInExtern {
+		an.Types[typ] = type_
+	}
 
 	return type_
 }
