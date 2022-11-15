@@ -179,6 +179,6 @@ func randtes_RecursiveType() testsource.RecursiveType {
 
 func randtes_StructWithExternalRef() testsource.StructWithExternalRef {
 	return testsource.StructWithExternalRef{
-		Field2: randcon_CancelFunc(),
+		Field2: randsub_Enum(),
 	}
 }

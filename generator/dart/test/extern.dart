@@ -1,9 +1,9 @@
-class Context {}
+class Enum {}
 
-Map<String, dynamic> contextToJson(Context ct) {
+Map<String, dynamic> enumToJson(Enum ct) {
   return {};
 }
 
-Context contextFromJson(dynamic json) {
-  return Context();
+Enum enumFromJson(dynamic json) {
+  return Enum();
 }

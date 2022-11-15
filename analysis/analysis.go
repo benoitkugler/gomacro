@@ -410,36 +410,41 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 
 	name, isNamed := typ.(*types.Named)
 	if isNamed {
-		if ctx.extern != nil { // check for external refs
-			if name.Obj().Pkg().Name() == ctx.extern.goPackage {
-				return &Extern{name: name, ExternalFiles: ctx.extern.externalFiles}
-			}
-		}
-
+		var out Type
 		// look for enums, unions and structs
 		if enum, isEnum := ctx.enums[name]; isEnum {
-			return enum
+			out = enum
 		} else if members, isUnion := ctx.unions[name]; isUnion {
 			// add the member to the type to analyze
-			out := &Union{name: name}
+			un := &Union{name: name}
 			for _, member := range members {
-				out.Members = append(out.Members, an.handleType(member, ctx))
+				un.Members = append(un.Members, an.handleType(member, ctx))
 			}
-			return out
+			out = un
 		} else if st, isStruct := typ.Underlying().(*types.Struct); isStruct {
-			out := &Struct{
+			str := &Struct{
 				Name: name,
 				// Implements are defered
 			}
-			an.Types[typ] = out                         // register before recursing
-			out.Fields = an.handleStructFields(st, ctx) // recurse
-			out.Comments = fetchStructComments(ctx.rootPackage, name)
-			return out
+			an.Types[typ] = str                         // register before recursing
+			str.Fields = an.handleStructFields(st, ctx) // recurse
+			str.Comments = fetchStructComments(ctx.rootPackage, name)
+			out = str
+		} else {
+			// otherwise, analyze the underlying type
+			under := an.handleType(typ.Underlying(), ctx).(AnonymousType)
+			named := &Named{name: name, Underlying: under}
+			out = named
 		}
 
-		// otherwise, analyze the underlying type
-		under := an.handleType(typ.Underlying(), ctx).(AnonymousType)
-		return &Named{name: name, Underlying: under}
+		if ctx.extern != nil { // check for external refs
+			if name.Obj().Pkg().Name() == ctx.extern.goPackage {
+				// wrap the type into Extern
+				return &Extern{Origin: out, ExternalFiles: ctx.extern.externalFiles}
+			}
+		}
+
+		return out
 	}
 
 	switch underlying := typ.Underlying().(type) {

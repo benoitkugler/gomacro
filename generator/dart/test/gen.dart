@@ -251,7 +251,7 @@ JSON structWithCommentToJson(StructWithComment item) {
 
 // github.com/benoitkugler/gomacro/testutils/testsource.StructWithExternalRef
 class StructWithExternalRef {
-  final CancelFunc field2;
+  final Enum field2;
 
   const StructWithExternalRef(this.field2);
 
@@ -263,11 +263,11 @@ class StructWithExternalRef {
 
 StructWithExternalRef structWithExternalRefFromJson(dynamic json_) {
   final json = (json_ as JSON);
-  return StructWithExternalRef(cancelFuncFromJson(json['Field2']));
+  return StructWithExternalRef(enumFromJson(json['Field2']));
 }
 
 JSON structWithExternalRefToJson(StructWithExternalRef item) {
-  return {"Field2": cancelFuncToJson(item.field2)};
+  return {"Field2": enumToJson(item.field2)};
 }
 
 DateTime dateTimeFromJson(dynamic json) => DateTime.parse(json as String);

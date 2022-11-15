@@ -134,14 +134,14 @@ func newTime(typ types.Type) (Type, bool) {
 // no declaration should be written for a type,
 // but the type should be imported from an other file.
 type Extern struct {
-	name *types.Named
+	Origin Type
 
 	// the files where to find the definition,
 	// depending on the generation mode
 	ExternalFiles map[string]string
 }
 
-func (e *Extern) Type() types.Type { return e.name }
+func (e *Extern) Type() types.Type { return e.Origin.Type() }
 
 // Pointer is a pointer to a type
 type Pointer struct {

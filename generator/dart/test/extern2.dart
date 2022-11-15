@@ -1,9 +1,9 @@
-class CancelFunc {}
+class Enum {}
 
-Map<String, dynamic> cancelFuncToJson(CancelFunc ct) {
+Map<String, dynamic> enumToJson(Enum ct) {
   return {};
 }
 
-CancelFunc cancelFuncFromJson(dynamic json) {
-  return CancelFunc();
+Enum enumFromJson(dynamic json) {
+  return Enum();
 }
