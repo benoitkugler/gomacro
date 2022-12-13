@@ -47,18 +47,22 @@ func typeName(typ an.Type) string {
 	}
 }
 
-func codeForNamed(typ *an.Named, cache gen.Cache) (out []gen.Declaration) {
+func (buf buffer) codeForNamed(typ *an.Named) (gen.Declaration, string) {
 	// type wrapper
 	code := fmt.Sprintf(`
 	// %s
 	typedef %s = %s;
 	
-	`, gen.Origin(typ), typeName(typ), typeName(typ.Underlying))
-	out = append(out, gen.Declaration{ID: typeName(typ), Content: code})
+	%s
+	`, gen.Origin(typ), typeName(typ), typeName(typ.Underlying),
+		jsonForNamed(typ),
+	)
+	out := gen.Declaration{ID: typeName(typ), Content: code}
 
 	// recurse for the underlying code
-	out = append(out, generate(typ.Underlying, cache)...)
-	return out
+	importFile := buf.generate(typ.Underlying, buf.linker.GetOutput(typ.Type()))
+
+	return out, importFile
 }
 
 func codeForBasic(typ *an.Basic) gen.Declaration {
@@ -70,30 +74,22 @@ func codeForTime(typ *an.Time) gen.Declaration {
 	return gen.Declaration{ID: "__DateTime_json", Content: jsonForTime()}
 }
 
-func codeForArray(typ *an.Array, cache gen.Cache) (out []gen.Declaration) {
-	out = append(out, gen.Declaration{ID: jsonID(typ), Content: jsonForArray(typ)})
+func (buf buffer) codeForArray(typ *an.Array, parentOutputFile string) (gen.Declaration, string) {
+	out := gen.Declaration{ID: jsonID(typ), Content: jsonForArray(typ)}
 
 	// recurse for the element
-	out = append(out, generate(typ.Elem, cache)...)
-	return out
+	importS := buf.generate(typ.Elem, parentOutputFile)
+	return out, importS
 }
 
-func codeForMap(typ *an.Map, cache gen.Cache) (out []gen.Declaration) {
-	out = append(out, gen.Declaration{ID: jsonID(typ), Content: jsonForMap(typ)})
+func (buf buffer) codeForMap(typ *an.Map, parentOutputFile string) (gen.Declaration, string, string) {
+	out := gen.Declaration{ID: jsonID(typ), Content: jsonForMap(typ)}
 
 	// recurse for the key and element
-	out = append(out, generate(typ.Key, cache)...)
-	out = append(out, generate(typ.Elem, cache)...)
-	return out
-}
+	importKey := buf.generate(typ.Key, parentOutputFile)
+	importElem := buf.generate(typ.Elem, parentOutputFile)
 
-func codeForExtern(typ *an.Extern) gen.Declaration {
-	importLine := fmt.Sprintf("import '%s';", typ.ExternalFiles["dart"])
-	return gen.Declaration{
-		ID:       importLine,
-		Content:  importLine,
-		Priority: true, // must appear before other decls
-	}
+	return out, importKey, importElem
 }
 
 func codeForEnum(typ *an.Enum) gen.Declaration {
@@ -153,10 +149,12 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 	return gen.Declaration{ID: name, Content: content}
 }
 
-func codeForUnion(typ *an.Union, cache gen.Cache) (out []gen.Declaration) {
+func (buf buffer) codeForUnion(typ *an.Union) (gen.Declaration, []string) {
+	var importMembers []string
 	// recurse
 	for _, member := range typ.Members {
-		out = append(out, generate(member, cache)...)
+		imp := buf.generate(member, buf.linker.GetOutput(typ.Type()))
+		importMembers = append(importMembers, imp)
 	}
 
 	name := typeName(typ)
@@ -167,19 +165,20 @@ func codeForUnion(typ *an.Union, cache gen.Cache) (out []gen.Declaration) {
 
 	content += jsonForUnion(typ)
 
-	out = append(out, gen.Declaration{ID: name, Content: content})
-	return out
+	out := gen.Declaration{ID: name, Content: content}
+	return out, importMembers
 }
 
-func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
-	var fields, initFields, interpolatedFields []string
+func (buf buffer) codeForStruct(typ *an.Struct) (gen.Declaration, []string) {
+	var fields, initFields, interpolatedFields, importForFields []string
 	for _, field := range typ.Fields {
 		if !field.JSONExported() {
 			continue
 		}
 
 		// recurse
-		out = append(out, generate(field.Type, cache)...)
+		importField := buf.generate(field.Type, buf.linker.GetOutput(typ.Name))
+		importForFields = append(importForFields, importField)
 
 		dartFieldName := lowerFirst(field.JSONName()) // convert to dart convention
 
@@ -202,7 +201,7 @@ func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 
 	name := typeName(typ)
 
-	decl := gen.Declaration{
+	out := gen.Declaration{
 		ID: name, Content: fmt.Sprintf(`
 		// %s
 		class %s %s {
@@ -223,7 +222,6 @@ func codeForStruct(typ *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 			jsonForStruct(typ),
 		),
 	}
-	out = append(out, decl)
 
-	return out
+	return out, importForFields
 }

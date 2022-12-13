@@ -10,6 +10,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -73,20 +74,21 @@ func commonPrefix(paths []string) string {
 // LoadSources returns for each source file, the `*packages.Package` containing it.
 // Since it only calls `packages.Load` once, it is a faster alternative
 // to repeated `LoadSource` calls.
-func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
+// It also returns the common (root) directory for all the files.
+func LoadSources(sourceFiles []string) ([]*packages.Package, string, error) {
 	patterns := make([]string, len(sourceFiles))
 	dirs := make([]string, len(sourceFiles))
 
 	for i, sourceFile := range sourceFiles {
 		_, err := os.Stat(sourceFile)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		patterns[i] = "file=" + sourceFile
 
 		abs, err := filepath.Abs(sourceFile)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		dirs[i] = filepath.Dir(abs)
 	}
@@ -94,7 +96,7 @@ func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
 	// compute the common directory
 	dir := commonPrefix(dirs)
 	if dir == "" {
-		return nil, fmt.Errorf("invalid source directories: %v", dirs)
+		return nil, "", fmt.Errorf("invalid source directories: %v", dirs)
 	}
 
 	cfg := &packages.Config{
@@ -105,13 +107,13 @@ func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
 	// let packages handle the heavy lifting for us
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	nbErrors := packages.PrintErrors(pkgs)
 
 	if nbErrors > 0 {
-		return nil, fmt.Errorf("go packages have errors")
+		return nil, "", fmt.Errorf("go packages have errors")
 	}
 
 	// match back the packages
@@ -119,22 +121,22 @@ func LoadSources(sourceFiles []string) ([]*packages.Package, error) {
 	for i, sourceFile := range sourceFiles {
 		abs, err := filepath.Abs(sourceFile)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		selected := selectByFile(pkgs, abs)
 		if selected == nil {
-			return nil, fmt.Errorf("file %s not found in packages sources", abs)
+			return nil, "", fmt.Errorf("file %s not found in packages sources", abs)
 		}
 		out[i] = selected
 	}
 
-	return out, nil
+	return out, dir, nil
 }
 
 // LoadSource returns the `packages.Package` containing the given file.
 func LoadSource(sourceFile string) (*packages.Package, error) {
-	pkgs, err := LoadSources([]string{sourceFile})
+	pkgs, _, err := LoadSources([]string{sourceFile})
 	if err != nil {
 		return nil, err
 	}
@@ -379,6 +381,11 @@ func (an *Analysis) handleStructFields(typ *types.Struct, ctx context) []StructF
 		// handle extern definition
 		ctx.extern = newExternMap(tag)
 
+		if tag.Get("gomacro") == "isOpaque" {
+			out = append(out, StructField{Type: Dynamic{}, Field: field, Tag: tag})
+			break
+		}
+
 		// recurse
 		fieldType := an.handleType(field.Type(), ctx)
 
@@ -515,4 +522,74 @@ func (an *Analysis) GetByName(source *types.Named, name string) Type {
 	scope := source.Obj().Pkg().Scope()
 	ty := scope.Lookup(name).Type()
 	return an.Types[ty]
+}
+
+// Linker is responsible for attributing the correct output file to
+// a given type, recreating the package tree.
+type Linker struct {
+	typeToOut map[*types.Named]string
+
+	// Extension is added to all the output files returned
+	// by the linker.
+	Extension string
+}
+
+func NewLinker(rootDirectory string, sources []*Analysis) Linker {
+	out := Linker{
+		typeToOut: make(map[*types.Named]string),
+	}
+
+	// keep the last dir as common prefix, trim the rest
+	_, rootDirectory, _ = strings.Cut(rootDirectory, "go/src/")
+	prefix := path.Dir(rootDirectory) + "/"
+	for _, src := range sources {
+		for typ := range src.Types {
+			if named, isNamed := typ.(*types.Named); isNamed {
+				pkgPath := named.Obj().Pkg().Path()
+				if !strings.HasPrefix(pkgPath, prefix) { // this is std lib
+					pkgPath = path.Join("stdlib", pkgPath)
+				} else {
+					pkgPath = strings.TrimPrefix(pkgPath, prefix)
+				}
+				outPath := strings.ReplaceAll(pkgPath, "/", "_")
+				out.typeToOut[named] = outPath
+			}
+		}
+	}
+
+	return out
+}
+
+const predefined = "predefined"
+
+func (lk Linker) IsPredefined(outFile string) bool {
+	return predefined+lk.Extension == outFile
+}
+
+// GetOutput returns the file where [ty] should be defined, adding [Extension]
+func (lk Linker) GetOutput(ty types.Type) string {
+	out := predefined
+	// considere time a predefined
+	if ty == timeTy {
+		return out + lk.Extension
+	}
+	if named, isNamed := ty.(*types.Named); isNamed {
+		out = lk.typeToOut[named]
+	}
+	return out + lk.Extension
+}
+
+// OutputFiles returns a list of file names, adding [Extension]
+func (lk Linker) OutputFiles() []string {
+	uniq := map[string]bool{predefined: true}
+	for _, output := range lk.typeToOut {
+		uniq[output] = true
+	}
+	var out []string
+	for output := range uniq {
+		out = append(out, output+lk.Extension)
+	}
+
+	sort.Strings(out)
+	return out
 }

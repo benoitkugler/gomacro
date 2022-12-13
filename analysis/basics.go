@@ -22,8 +22,10 @@ func (*Map) isAnonymous()   {}
 
 func (b *Basic) Type() types.Type { return b.B }
 
+var timeTy = types.NewNamed(types.NewTypeName(0, nil, "Time", nil), &types.Struct{}, nil)
+
 func (*Time) Type() types.Type {
-	return types.NewNamed(types.NewTypeName(0, nil, "Time", nil), &types.Struct{}, nil)
+	return timeTy
 }
 
 func (ar *Array) Type() types.Type {
@@ -154,3 +156,9 @@ type Pointer struct {
 func (p *Pointer) Type() types.Type {
 	return types.NewPointer(p.Elem.Type())
 }
+
+type Dynamic struct{}
+
+var dinamicTy = types.NewInterface(nil, nil)
+
+func (Dynamic) Type() types.Type { return dinamicTy }

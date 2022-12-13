@@ -18,7 +18,12 @@ func jsonID(typ an.Type) string {
 	case *an.Pointer:
 		panic("pointers not handled by the Dart generator")
 	case *an.Named: // directly call the underlying function
-		return jsonID(typ.Underlying)
+		switch typ.Underlying.(type) {
+		case *an.Array, *an.Map:
+			return lowerFirst(typeName(typ))
+		default:
+			return jsonID(typ.Underlying)
+		}
 	case *an.Basic, *an.Time:
 		return lowerFirst(typeName(typ))
 	case *an.Array:
@@ -82,6 +87,21 @@ func jsonForEnum(en *an.Enum) string {
 	dynamic %sToJson(%s item) => item.toValue();
 	
 	`, name, id, name, valueType, id, name)
+}
+
+func jsonForNamed(na *an.Named) string {
+	switch na.Underlying.(type) {
+	case *an.Array, *an.Map:
+	default:
+		return ""
+	}
+	name, id := typeName(na), jsonID(na)
+	elemID := jsonID(na.Underlying)
+	return fmt.Sprintf(`%s %sFromJson(dynamic json) { return %sFromJson(json); }
+
+	dynamic %sToJson(%s item) { return %sToJson(item); }
+	`, name, id, elemID,
+		id, name, elemID)
 }
 
 func jsonForArray(l *an.Array) string {

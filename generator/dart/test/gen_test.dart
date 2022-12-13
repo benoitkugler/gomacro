@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'gen.dart';
+import 'testsource.dart';
+import 'testsource_subpackage.dart';
 
 main(List<String> args) {
   final m = ComplexStruct(

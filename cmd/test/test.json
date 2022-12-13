@@ -1,4 +1,9 @@
 {
+    "_dart": [
+        {
+            "Output": "test/"
+        }
+    ],
     "test/source.go": [
         {
             "Mode": "dart",

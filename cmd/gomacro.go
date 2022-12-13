@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -72,16 +71,25 @@ func (i *Actions) Set(value string) error {
 	return nil
 }
 
-func runActions(wg *sync.WaitGroup, source string, pkg *packages.Package, actions Actions) error {
+type outputFile struct {
+	format  generator.Format
+	file    string
+	content string
+}
+
+// special case for dart actions, which are returned for latter processsing
+func runActions(source string, pkg *packages.Package, actions Actions) (*analysis.Analysis, []outputFile, error) {
 	fullPath, err := filepath.Abs(source)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	fmt.Printf("Running actions for %s\n", source)
 
 	ana := analysis.NewAnalysisFromFile(pkg, source)
 
+	hasDart := false
+	var outs []outputFile
 	for _, m := range actions {
 		var (
 			code   string
@@ -110,18 +118,61 @@ func runActions(wg *sync.WaitGroup, source string, pkg *packages.Package, action
 			code = typescript.GenerateAxios(api)
 			format = generator.TypeScript
 		case dartGen:
-			code = generator.WriteDeclarations(dart.Generate(ana))
-			format = generator.Dart
+			hasDart = true
+			// code = generator.WriteDeclarations(dart.Generate(ana))
+			// format = generator.Dart
 		default:
 			panic(m.Mode)
 		}
 
-		err := os.WriteFile(output, []byte(code), os.ModePerm)
+		if code != "" {
+			outs = append(outs, outputFile{format: format, file: output, content: code})
+		}
+
+		// err := os.WriteFile(output, []byte(code), os.ModePerm)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		// fmt.Printf("\tCode for action <%s> written to %s (pending formatting).\n", m.Mode, output)
+
+		// go func() {
+		// 	err = fmts.FormatFile(format, output)
+		// 	if err != nil {
+		// 		panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
+		// 	}
+		// 	wg.Done()
+		// }()
+
+	}
+	if hasDart {
+		return ana, outs, nil
+	}
+	return nil, outs, nil
+}
+
+func saveOutputs(commonDir, dartOutputDir string, dartAnalysis []*analysis.Analysis, outputs []outputFile) error {
+	for _, out := range dart.Generate(commonDir, dartAnalysis) {
+		outputs = append(outputs, outputFile{
+			format:  generator.Dart,
+			file:    filepath.Join(dartOutputDir, out.Filename),
+			content: generator.WriteDeclarations(out.Content),
+		})
+	}
+
+	fmt.Println("Code generated. Saving and formatting...")
+
+	var wg sync.WaitGroup
+	wg.Add(len(outputs))
+	for _, out := range outputs {
+		output := out.file
+		format := out.format
+		err := os.WriteFile(output, []byte(out.content), os.ModePerm)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("\tCode for action <%s> written to %s (pending formatting).\n", m.Mode, output)
+		fmt.Printf("\tCode written to %s (pending formatting).\n", output)
 
 		go func() {
 			err = fmts.FormatFile(format, output)
@@ -130,23 +181,10 @@ func runActions(wg *sync.WaitGroup, source string, pkg *packages.Package, action
 			}
 			wg.Done()
 		}()
-
 	}
-	return nil
-}
-
-func runFromArgs(source string, actions Actions) error {
-	pkg, err := analysis.LoadSource(source)
-	if err != nil {
-		return err
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(actions))
-	err = runActions(&wg, source, pkg, actions)
+	fmt.Println("Waiting for formatters...")
 	wg.Wait()
-
-	return err
+	return nil
 }
 
 // configuration file based API
@@ -166,63 +204,52 @@ func runFromConfig(configFile string) error {
 		return err
 	}
 
+	dartOutputDir := conf["_dart"][0].Output
+	delete(conf, "_dart")
+
 	// fetch the packages for each file in one call
-	var (
-		files     []string
-		nbActions int
-	)
-	for file, actions := range conf {
+	var files []string
+	for file := range conf {
 		files = append(files, file)
-		nbActions += len(actions)
 	}
 	sort.Strings(files) // ensure deterministic execution order
 
-	fmt.Println("Type-cheking source files...")
-	pkgs, err := analysis.LoadSources(files)
+	fmt.Println("Type-checking source files...")
+	pkgs, commonDir, err := analysis.LoadSources(files)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Source loading done.")
+	fmt.Println("Source loading done. Root directory:", commonDir)
 
-	var wg sync.WaitGroup
-	wg.Add(nbActions)
+	var (
+		allOutputs []outputFile
+		dartAnas   []*analysis.Analysis
+	)
 	for i, file := range files {
 		actions := conf[file]
 		pkg := pkgs[i]
-		err = runActions(&wg, file, pkg, actions)
+		dartAna, outs, err := runActions(file, pkg, actions)
 		if err != nil {
 			return err
 		}
+		allOutputs = append(allOutputs, outs...)
+		if dartAna != nil {
+			dartAnas = append(dartAnas, dartAna)
+		}
 	}
-	fmt.Println("Waiting for formatters...")
-	wg.Wait()
 
-	return nil
+	return saveOutputs(commonDir, dartOutputDir, dartAnas, allOutputs)
 }
 
 func main() {
-	configFilePtr := flag.String("conf", "", "JSON config file defining which actions to execute")
-	sourcePtr := flag.String("source", "", "go source file to convert")
-	var actions Actions
-	flag.Var(&actions, "actions", "list of actions <mode>:<output>")
-
-	flag.Parse()
-
-	source, configFile := *sourcePtr, *configFilePtr
-	if source == "" && configFile == "" {
-		log.Fatal("Please define an input source file or a configuration file.")
-	} else if source != "" && configFile != "" {
-		log.Fatal("Please define either an input source file or a configuration file, not both.")
+	if len(os.Args) < 2 {
+		log.Fatal("Please provide a configuration file.")
 	}
 
-	if configFile != "" {
-		if err := runFromConfig(configFile); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		if err := runFromArgs(source, actions); err != nil {
-			log.Fatal(err)
-		}
+	configFile := os.Args[1]
+
+	if err := runFromConfig(configFile); err != nil {
+		log.Fatal(err)
 	}
 	fmt.Println("Done.")
 }

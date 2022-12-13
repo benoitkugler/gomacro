@@ -85,7 +85,7 @@ func TestLoadSource(t *testing.T) {
 	_, err = newAnalysisFromFile("../testutils/testsource/not_go/dummy.txt")
 	Assert(t, err != nil)
 
-	_, err = LoadSources([]string{"analysis.go", "../testutils/utils.go", "basics.go"})
+	_, _, err = LoadSources([]string{"analysis.go", "../testutils/utils.go", "basics.go"})
 	Assert(t, err == nil)
 }
 
@@ -131,4 +131,16 @@ func TestGetByName(t *testing.T) {
 
 	st := Lookup(testPkg, "StructWithExternalRef")
 	fmt.Println(an.GetByName(st, "Basic2").Type().String())
+}
+
+func TestLinker(t *testing.T) {
+	an := NewAnalysisFromFile(testPkg, testSource)
+
+	lk := NewLinker(an.Root.PkgPath, []*Analysis{an})
+	lk.Extension = ".dart"
+
+	Assert(t, len(lk.OutputFiles()) == 4)
+
+	st := Lookup(testPkg, "StructWithExternalRef")
+	Assert(t, lk.GetOutput(st) == "testsource.dart")
 }

@@ -17,17 +17,19 @@ func TestGenerate(t *testing.T) {
 
 	an := analysis.NewAnalysisFromFile(pkg, source)
 
-	decls := Generate(an)
-	out := generator.WriteDeclarations(decls)
+	decls := Generate("github.com/benoitkugler/gomacro/testutils/testsource", []*analysis.Analysis{an})
+	for _, file := range decls {
+		out := generator.WriteDeclarations(file.Content)
 
-	fn := "test/gen.dart"
-	err = os.WriteFile(fn, []byte(out), os.ModePerm)
-	if err != nil {
-		t.Fatal(err)
-	}
+		fn := "test/" + file.Filename
+		err = os.WriteFile(fn, []byte(out), os.ModePerm)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	var fmts generator.Formatters
-	if err := fmts.FormatFile(generator.Dart, fn); err != nil {
-		t.Fatal(err)
+		var fmts generator.Formatters
+		if err := fmts.FormatFile(generator.Dart, fn); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

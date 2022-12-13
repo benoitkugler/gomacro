@@ -37,6 +37,8 @@ func generateTypes(types []an.Type) []gen.Declaration {
 
 func typeName(ty an.Type) string {
 	switch ty := ty.(type) {
+	case an.Dynamic:
+		return "unknown"
 	case *an.Pointer:
 		panic("pointers not handled by Typescript generator")
 	case *an.Basic:
@@ -75,7 +77,7 @@ func generate(ty an.Type, cache gen.Cache) []gen.Declaration {
 	}
 
 	switch ty := ty.(type) {
-	case *an.Basic: // nothing to do
+	case an.Dynamic, *an.Basic: // nothing to do
 		return nil
 	case *an.Pointer:
 		panic("pointers not handled by Typescript generator")
