@@ -45,7 +45,7 @@ ComplexStruct complexStructFromJson(dynamic json_) {
       dateTimeFromJson(json['Time']),
       stringFromJson(json['B']),
       itfTypeFromJson(json['Value']),
-      listItfTypeFromJson(json['L']),
+      itfListFromJson(json['L']),
       intFromJson(json['A']),
       enumIntFromJson(json['E']),
       enumUIntFromJson(json['E2']),
@@ -60,7 +60,7 @@ JSON complexStructToJson(ComplexStruct item) {
     "Time": dateTimeToJson(item.time),
     "B": stringToJson(item.b),
     "Value": itfTypeToJson(item.value),
-    "L": listItfTypeToJson(item.l),
+    "L": itfListToJson(item.l),
     "A": intToJson(item.a),
     "E": enumIntToJson(item.e),
     "E2": enumUIntToJson(item.e2),
@@ -151,6 +151,14 @@ dynamic enumUIntToJson(EnumUInt item) => item.toValue();
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfList
 typedef ItfList = List<ItfType>;
 
+ItfList itfListFromJson(dynamic json) {
+  return listItfTypeFromJson(json);
+}
+
+dynamic itfListToJson(ItfList item) {
+  return listItfTypeToJson(item);
+}
+
 /// github.com/benoitkugler/gomacro/testutils/testsource.ItfType
 abstract class ItfType {}
 
@@ -227,23 +235,30 @@ JSON recursiveTypeToJson(RecursiveType item) {
 
 // github.com/benoitkugler/gomacro/testutils/testsource.StructWithExternalRef
 class StructWithExternalRef {
+  final NamedSlice field1;
   final NamedSlice field2;
+  final int field3;
 
-  const StructWithExternalRef(this.field2);
+  const StructWithExternalRef(this.field1, this.field2, this.field3);
 
   @override
   String toString() {
-    return "StructWithExternalRef($field2)";
+    return "StructWithExternalRef($field1, $field2, $field3)";
   }
 }
 
 StructWithExternalRef structWithExternalRefFromJson(dynamic json_) {
   final json = (json_ as JSON);
-  return StructWithExternalRef(listEnumFromJson(json['Field2']));
+  return StructWithExternalRef(namedSliceFromJson(json['Field1']),
+      namedSliceFromJson(json['Field2']), intFromJson(json['Field3']));
 }
 
 JSON structWithExternalRefToJson(StructWithExternalRef item) {
-  return {"Field2": listEnumToJson(item.field2)};
+  return {
+    "Field1": namedSliceToJson(item.field1),
+    "Field2": namedSliceToJson(item.field2),
+    "Field3": intToJson(item.field3)
+  };
 }
 
 Map<int, int> dictIntToIntFromJson(dynamic json) {

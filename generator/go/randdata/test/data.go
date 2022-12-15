@@ -36,6 +36,15 @@ func randSliceint() []int {
 	return out
 }
 
+func randSlicesub_Enum() []subpackage.Enum {
+	l := 40 + rand.Intn(10)
+	out := make([]subpackage.Enum, l)
+	for i := range out {
+		out[i] = randsub_Enum()
+	}
+	return out
+}
+
 func randSlicetes_ItfType() []testsource.ItfType {
 	l := 40 + rand.Intn(10)
 	out := make([]testsource.ItfType, l)
@@ -76,6 +85,16 @@ func randstring() string {
 		b[i] = letterRunes2[rand.Intn(maxLength)]
 	}
 	return string(b)
+}
+
+func randsub_Enum() subpackage.Enum {
+	choix := [...]subpackage.Enum{subpackage.A, subpackage.B, subpackage.C}
+	i := rand.Intn(len(choix))
+	return choix[i]
+}
+
+func randsub_NamedSlice() subpackage.NamedSlice {
+	return subpackage.NamedSlice(randSlicesub_Enum())
 }
 
 func randsub_StructWithComment() subpackage.StructWithComment {
@@ -179,6 +198,8 @@ func randtes_RecursiveType() testsource.RecursiveType {
 
 func randtes_StructWithExternalRef() testsource.StructWithExternalRef {
 	return testsource.StructWithExternalRef{
+		Field1: randsub_NamedSlice(),
 		Field2: randsub_NamedSlice(),
+		Field3: randint(),
 	}
 }

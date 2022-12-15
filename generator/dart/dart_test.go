@@ -17,7 +17,7 @@ func TestGenerate(t *testing.T) {
 
 	an := analysis.NewAnalysisFromFile(pkg, source)
 
-	decls := Generate("github.com/benoitkugler/gomacro/testutils/testsource", []*analysis.Analysis{an})
+	decls := Generate("go/src/github.com/benoitkugler/gomacro/testutils/testsource", []*analysis.Analysis{an})
 	for _, file := range decls {
 		out := generator.WriteDeclarations(file.Content)
 

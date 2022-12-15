@@ -121,8 +121,6 @@ func newType(ty an.Type) Type {
 			}
 		}
 		return JSON{t: ty}
-	case *an.Extern:
-		panic("Extern types not supported in SQL generator")
 	case *an.Pointer:
 		panic("Pointer types not supported in SQL generator")
 	case *an.Named:

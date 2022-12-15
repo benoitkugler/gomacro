@@ -22,6 +22,14 @@ dynamic enumToJson(Enum item) => item.toValue();
 // github.com/benoitkugler/gomacro/testutils/testsource/subpackage.NamedSlice
 typedef NamedSlice = List<Enum>;
 
+NamedSlice namedSliceFromJson(dynamic json) {
+  return listEnumFromJson(json);
+}
+
+dynamic namedSliceToJson(NamedSlice item) {
+  return listEnumToJson(item);
+}
+
 // github.com/benoitkugler/gomacro/testutils/testsource/subpackage.StructWithComment
 class StructWithComment {
   final int a;

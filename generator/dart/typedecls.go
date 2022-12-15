@@ -40,7 +40,7 @@ func typeName(typ an.Type) string {
 		return fmt.Sprintf("List<%s>", typeName(typ.Elem))
 	case *an.Map:
 		return fmt.Sprintf("Map<%s,%s>", typeName(typ.Key), typeName(typ.Elem))
-	case *an.Named, *an.Extern, *an.Struct, *an.Enum, *an.Union: // these types are always named
+	case *an.Named, *an.Struct, *an.Enum, *an.Union: // these types are always named
 		return strings.Title(an.LocalName(typ)) // Dart convention
 	default:
 		panic(an.ExhaustiveTypeSwitch + fmt.Sprintf(": %T", typ))

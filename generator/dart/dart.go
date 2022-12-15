@@ -134,10 +134,10 @@ func (buf buffer) generate(typ an.Type, parentOutputFile string) string {
 		return outfile
 	}
 	file := buf.files[outfile]
-
 	if file == nil {
-		panic(fmt.Sprintf("missing output file '%s' (parent :'%s') for type %T", outfile, parentOutputFile, typ))
+		panic(fmt.Sprintf("missing output file '%s' (parent :'%s') for type %T (%s)", outfile, parentOutputFile, typ, typ.Type()))
 	}
+
 	switch typ := typ.(type) {
 	case *an.Pointer:
 		panic("pointers not handled by the Dart generator")
@@ -154,9 +154,6 @@ func (buf buffer) generate(typ an.Type, parentOutputFile string) string {
 	case *an.Map:
 		decl, importKey, importElem := buf.codeForMap(typ, outfile)
 		file.add(decl, importKey, importElem)
-	case *an.Extern:
-		// TODO:
-		return outfile
 	case *an.Struct:
 		decl, imports := buf.codeForStruct(typ)
 		file.add(decl, imports...)

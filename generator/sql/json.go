@@ -25,8 +25,6 @@ func codeFor(ty an.Type, cache gen.Cache) []gen.Declaration {
 	switch ty := ty.(type) {
 	case *an.Basic, *an.Time:
 		return []gen.Declaration{codeForBasicOrTime(ty)}
-	case *an.Extern:
-		panic("Extern types not implemented in SQL JSON generator")
 	case *an.Named:
 		return codeFor(ty.Underlying, cache)
 	case *an.Enum:
@@ -77,7 +75,7 @@ func typeID(ty an.Type) string {
 		return "map_" + typeID(ty.Elem) // JSON map keys are always strings
 	case *an.Named: // shortcut to underlying
 		return typeID(ty.Underlying)
-	case *an.Extern, *an.Struct, *an.Enum, *an.Union: // these types are always named
+	case *an.Struct, *an.Enum, *an.Union: // these types are always named
 		return idFromNamed(ty.Type().(*types.Named))
 	default:
 		panic(an.ExhaustiveTypeSwitch + fmt.Sprintf(": %T", ty))

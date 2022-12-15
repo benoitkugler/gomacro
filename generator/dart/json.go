@@ -30,11 +30,6 @@ func jsonID(typ an.Type) string {
 		return "list" + strings.Title(jsonID(typ.Elem))
 	case *an.Map:
 		return "dict" + strings.Title(jsonID(typ.Key)) + "To" + strings.Title(jsonID(typ.Elem))
-	case *an.Extern:
-		if typ.Underlying != nil {
-			return jsonID(typ.Underlying)
-		}
-		return lowerFirst(typeName(typ))
 	case *an.Struct, *an.Enum, *an.Union: // these types are always named
 		return lowerFirst(typeName(typ))
 	default:

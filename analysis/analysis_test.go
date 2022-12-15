@@ -58,7 +58,6 @@ func TestMethodTags(t *testing.T) {
 		&Enum{name: &types.Named{}},
 		&Struct{},
 		&Union{},
-		&Extern{},
 		&Pointer{&Time{}},
 		&Named{},
 	} {
@@ -110,20 +109,6 @@ func TestAnalysisStruct(t *testing.T) {
 	st := Lookup(testPkg, "StructWithExternalRef")
 	fields := an.Types[st].(*Struct).Fields
 	Assert(t, len(fields) == 3)
-
-	ext, ok := fields[0].Type.(*Extern)
-	Assert(t, ok)
-	Assert(t, len(ext.ExternalFiles) == 1)
-
-	ext, ok = fields[1].Type.(*Extern)
-	Assert(t, ok)
-	Assert(t, len(ext.ExternalFiles) == 2, ext.ExternalFiles)
-
-	ma, ok := fields[2].Type.(*Map)
-	Assert(t, ok)
-	ext, ok = ma.Elem.(*Extern)
-	Assert(t, ok)
-	Assert(t, len(ext.ExternalFiles) == 1)
 }
 
 func TestGetByName(t *testing.T) {
@@ -136,10 +121,11 @@ func TestGetByName(t *testing.T) {
 func TestLinker(t *testing.T) {
 	an := NewAnalysisFromFile(testPkg, testSource)
 
-	lk := NewLinker(an.Root.PkgPath, []*Analysis{an})
+	lk := NewLinker("go/src/github.com/benoitkugler/gomacro/testutils/testsource", []*Analysis{an})
 	lk.Extension = ".dart"
 
-	Assert(t, len(lk.OutputFiles()) == 4)
+	// subpackage + origin + predefined
+	Assert(t, len(lk.OutputFiles()) == 3)
 
 	st := Lookup(testPkg, "StructWithExternalRef")
 	Assert(t, lk.GetOutput(st) == "testsource.dart")

@@ -66,7 +66,7 @@ func (ctx context) functionID(ty an.Type) string {
 		return fmt.Sprintf("Slice%s", ctx.functionID(ty.Elem))
 	case *an.Map:
 		return fmt.Sprintf("Map%s%s", ctx.functionID(ty.Key), ctx.functionID(ty.Elem))
-	case *an.Extern, *an.Named, *an.Enum, *an.Struct, *an.Union:
+	case *an.Named, *an.Enum, *an.Struct, *an.Union:
 		// build a string usable in function names
 		obj := ty.Type().(*types.Named).Obj()
 		packageName := obj.Pkg().Name()
@@ -94,9 +94,6 @@ func (ctx context) generate(ty an.Type) []gen.Declaration {
 		return ctx.codeForPointer(ty)
 	case *an.Named:
 		return ctx.codeForNamed(ty)
-	case *an.Extern:
-		// ignore, an implementation should be written manually
-		return nil
 	case *an.Array:
 		return ctx.codeForArray(ty)
 	case *an.Map:

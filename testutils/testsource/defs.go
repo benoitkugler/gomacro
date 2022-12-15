@@ -1,7 +1,6 @@
 package testsource
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/benoitkugler/gomacro/testutils/testsource/subpackage"
@@ -61,9 +60,9 @@ type ComplexStruct struct {
 type ItfList []ItfType
 
 type StructWithExternalRef struct {
-	field1 big.Int `gomacro-extern:"big#dart#extern.dart"`
+	Field1 subpackage.NamedSlice
 	Field2 subpackage.NamedSlice
-	field3 map[int]big.Rat `gomacro-extern:"big#dart#extern3.dart"`
+	Field3 int
 }
 
 type RecursiveType struct {

@@ -132,22 +132,6 @@ func newTime(typ types.Type) (Type, bool) {
 	return out, true
 }
 
-// Extern is a special type used when
-// no declaration should be written for a type,
-// but the type should be imported from an other file.
-type Extern struct {
-	origin *types.Named
-
-	// Optional
-	Underlying AnonymousType
-
-	// the files where to find the definition,
-	// depending on the generation mode
-	ExternalFiles map[string]string
-}
-
-func (e *Extern) Type() types.Type { return e.origin }
-
 // Pointer is a pointer to a type
 type Pointer struct {
 	Elem Type

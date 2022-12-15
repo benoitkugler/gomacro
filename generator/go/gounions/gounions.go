@@ -46,7 +46,7 @@ func (ctx context) generate(typ an.Type) []gen.Declaration {
 	}
 
 	switch typ := typ.(type) {
-	case *an.Basic, *an.Time, *an.Extern, *an.Enum:
+	case *an.Basic, *an.Time, *an.Enum:
 		return nil
 	case *an.Pointer:
 		return ctx.generate(typ.Elem)

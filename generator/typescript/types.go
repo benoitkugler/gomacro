@@ -64,7 +64,7 @@ func typeName(ty an.Type) string {
 			return fmt.Sprintf("%s[]", typeName(ty.Elem))
 		}
 		return fmt.Sprintf("( %s[] | null)", typeName(ty.Elem))
-	case *an.Extern, *an.Named, *an.Enum, *an.Struct, *an.Union:
+	case *an.Named, *an.Enum, *an.Struct, *an.Union:
 		return an.LocalName(ty)
 	default:
 		panic(an.ExhaustiveTypeSwitch)
@@ -81,8 +81,6 @@ func generate(ty an.Type, cache gen.Cache) []gen.Declaration {
 		return nil
 	case *an.Pointer:
 		panic("pointers not handled by Typescript generator")
-	case *an.Extern:
-		return []gen.Declaration{codeForExtern(ty)}
 	case *an.Time:
 		return []gen.Declaration{codeForTime(ty)}
 	case *an.Array:
@@ -134,17 +132,6 @@ func codeForTime(t *an.Time) gen.Declaration {
 		return dateDecl
 	}
 	return timeDecl
-}
-
-func codeForExtern(ty *an.Extern) gen.Declaration {
-	// make sure .ts is stripped if provied
-	extern := strings.TrimSuffix(ty.ExternalFiles["ts"], ".ts")
-	importLine := fmt.Sprintf("import {%s} from %q;", an.LocalName(ty), extern)
-	return gen.Declaration{
-		ID:       importLine,
-		Content:  importLine,
-		Priority: true, // must appear before other decls
-	}
 }
 
 func codeForNamed(named *an.Named, cache gen.Cache) []gen.Declaration {

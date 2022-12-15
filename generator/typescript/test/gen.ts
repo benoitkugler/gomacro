@@ -1,4 +1,3 @@
-import { NamedSlice } from "./extern";
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic1
 export type Basic1 = number;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic2
@@ -30,6 +29,19 @@ export interface ConcretType1 {
 export interface ConcretType2 {
   D: number;
 }
+// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.Enum
+export enum Enum {
+  A = 0,
+  B = 1,
+  C = 2,
+}
+
+export const EnumLabels: { [key in Enum]: string } = {
+  [Enum.A]: "",
+  [Enum.B]: "",
+  [Enum.C]: "",
+};
+
 // github.com/benoitkugler/gomacro/testutils/testsource.EnumInt
 export enum EnumInt {
   Ai = 0,
@@ -87,6 +99,8 @@ export interface ItfType2 {
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.MyDate
 export type MyDate = Date_;
+// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.NamedSlice
+export type NamedSlice = Enum[] | null;
 // github.com/benoitkugler/gomacro/testutils/testsource.RecursiveType
 export interface RecursiveType {
   Children: RecursiveType[] | null;
@@ -97,7 +111,9 @@ export interface StructWithComment {
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.StructWithExternalRef
 export interface StructWithExternalRef {
+  Field1: NamedSlice;
   Field2: NamedSlice;
+  Field3: number;
 }
 
 class DateTag {
@@ -106,10 +122,3 @@ class DateTag {
 
 // AAAA-MM-YY date format
 export type Date_ = string & DateTag;
-
-class TimeTag {
-  private _ = "T" as const;
-}
-
-// ISO date-time string
-export type Time = string & TimeTag;

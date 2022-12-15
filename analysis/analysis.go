@@ -418,21 +418,10 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 
 	name, isNamed := typ.(*types.Named)
 	if isNamed {
-		// check for external refs
-		isExtern := ctx.extern != nil && name.Obj().Pkg().Name() == ctx.extern.goPackage
-
-		// if extern, only recurse for AnoymousType
-
 		// look for enums, unions and structs
 		if enum, isEnum := ctx.enums[name]; isEnum {
-			if isExtern {
-				return &Extern{origin: name, ExternalFiles: ctx.extern.externalFiles}
-			}
 			return enum
 		} else if members, isUnion := ctx.unions[name]; isUnion {
-			if isExtern {
-				return &Extern{origin: name, ExternalFiles: ctx.extern.externalFiles}
-			}
 			// add the member to the type to analyze
 			un := &Union{name: name}
 			for _, member := range members {
@@ -440,9 +429,6 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 			}
 			return un
 		} else if st, isStruct := typ.Underlying().(*types.Struct); isStruct {
-			if isExtern {
-				return &Extern{origin: name, ExternalFiles: ctx.extern.externalFiles}
-			}
 			str := &Struct{
 				Name: name,
 				// Implements are defered
@@ -454,12 +440,6 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 		} else {
 			// otherwise, analyze the underlying type
 			under := an.handleType(typ.Underlying(), ctx).(AnonymousType)
-
-			if isExtern {
-				// wrap the type into Extern
-				return &Extern{origin: name, Underlying: under, ExternalFiles: ctx.extern.externalFiles}
-			}
-
 			return &Named{name: name, Underlying: under}
 		}
 	}
@@ -543,7 +523,10 @@ func NewLinker(rootDirectory string, sources []*Analysis) Linker {
 	_, rootDirectory, _ = strings.Cut(rootDirectory, "go/src/")
 	prefix := path.Dir(rootDirectory) + "/"
 	for _, src := range sources {
-		for typ := range src.Types {
+		for typ, resolved := range src.Types {
+			if _, isTime := resolved.(*Time); isTime { // considered as predefined
+				continue
+			}
 			if named, isNamed := typ.(*types.Named); isNamed {
 				pkgPath := named.Obj().Pkg().Path()
 				if !strings.HasPrefix(pkgPath, prefix) { // this is std lib
