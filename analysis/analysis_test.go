@@ -130,3 +130,10 @@ func TestLinker(t *testing.T) {
 	st := Lookup(testPkg, "StructWithExternalRef")
 	Assert(t, lk.GetOutput(st) == "testsource.dart")
 }
+
+func TestTime(t *testing.T) {
+	an := NewAnalysisFromFile(testPkg, testSource)
+
+	st := Lookup(testPkg, "ComplexStruct")
+	Assert(t, !an.Types[st].(*Struct).Fields[3].Type.(*Time).IsDate)
+}

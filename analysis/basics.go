@@ -22,9 +22,15 @@ func (*Map) isAnonymous()   {}
 
 func (b *Basic) Type() types.Type { return b.B }
 
-var timeTy = types.NewNamed(types.NewTypeName(0, nil, "Time", nil), &types.Struct{}, nil)
+var (
+	timeTy = types.NewNamed(types.NewTypeName(0, nil, "Time", nil), &types.Struct{}, nil)
+	dateTy = types.NewNamed(types.NewTypeName(0, nil, "Date", nil), &types.Struct{}, nil)
+)
 
-func (*Time) Type() types.Type {
+func (ti *Time) Type() types.Type {
+	if ti.IsDate {
+		return dateTy
+	}
 	return timeTy
 }
 

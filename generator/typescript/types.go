@@ -127,6 +127,7 @@ var (
 )
 
 func codeForTime(t *an.Time) gen.Declaration {
+	fmt.Println(t.IsDate)
 	// special case for date and time
 	if t.IsDate {
 		return dateDecl
@@ -191,6 +192,7 @@ func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 			continue
 		}
 
+		fmt.Println(field.JSONName(), field.Type)
 		decls = append(decls, generate(field.Type, cache)...) // recurse
 		fields = append(fields, fmt.Sprintf("\t%s: %s,", field.JSONName(), typeName(field.Type)))
 	}

@@ -553,7 +553,7 @@ func (lk Linker) IsPredefined(outFile string) bool {
 func (lk Linker) GetOutput(ty types.Type) string {
 	out := predefined
 	// considere time a predefined
-	if ty == timeTy {
+	if ty == timeTy || ty == dateTy {
 		return out + lk.Extension
 	}
 	if named, isNamed := ty.(*types.Named); isNamed {

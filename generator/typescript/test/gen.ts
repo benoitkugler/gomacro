@@ -122,3 +122,10 @@ class DateTag {
 
 // AAAA-MM-YY date format
 export type Date_ = string & DateTag;
+
+class TimeTag {
+  private _ = "T" as const;
+}
+
+// ISO date-time string
+export type Time = string & TimeTag;
