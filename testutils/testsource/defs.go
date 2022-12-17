@@ -75,3 +75,9 @@ type (
 	Basic3 float64
 	Basic4 string
 )
+
+type WithOpaque struct {
+	F1 StructWithExternalRef `gomacro-opaque:"dart"`
+	F2 RecursiveType         `gomacro-opaque:"dart, typescript"`
+	F3 StructWithExternalRef `gomacro-opaque:" typescript"`
+}

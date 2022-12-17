@@ -40,8 +40,6 @@ func TestPanics(t *testing.T) {
 
 	ShouldPanic(t, func() { isSpecialComment("// gomacro:XXX a") })
 
-	ShouldPanic(t, func() { newExternMap(`gomacro-extern:"context#dart"`) })
-
 	ShouldPanic(t, func() { (&Basic{B: types.Typ[types.Complex128]}).Kind() })
 
 	ShouldPanic(t, func() { (&Analysis{}).createType(nil, context{}) })
@@ -136,4 +134,16 @@ func TestTime(t *testing.T) {
 
 	st := Lookup(testPkg, "ComplexStruct")
 	Assert(t, !an.Types[st].(*Struct).Fields[3].Type.(*Time).IsDate)
+}
+
+func TestOpaque(t *testing.T) {
+	an := NewAnalysisFromFile(testPkg, testSource)
+
+	st := Lookup(testPkg, "WithOpaque")
+	Assert(t, an.Types[st].(*Struct).Fields[0].IsOpaqueFor("dart"))
+	Assert(t, !an.Types[st].(*Struct).Fields[0].IsOpaqueFor("typescript"))
+	Assert(t, an.Types[st].(*Struct).Fields[1].IsOpaqueFor("dart"))
+	Assert(t, an.Types[st].(*Struct).Fields[1].IsOpaqueFor("typescript"))
+	Assert(t, !an.Types[st].(*Struct).Fields[2].IsOpaqueFor("dart"))
+	Assert(t, an.Types[st].(*Struct).Fields[2].IsOpaqueFor("typescript"))
 }

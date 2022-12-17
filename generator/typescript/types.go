@@ -35,10 +35,12 @@ func generateTypes(types []an.Type) []gen.Declaration {
 	return decls
 }
 
+func declID(ty an.Type) string {
+	return ty.Type().String()
+}
+
 func typeName(ty an.Type) string {
 	switch ty := ty.(type) {
-	case an.Dynamic:
-		return "unknown"
 	case *an.Pointer:
 		panic("pointers not handled by Typescript generator")
 	case *an.Basic:
@@ -77,7 +79,7 @@ func generate(ty an.Type, cache gen.Cache) []gen.Declaration {
 	}
 
 	switch ty := ty.(type) {
-	case an.Dynamic, *an.Basic: // nothing to do
+	case *an.Basic: // nothing to do
 		return nil
 	case *an.Pointer:
 		panic("pointers not handled by Typescript generator")
@@ -127,7 +129,6 @@ var (
 )
 
 func codeForTime(t *an.Time) gen.Declaration {
-	fmt.Println(t.IsDate)
 	// special case for date and time
 	if t.IsDate {
 		return dateDecl
@@ -147,7 +148,7 @@ func codeForNamed(named *an.Named, cache gen.Cache) []gen.Declaration {
 	code := fmt.Sprintf(`// %s
 	export type %s = %s`, gen.Origin(named), name, target)
 
-	deps = append(deps, gen.Declaration{ID: name, Content: code})
+	deps = append(deps, gen.Declaration{ID: declID(named), Content: code})
 	return deps
 }
 
@@ -170,7 +171,7 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 		valueLabels = append(valueLabels, fmt.Sprintf("[%s.%s]: %q,", name, varName, val.Comment))
 	}
 	return gen.Declaration{
-		ID: name,
+		ID: declID(enum),
 		Content: fmt.Sprintf(`// %s
 			export enum %s {
 				%s
@@ -192,9 +193,13 @@ func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 			continue
 		}
 
-		fmt.Println(field.JSONName(), field.Type)
-		decls = append(decls, generate(field.Type, cache)...) // recurse
-		fields = append(fields, fmt.Sprintf("\t%s: %s,", field.JSONName(), typeName(field.Type)))
+		if field.IsOpaqueFor("typescript") {
+			// use unknown
+			fields = append(fields, fmt.Sprintf("\t%s: unknown,", field.JSONName()))
+		} else {
+			decls = append(decls, generate(field.Type, cache)...) // recurse
+			fields = append(fields, fmt.Sprintf("\t%s: %s,", field.JSONName(), typeName(field.Type)))
+		}
 	}
 
 	name := typeName(t)
@@ -209,7 +214,7 @@ func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 		}`, name, strings.Join(fields, "\n"))
 	}
 
-	decls = append(decls, gen.Declaration{ID: name, Content: out})
+	decls = append(decls, gen.Declaration{ID: declID(t), Content: out})
 	return decls
 }
 
@@ -238,7 +243,7 @@ func codeForUnion(u *an.Union, cache gen.Cache) (out []gen.Declaration) {
 		Data: %s
 	}`, enumKindName, strings.Join(kindEnum, ",\n"), gen.Origin(u), name, enumKindName, strings.Join(members, " | "))
 
-	out = append(out, gen.Declaration{ID: name, Content: code})
+	out = append(out, gen.Declaration{ID: declID(u), Content: code})
 
 	return out
 }

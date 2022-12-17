@@ -342,34 +342,7 @@ type context struct {
 	enums  enumsMap
 	unions unionsMap
 
-	extern     *externMap // optional
 	isInExtern bool
-}
-
-type externMap struct {
-	externalFiles map[string]string
-	goPackage     string
-}
-
-// check for tag with the form gomacro-extern:"<pkg>#<mode1>#<targetFile1>#<mode2>#<targetFile2>"
-func newExternMap(tag reflect.StructTag) *externMap {
-	de := tag.Get("gomacro-extern")
-	if de == "" {
-		return nil
-	}
-
-	const separator = "#"
-	chunks := strings.Split(de, separator)
-	goPackage := chunks[0]
-	chunks = chunks[1:]
-	if len(chunks)%2 != 0 {
-		panic("invalid gomacro-extern tag " + de)
-	}
-	externalFiles := make(map[string]string)
-	for i := 0; i < len(chunks)/2; i++ {
-		externalFiles[chunks[2*i]] = chunks[2*i+1]
-	}
-	return &externMap{goPackage: goPackage, externalFiles: externalFiles}
 }
 
 func (an *Analysis) handleStructFields(typ *types.Struct, ctx context) []StructField {
@@ -377,14 +350,6 @@ func (an *Analysis) handleStructFields(typ *types.Struct, ctx context) []StructF
 	for i := 0; i < typ.NumFields(); i++ {
 		field := typ.Field(i)
 		tag := reflect.StructTag(typ.Tag(i))
-
-		// handle extern definition
-		ctx.extern = newExternMap(tag)
-
-		if tag.Get("gomacro") == "isOpaque" {
-			out = append(out, StructField{Type: Dynamic{}, Field: field, Tag: tag})
-			break
-		}
 
 		// recurse
 		fieldType := an.handleType(field.Type(), ctx)

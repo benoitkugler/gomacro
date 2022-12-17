@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -62,6 +63,15 @@ func (st StructField) JSONExported() bool {
 		return false
 	}
 	return st.Field.Exported()
+}
+
+// IsOpaqueFor returns true if the field should be considered
+// as dynamic when generating code for [target]
+func (st StructField) IsOpaqueFor(target string) bool {
+	if t := st.Tag.Get("gomacro-opaque"); t != "" {
+		return strings.Contains(t, target)
+	}
+	return false
 }
 
 type Struct struct {

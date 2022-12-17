@@ -1,3 +1,17 @@
+class DateTag {
+  private _ = "D" as const;
+}
+
+// AAAA-MM-YY date format
+export type Date_ = string & DateTag;
+
+class TimeTag {
+  private _ = "T" as const;
+}
+
+// ISO date-time string
+export type Time = string & TimeTag;
+
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic1
 export type Basic1 = number;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic2
@@ -29,19 +43,6 @@ export interface ConcretType1 {
 export interface ConcretType2 {
   D: number;
 }
-// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.Enum
-export enum Enum {
-  A = 0,
-  B = 1,
-  C = 2,
-}
-
-export const EnumLabels: { [key in Enum]: string } = {
-  [Enum.A]: "",
-  [Enum.B]: "",
-  [Enum.C]: "",
-};
-
 // github.com/benoitkugler/gomacro/testutils/testsource.EnumInt
 export enum EnumInt {
   Ai = 0,
@@ -99,15 +100,9 @@ export interface ItfType2 {
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.MyDate
 export type MyDate = Date_;
-// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.NamedSlice
-export type NamedSlice = Enum[] | null;
 // github.com/benoitkugler/gomacro/testutils/testsource.RecursiveType
 export interface RecursiveType {
   Children: RecursiveType[] | null;
-}
-// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.StructWithComment
-export interface StructWithComment {
-  A: number;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.StructWithExternalRef
 export interface StructWithExternalRef {
@@ -115,17 +110,28 @@ export interface StructWithExternalRef {
   Field2: NamedSlice;
   Field3: number;
 }
-
-class DateTag {
-  private _ = "D" as const;
+// github.com/benoitkugler/gomacro/testutils/testsource.WithOpaque
+export interface WithOpaque {
+  F1: StructWithExternalRef;
+  F2: unknown;
+  F3: unknown;
+}
+// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.Enum
+export enum Enum {
+  A = 0,
+  B = 1,
+  C = 2,
 }
 
-// AAAA-MM-YY date format
-export type Date_ = string & DateTag;
+export const EnumLabels: { [key in Enum]: string } = {
+  [Enum.A]: "",
+  [Enum.B]: "",
+  [Enum.C]: "",
+};
 
-class TimeTag {
-  private _ = "T" as const;
+// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.NamedSlice
+export type NamedSlice = Enum[] | null;
+// github.com/benoitkugler/gomacro/testutils/testsource/subpackage.StructWithComment
+export interface StructWithComment {
+  A: number;
 }
-
-// ISO date-time string
-export type Time = string & TimeTag;

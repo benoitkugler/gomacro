@@ -146,9 +146,3 @@ type Pointer struct {
 func (p *Pointer) Type() types.Type {
 	return types.NewPointer(p.Elem.Type())
 }
-
-type Dynamic struct{}
-
-var dinamicTy = types.NewInterface(nil, nil)
-
-func (Dynamic) Type() types.Type { return dinamicTy }
