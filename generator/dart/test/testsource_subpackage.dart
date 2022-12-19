@@ -43,11 +43,11 @@ class StructWithComment {
 }
 
 StructWithComment structWithCommentFromJson(dynamic json_) {
-  final json = (json_ as JSON);
+  final json = (json_ as Map<String, dynamic>);
   return StructWithComment(intFromJson(json['A']));
 }
 
-JSON structWithCommentToJson(StructWithComment item) {
+Map<String, dynamic> structWithCommentToJson(StructWithComment item) {
   return {"A": intToJson(item.a)};
 }
 

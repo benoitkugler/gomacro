@@ -8,7 +8,6 @@ DateTime dateTimeFromJson(dynamic json) => DateTime.parse(json as String);
 
 dynamic dateTimeToJson(DateTime dt) => dt.toString();
 
-typedef JSON = Map<String, dynamic>; // alias to shorten JSON convertors
 bool boolFromJson(dynamic json) => json as bool;
 
 bool boolToJson(bool item) => item;

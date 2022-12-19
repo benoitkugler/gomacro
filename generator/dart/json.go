@@ -134,7 +134,7 @@ func jsonForMap(ma *an.Map) string {
 		if (json == null) {
 			return {};
 		}
-		return (json as JSON).map((k,v) => MapEntry(%s, %sFromJson(v)));
+		return (json as Map<String, dynamic>).map((k,v) => MapEntry(%s, %sFromJson(v)));
 	}
 	
 	Map<String, dynamic> %sToJson(%s item) {
@@ -162,13 +162,13 @@ func jsonForStruct(st *an.Struct) string {
 
 	return fmt.Sprintf(`
 	%s %sFromJson(dynamic json_) {
-		final json = (json_ as JSON);
+		final json = (json_ as Map<String, dynamic>);
 		return %s(
 			%s
 		);
 	}
 	
-	JSON %sToJson(%s item) {
+	Map<String, dynamic> %sToJson(%s item) {
 		return {
 			%s
 		};
@@ -201,7 +201,7 @@ func jsonForUnion(u *an.Union) string {
 	name, id := typeName(u), jsonID(u)
 
 	codeFrom := fmt.Sprintf(`%s %sFromJson(dynamic json_) {
-		final json = json_ as JSON;
+		final json = json_ as Map<String, dynamic>;
 		final kind = json['Kind'] as String;
 		final data = json['Data'];
 		switch (kind) {
@@ -212,7 +212,7 @@ func jsonForUnion(u *an.Union) string {
 	}
 	`, name, id, strings.Join(casesFrom, "\n"))
 
-	codeTo := fmt.Sprintf(`JSON %sToJson(%s item) {
+	codeTo := fmt.Sprintf(`Map<String, dynamic> %sToJson(%s item) {
 		%s else {
 			throw ("unexpected type");
 		}	

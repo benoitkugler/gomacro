@@ -39,7 +39,7 @@ class ComplexStruct {
 }
 
 ComplexStruct complexStructFromJson(dynamic json_) {
-  final json = (json_ as JSON);
+  final json = (json_ as Map<String, dynamic>);
   return ComplexStruct(
       dictIntToIntFromJson(json['with_tag']),
       dateTimeFromJson(json['Time']),
@@ -54,7 +54,7 @@ ComplexStruct complexStructFromJson(dynamic json_) {
       structWithCommentFromJson(json['Imported']));
 }
 
-JSON complexStructToJson(ComplexStruct item) {
+Map<String, dynamic> complexStructToJson(ComplexStruct item) {
   return {
     "with_tag": dictIntToIntToJson(item.with_tag),
     "Time": dateTimeToJson(item.time),
@@ -84,11 +84,11 @@ class ConcretType1 implements ItfType, ItfType2 {
 }
 
 ConcretType1 concretType1FromJson(dynamic json_) {
-  final json = (json_ as JSON);
+  final json = (json_ as Map<String, dynamic>);
   return ConcretType1(listIntFromJson(json['List2']), intFromJson(json['V']));
 }
 
-JSON concretType1ToJson(ConcretType1 item) {
+Map<String, dynamic> concretType1ToJson(ConcretType1 item) {
   return {"List2": listIntToJson(item.list2), "V": intToJson(item.v)};
 }
 
@@ -105,11 +105,11 @@ class ConcretType2 implements ItfType {
 }
 
 ConcretType2 concretType2FromJson(dynamic json_) {
-  final json = (json_ as JSON);
+  final json = (json_ as Map<String, dynamic>);
   return ConcretType2(doubleFromJson(json['D']));
 }
 
-JSON concretType2ToJson(ConcretType2 item) {
+Map<String, dynamic> concretType2ToJson(ConcretType2 item) {
   return {"D": doubleToJson(item.d)};
 }
 
@@ -163,7 +163,7 @@ dynamic itfListToJson(ItfList item) {
 abstract class ItfType {}
 
 ItfType itfTypeFromJson(dynamic json_) {
-  final json = json_ as JSON;
+  final json = json_ as Map<String, dynamic>;
   final kind = json['Kind'] as String;
   final data = json['Data'];
   switch (kind) {
@@ -176,7 +176,7 @@ ItfType itfTypeFromJson(dynamic json_) {
   }
 }
 
-JSON itfTypeToJson(ItfType item) {
+Map<String, dynamic> itfTypeToJson(ItfType item) {
   if (item is ConcretType1) {
     return {'Kind': "ConcretType1", 'Data': concretType1ToJson(item)};
   } else if (item is ConcretType2) {
@@ -190,7 +190,7 @@ JSON itfTypeToJson(ItfType item) {
 abstract class ItfType2 {}
 
 ItfType2 itfType2FromJson(dynamic json_) {
-  final json = json_ as JSON;
+  final json = json_ as Map<String, dynamic>;
   final kind = json['Kind'] as String;
   final data = json['Data'];
   switch (kind) {
@@ -201,7 +201,7 @@ ItfType2 itfType2FromJson(dynamic json_) {
   }
 }
 
-JSON itfType2ToJson(ItfType2 item) {
+Map<String, dynamic> itfType2ToJson(ItfType2 item) {
   if (item is ConcretType1) {
     return {'Kind': "ConcretType1", 'Data': concretType1ToJson(item)};
   } else {
@@ -225,11 +225,11 @@ class RecursiveType {
 }
 
 RecursiveType recursiveTypeFromJson(dynamic json_) {
-  final json = (json_ as JSON);
+  final json = (json_ as Map<String, dynamic>);
   return RecursiveType(listRecursiveTypeFromJson(json['Children']));
 }
 
-JSON recursiveTypeToJson(RecursiveType item) {
+Map<String, dynamic> recursiveTypeToJson(RecursiveType item) {
   return {"Children": listRecursiveTypeToJson(item.children)};
 }
 
@@ -248,12 +248,12 @@ class StructWithExternalRef {
 }
 
 StructWithExternalRef structWithExternalRefFromJson(dynamic json_) {
-  final json = (json_ as JSON);
+  final json = (json_ as Map<String, dynamic>);
   return StructWithExternalRef(namedSliceFromJson(json['Field1']),
       namedSliceFromJson(json['Field2']), intFromJson(json['Field3']));
 }
 
-JSON structWithExternalRefToJson(StructWithExternalRef item) {
+Map<String, dynamic> structWithExternalRefToJson(StructWithExternalRef item) {
   return {
     "Field1": namedSliceToJson(item.field1),
     "Field2": namedSliceToJson(item.field2),
@@ -261,11 +261,42 @@ JSON structWithExternalRefToJson(StructWithExternalRef item) {
   };
 }
 
+// github.com/benoitkugler/gomacro/testutils/testsource.WithOpaque
+class WithOpaque {
+  final StructWithExternalRef f1;
+  final RecursiveType f2;
+  final StructWithExternalRef f3;
+
+  const WithOpaque(this.f1, this.f2, this.f3);
+
+  @override
+  String toString() {
+    return "WithOpaque($f1, $f2, $f3)";
+  }
+}
+
+WithOpaque withOpaqueFromJson(dynamic json_) {
+  final json = (json_ as Map<String, dynamic>);
+  return WithOpaque(
+      structWithExternalRefFromJson(json['F1']),
+      recursiveTypeFromJson(json['F2']),
+      structWithExternalRefFromJson(json['F3']));
+}
+
+Map<String, dynamic> withOpaqueToJson(WithOpaque item) {
+  return {
+    "F1": structWithExternalRefToJson(item.f1),
+    "F2": recursiveTypeToJson(item.f2),
+    "F3": structWithExternalRefToJson(item.f3)
+  };
+}
+
 Map<int, int> dictIntToIntFromJson(dynamic json) {
   if (json == null) {
     return {};
   }
-  return (json as JSON).map((k, v) => MapEntry(int.parse(k), intFromJson(v)));
+  return (json as Map<String, dynamic>)
+      .map((k, v) => MapEntry(int.parse(k), intFromJson(v)));
 }
 
 Map<String, dynamic> dictIntToIntToJson(Map<int, int> item) {
