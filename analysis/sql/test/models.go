@@ -43,6 +43,7 @@ type Question struct {
 }
 
 // gomacro:SQL ADD UNIQUE(IdQuestion, Tag)
+// gomacro:SQL CREATE UNIQUE INDEX index_name ON QuestionTag (Tag)
 type QuestionTag struct {
 	Tag        string `json:"tag"`
 	IdQuestion int64  ` gomacro-sql-foreign:"Question" gomacro-sql-on-delete:"CASCADE" json:"id_question"`

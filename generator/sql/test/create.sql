@@ -88,6 +88,8 @@ ALTER TABLE questions
 ALTER TABLE question_tags
     ADD UNIQUE (IdQuestion, Tag);
 
+CREATE UNIQUE INDEX index_name ON question_tags (Tag);
+
 ALTER TABLE question_tags
     ADD FOREIGN KEY (IdQuestion) REFERENCES questions ON DELETE CASCADE;
 

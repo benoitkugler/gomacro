@@ -102,7 +102,12 @@ func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep replacer, cont
 		enumValue := enum.Get(varName)
 		return fmt.Sprintf("%s /* %s.%s */", enumValue.Const.Val().ExactString(), typeName, varName)
 	})
-	return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(ta.TableName()), content)
+
+	if strings.HasPrefix(content, "ADD") {
+		return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(ta.TableName()), content)
+	}
+
+	return fmt.Sprintf("%s;", content)
 }
 
 func generateTable(ta sql.Table) []gen.Declaration {
