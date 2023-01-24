@@ -122,12 +122,13 @@ func generateTable(ta sql.Table) []gen.Declaration {
 
 		// add the eventual JSON validation function
 		if js, isJSON := f.SQLType.(sql.JSON); isJSON {
-			var jsonFuncName string
-			decls, jsonFuncName = jsonValidations(js)
+			jsonDecls, jsonFuncName := jsonValidations(js)
 
 			colName := f.Field.Field.Name()
+			id := prefixDeclJSONConstraint + jsonFuncName + gen.SQLTableName(ta.TableName()) + colName
+			decls = append(decls, jsonDecls...)
 			decls = append(decls, gen.Declaration{
-				ID:       prefixDeclJSONConstraint + jsonFuncName,
+				ID:       id,
 				Content:  fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s_gomacro CHECK (%s(%s));", gen.SQLTableName(ta.TableName()), colName, jsonFuncName, colName),
 				Priority: false,
 			})
