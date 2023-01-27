@@ -176,13 +176,21 @@ func (buf buffer) codeForStruct(typ *an.Struct) (gen.Declaration, []string) {
 			continue
 		}
 
-		// recurse
-		importField := buf.generate(field.Type, buf.linker.GetOutput(typ.Name))
-		importForFields = append(importForFields, importField)
+		var tn string
+		if field.IsOpaqueFor("dart") {
+			// use dynamic
+			tn = "dynamic"
+		} else {
+			// recurse
+			importField := buf.generate(field.Type, buf.linker.GetOutput(typ.Name))
+			importForFields = append(importForFields, importField)
+
+			tn = typeName(field.Type)
+		}
 
 		dartFieldName := lowerFirst(field.JSONName()) // convert to dart convention
 
-		fields = append(fields, fmt.Sprintf("final %s %s;", typeName(field.Type), dartFieldName))
+		fields = append(fields, fmt.Sprintf("final %s %s;", tn, dartFieldName))
 		initFields = append(initFields, fmt.Sprintf("this.%s", dartFieldName))
 		interpolatedFields = append(interpolatedFields, fmt.Sprintf("$%s", dartFieldName))
 	}

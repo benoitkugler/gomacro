@@ -263,8 +263,8 @@ Map<String, dynamic> structWithExternalRefToJson(StructWithExternalRef item) {
 
 // github.com/benoitkugler/gomacro/testutils/testsource.WithOpaque
 class WithOpaque {
-  final StructWithExternalRef f1;
-  final RecursiveType f2;
+  final dynamic f1;
+  final dynamic f2;
   final StructWithExternalRef f3;
 
   const WithOpaque(this.f1, this.f2, this.f3);
@@ -278,15 +278,13 @@ class WithOpaque {
 WithOpaque withOpaqueFromJson(dynamic json_) {
   final json = (json_ as Map<String, dynamic>);
   return WithOpaque(
-      structWithExternalRefFromJson(json['F1']),
-      recursiveTypeFromJson(json['F2']),
-      structWithExternalRefFromJson(json['F3']));
+      json['F1'], json['F2'], structWithExternalRefFromJson(json['F3']));
 }
 
 Map<String, dynamic> withOpaqueToJson(WithOpaque item) {
   return {
-    "F1": structWithExternalRefToJson(item.f1),
-    "F2": recursiveTypeToJson(item.f2),
+    "F1": item.f1,
+    "F2": item.f2,
     "F3": structWithExternalRefToJson(item.f3)
   };
 }

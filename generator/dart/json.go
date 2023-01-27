@@ -154,8 +154,14 @@ func jsonForStruct(st *an.Struct) string {
 		fieldName := field.JSONName()
 		dartFieldName := lowerFirst(fieldName) // convert to dart convention
 
-		fieldsFrom = append(fieldsFrom, fmt.Sprintf("%sFromJson(json['%s'])", fieldTypeID, fieldName))
-		fieldsTo = append(fieldsTo, fmt.Sprintf("%q : %sToJson(item.%s)", fieldName, fieldTypeID, dartFieldName))
+		if field.IsOpaqueFor("dart") {
+			// use identity
+			fieldsFrom = append(fieldsFrom, fmt.Sprintf("json['%s']", fieldName))
+			fieldsTo = append(fieldsTo, fmt.Sprintf("%q :  item.%s", fieldName, dartFieldName))
+		} else {
+			fieldsFrom = append(fieldsFrom, fmt.Sprintf("%sFromJson(json['%s'])", fieldTypeID, fieldName))
+			fieldsTo = append(fieldsTo, fmt.Sprintf("%q : %sToJson(item.%s)", fieldName, fieldTypeID, dartFieldName))
+		}
 	}
 
 	name, id := typeName(st), jsonID(st)
