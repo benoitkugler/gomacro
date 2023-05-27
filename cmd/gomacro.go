@@ -43,6 +43,25 @@ type action struct {
 	Output string
 }
 
+func newAction(value string) (action, error) {
+	md, output, ok := strings.Cut(value, ":")
+	if !ok {
+		return action{}, fmt.Errorf("expected colon separated <mode>:<output>, got %s", value)
+	}
+	m := action{Mode: mode(md), Output: output}
+	switch m.Mode {
+	case goUnionsGen, goSqlcrudGen, goRanddataGen,
+		sqlGen, typescriptApiGen, typescriptTypesGen, dartGen:
+	default:
+		return action{}, fmt.Errorf("invalid mode %s", m.Mode)
+	}
+	if m.Output == "" {
+		return action{}, fmt.Errorf("output not specified for mode %s", m.Mode)
+	}
+
+	return m, nil
+}
+
 type Actions []action
 
 func (i *Actions) String() string {
@@ -53,19 +72,9 @@ func (i *Actions) String() string {
 }
 
 func (i *Actions) Set(value string) error {
-	chuncks := strings.Split(value, ":")
-	if len(chuncks) != 2 {
-		return fmt.Errorf("expected colon separated <mode>:<output>, got %s", value)
-	}
-	m := action{Mode: mode(chuncks[0]), Output: chuncks[1]}
-	switch m.Mode {
-	case goUnionsGen, goSqlcrudGen, goRanddataGen,
-		sqlGen, typescriptApiGen, dartGen:
-	default:
-		return fmt.Errorf("invalid mode %s", m.Mode)
-	}
-	if m.Output == "" {
-		return fmt.Errorf("output not specified for mode %s", m.Mode)
+	m, err := newAction(value)
+	if err != nil {
+		return err
 	}
 	*i = append(*i, m)
 	return nil
@@ -192,20 +201,27 @@ func saveOutputs(commonDir, dartOutputDir string, dartAnalysis []*analysis.Analy
 // Config maps a list of files to the actions to apply
 type Config map[string]Actions
 
-func runFromConfig(configFile string) error {
+func newConfigFromJSON(configFile string) (Config, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
 	var conf Config
 	if err = json.NewDecoder(f).Decode(&conf); err != nil {
-		return err
+		return nil, err
 	}
 
-	dartOutputDir := conf["_dart"][0].Output
-	delete(conf, "_dart")
+	return conf, nil
+}
+
+func (conf Config) run() error {
+	dartOutputDir := ""
+	if dart, ok := conf["_dart"]; ok {
+		dartOutputDir = dart[0].Output
+		delete(conf, "_dart")
+	}
 
 	// fetch the packages for each file in one call
 	var files []string
@@ -241,14 +257,49 @@ func runFromConfig(configFile string) error {
 	return saveOutputs(commonDir, dartOutputDir, dartAnas, allOutputs)
 }
 
+func runFromConfig(configFile string) error {
+	f, err := os.Open(configFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	var conf Config
+	if err = json.NewDecoder(f).Decode(&conf); err != nil {
+		return err
+	}
+
+	return conf.run()
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		log.Fatal("Please provide a configuration file.")
 	}
 
-	configFile := os.Args[1]
+	var (
+		conf Config
+		err  error
+	)
+	if len(os.Args) == 2 { // config mode
+		configFile := os.Args[1]
+		conf, err = newConfigFromJSON(configFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else { // single file mode
+		inputFile := os.Args[1]
+		conf = make(Config)
+		for _, actionString := range os.Args[2:] {
+			action, err := newAction(actionString)
+			if err != nil {
+				log.Fatal(err)
+			}
+			conf[inputFile] = append(conf[inputFile], action)
+		}
+	}
 
-	if err := runFromConfig(configFile); err != nil {
+	if err := conf.run(); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Done.")

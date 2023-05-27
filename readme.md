@@ -9,6 +9,15 @@ This module provides a tool taking Go code as input and generating boilerplate c
 - TypeScript : type definitions and Axios API (`generator/typescript`)
 - Dart : type definitions and JSON routines (`generator/dart`)
 
+## CLI usage
+
+### Single file mode 
+
+Provide a go source file as input, followed by the desired generation mode in the form 
+`<action>:<outputile>`. Several actions may be specified.
+
+```./gomacro myinput.go sql:ouput.sql```
+
 ## Module overview
 
 ### `analysis`

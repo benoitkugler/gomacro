@@ -256,15 +256,15 @@ func (ctx context) codeForStruct(ty *an.Struct) (decls []gen.Declaration) {
 		}
 
 		decls = append(decls, ctx.generate(field.Type)...) // recurse
-		fieldsCode += fmt.Sprintf("\t%s: rand%s(),\n", field.Field.Name(), ctx.functionID(field.Type))
+		fieldsCode += fmt.Sprintf("s.%s = rand%s()\n", field.Field.Name(), ctx.functionID(field.Type))
 	}
 	id, name := ctx.functionID(ty), ctx.typeName(ty)
 	code := gen.Declaration{
 		ID: id, Content: fmt.Sprintf(`
 	func rand%s() %s {
-		return %s{
-			%s
-		}
+		var s %s
+		%s
+		return s
 	}`, id, name, name, fieldsCode),
 	}
 
