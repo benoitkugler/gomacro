@@ -46,10 +46,12 @@ func isNullInt64(ty an.Type) bool {
 
 // IsNullXXX matches types whose underlying type is a struct
 // similar to sql.NullInt64, that is, a struct of the form
-// 	struct {
-// 		Valid bool
-//  	<Field> <Type>
-// 	}
+//
+//		struct {
+//			Valid bool
+//	 	<Field> <Type>
+//		}
+//
 // If so, it returns the data field declaration.
 func IsNullXXX(typ *types.Named) *types.Var {
 	isFieldValid := func(field *types.Var) bool {
@@ -168,6 +170,8 @@ type Table struct {
 	CustomConstraints []string
 
 	uniquesCols [][]string // not filtered
+
+	deleteKeys [][]string
 }
 
 func NewTable(s *an.Struct) Table {
@@ -211,6 +215,10 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 			ta.uniquesCols = append(ta.uniquesCols, columns)
 		}
 
+		if colums := isDeleteKey(comment.Content); len(colums) != 0 {
+			ta.deleteKeys = append(ta.deleteKeys, colums)
+		}
+
 		ta.CustomConstraints = append(ta.CustomConstraints, comment.Content)
 	}
 }
@@ -238,6 +246,14 @@ func (ta Table) ForeignKeys() (out []ForeignKey) {
 	return out
 }
 
+func (ta Table) columnsByName() map[string]Column {
+	colsByName := make(map[string]Column)
+	for _, col := range ta.Columns {
+		colsByName[col.Field.Field.Name()] = col
+	}
+	return colsByName
+}
+
 // `AdditionalUniqueCols` returns the columns which have a
 // UNIQUE constraint.
 // The columns returned by `ForeignKeys` are not included,
@@ -248,10 +264,7 @@ func (ta Table) AdditionalUniqueCols() [][]Column {
 		foreignKeys[key.F.Field.Name()] = true
 	}
 
-	colsByName := make(map[string]Column)
-	for _, col := range ta.Columns {
-		colsByName[col.Field.Field.Name()] = col
-	}
+	colsByName := ta.columnsByName()
 
 	var out [][]Column
 	for _, colNames := range ta.uniquesCols {
@@ -266,5 +279,23 @@ func (ta Table) AdditionalUniqueCols() [][]Column {
 
 		out = append(out, cols)
 	}
+	return out
+}
+
+// DeleteKeys returns a list of keys for which a 'DeleteByXXX' function
+// should be generated.
+func (ta Table) DeleteKeys() [][]Column {
+	colsByName := ta.columnsByName()
+
+	var out [][]Column
+	for _, colNames := range ta.deleteKeys {
+		cols := make([]Column, len(colNames))
+		for i, name := range colNames {
+			cols[i] = colsByName[name]
+		}
+
+		out = append(out, cols)
+	}
+
 	return out
 }

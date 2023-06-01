@@ -300,6 +300,16 @@ func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions ...int64) (Exercice
 	return ScanExerciceQuestions(rows)
 }
 
+// DeleteExerciceQuestionByIdQuestionAndBareme deletes the item matching the given fields, returning
+// the deleted items.
+func DeleteExerciceQuestionByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int) (item []ExerciceQuestion, err error) {
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING *", idQuestion, bareme)
+	if err != nil {
+		return nil, err
+	}
+	return ScanExerciceQuestions(rows)
+}
+
 // SelectExerciceQuestionByIdExerciceAndIndex return zero or one item, thanks to a UNIQUE SQL constraint.
 func SelectExerciceQuestionByIdExerciceAndIndex(tx DB, idExercice int64, index int) (item ExerciceQuestion, found bool, err error) {
 	row := tx.QueryRow("SELECT * FROM exercice_questions WHERE IdExercice = $1 AND Index = $2", idExercice, index)

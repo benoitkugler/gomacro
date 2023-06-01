@@ -38,3 +38,19 @@ func Test_isUniquesConstraint(t *testing.T) {
 		}
 	}
 }
+
+func Test_isDeleteKey(t *testing.T) {
+	tests := []struct {
+		ct   string
+		want []string
+	}{
+		{ct: "_DELETE KEY(IdTeacher, IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
+		{ct: "_DELETE KEY (IdTeacher , IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
+		{ct: "_DELETE (IdTeacher, IdTrivial)", want: nil},
+	}
+	for _, tt := range tests {
+		if got := isDeleteKey(tt.ct); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("isDeleteKey() = %v, want %v", got, tt.want)
+		}
+	}
+}
