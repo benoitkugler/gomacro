@@ -346,9 +346,9 @@ func (ctx context) generateDeleteByKeys(ta sql.Table) gen.Declaration {
 		varNames, varDecls := ctx.columsVarDecls(cols)
 
 		content += fmt.Sprintf(`
-		// Delete%[1]sBy%[2]s deletes the item matching the given fields, returning 
+		// Delete%[1]ssBy%[2]s deletes the item matching the given fields, returning 
 		// the deleted items.
-		func Delete%[1]sBy%[2]s(tx DB, %[3]s) (item []%[1]s, err error) {
+		func Delete%[1]ssBy%[2]s(tx DB, %[3]s) (item []%[1]s, err error) {
 			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[5]s RETURNING *", %[6]s)
 			if err != nil {
 				return nil, err
