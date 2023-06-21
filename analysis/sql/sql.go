@@ -217,6 +217,8 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 
 		if colums := isDeleteKey(comment.Content); len(colums) != 0 {
 			ta.deleteKeys = append(ta.deleteKeys, colums)
+			// do not add the comment to CustomConstraints
+			continue
 		}
 
 		ta.CustomConstraints = append(ta.CustomConstraints, comment.Content)
