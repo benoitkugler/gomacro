@@ -91,7 +91,7 @@ func (ctx context) typeName(ty types.Type) string {
 // returns true if `ty` is named and defined in the target package,
 // or is int64
 func (ctx context) generateArrayConverter(key sql.ForeignKey) bool {
-	ty := key.F.Type.Type()
+	ty := key.TargetIDType()
 	if ctx.typeName(ty) == "int64" {
 		return true
 	}
