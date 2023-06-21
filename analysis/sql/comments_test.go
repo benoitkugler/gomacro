@@ -49,7 +49,7 @@ func Test_isDeleteKey(t *testing.T) {
 		{ct: "_DELETE (IdTeacher, IdTrivial)", want: nil},
 	}
 	for _, tt := range tests {
-		if got := isDeleteKey(tt.ct); !reflect.DeepEqual(got, tt.want) {
+		if got := isSelectKey(tt.ct); !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("isDeleteKey() = %v, want %v", got, tt.want)
 		}
 	}

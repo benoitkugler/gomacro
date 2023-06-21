@@ -8,7 +8,7 @@ import (
 var (
 	// check if the constraint is of the form UNIQUE(col1, col2, ...)
 	reUniqueOrPrimary = regexp.MustCompile(`(?i)ADD (UNIQUE|PRIMARY KEY)\s?\((.*)\)`)
-	reDeleteKey       = regexp.MustCompile(`(?i)_DELETE KEY\s?\((.*)\)`)
+	reDeleteKey       = regexp.MustCompile(`(?i)_SELECT KEY\s?\((.*)\)`)
 )
 
 // return the column made unique by a UNIQUE(col) constraint
@@ -34,8 +34,8 @@ func isUniquesConstraint(ct string) []string {
 	return nil
 }
 
-// matches _DELETE KEY (col1, col2, ...)
-func isDeleteKey(ct string) []string {
+// matches _SELECT KEY (col1, col2, ...)
+func isSelectKey(ct string) []string {
 	matchs := reDeleteKey.FindStringSubmatch(ct)
 	if len(matchs) > 0 {
 		cols := strings.Split(matchs[1], ",")

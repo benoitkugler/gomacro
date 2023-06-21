@@ -212,7 +212,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 	}
 
 	decls = append(decls, ctx.generateSelectByUniques(ta))
-	decls = append(decls, ctx.generateDeleteByKeys(ta))
+	decls = append(decls, ctx.generateSelectByKeys(ta))
 
 	// generate the value interface method
 	for _, col := range ta.Columns {
@@ -336,16 +336,25 @@ func (ctx context) generateSelectByUniques(ta sql.Table) gen.Declaration {
 	}
 }
 
-func (ctx context) generateDeleteByKeys(ta sql.Table) gen.Declaration {
+func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 	var content string
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
-	for _, cols := range ta.DeleteKeys() {
+	for _, cols := range ta.SelectKeys() {
 		comparison := columsComparison(cols)
 		funcTitle := columsFuncTitle(cols)
 		varNames, varDecls := ctx.columsVarDecls(cols)
 
 		content += fmt.Sprintf(`
+		// Select%[1]ssBy%[2]s selects the items matching the given fields.
+		func Select%[1]ssBy%[2]s(tx DB, %[3]s) (item []%[1]s, err error) {
+			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[5]s", %[6]s)
+			if err != nil {
+				return nil, err
+			}
+			return Scan%[1]ss(rows)
+		}
+
 		// Delete%[1]ssBy%[2]s deletes the item matching the given fields, returning 
 		// the deleted items.
 		func Delete%[1]ssBy%[2]s(tx DB, %[3]s) (item []%[1]s, err error) {

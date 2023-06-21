@@ -300,9 +300,18 @@ func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions ...int64) (Exercice
 	return ScanExerciceQuestions(rows)
 }
 
-// DeleteExerciceQuestionByIdQuestionAndBareme deletes the item matching the given fields, returning
+// SelectExerciceQuestionsByIdQuestionAndBareme selects the items matching the given fields.
+func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int) (item []ExerciceQuestion, err error) {
+	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2", idQuestion, bareme)
+	if err != nil {
+		return nil, err
+	}
+	return ScanExerciceQuestions(rows)
+}
+
+// DeleteExerciceQuestionsByIdQuestionAndBareme deletes the item matching the given fields, returning
 // the deleted items.
-func DeleteExerciceQuestionByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int) (item []ExerciceQuestion, err error) {
+func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int) (item []ExerciceQuestion, err error) {
 	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING *", idQuestion, bareme)
 	if err != nil {
 		return nil, err

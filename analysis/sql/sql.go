@@ -171,7 +171,7 @@ type Table struct {
 
 	uniquesCols [][]string // not filtered
 
-	deleteKeys [][]string
+	selectKeys [][]string
 }
 
 func NewTable(s *an.Struct) Table {
@@ -215,8 +215,8 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 			ta.uniquesCols = append(ta.uniquesCols, columns)
 		}
 
-		if colums := isDeleteKey(comment.Content); len(colums) != 0 {
-			ta.deleteKeys = append(ta.deleteKeys, colums)
+		if colums := isSelectKey(comment.Content); len(colums) != 0 {
+			ta.selectKeys = append(ta.selectKeys, colums)
 			// do not add the comment to CustomConstraints
 			continue
 		}
@@ -284,13 +284,13 @@ func (ta Table) AdditionalUniqueCols() [][]Column {
 	return out
 }
 
-// DeleteKeys returns a list of keys for which a 'DeleteByXXX' function
+// SelectKeys returns a list of keys for which 'SelectByXXX' and 'DeleteByXXX' functions
 // should be generated.
-func (ta Table) DeleteKeys() [][]Column {
+func (ta Table) SelectKeys() [][]Column {
 	colsByName := ta.columnsByName()
 
 	var out [][]Column
-	for _, colNames := range ta.deleteKeys {
+	for _, colNames := range ta.selectKeys {
 		cols := make([]Column, len(colNames))
 		for i, name := range colNames {
 			cols[i] = colsByName[name]
