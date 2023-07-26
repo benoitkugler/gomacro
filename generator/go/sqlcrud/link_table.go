@@ -197,23 +197,24 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
 		}
 
+		varNamePlural := varName + "s_" // to avoid potential shadowing
 		content += fmt.Sprintf(`
-		func Select%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[5]s) (%[1]ss, error) {
-			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[6]s = ANY($1)", %[5]sArrayToPQ(%[3]ss))
+		func Select%[1]ssBy%[2]ss(tx DB, %[3]s ...%[5]s) (%[1]ss, error) {
+			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[6]s = ANY($1)", %[5]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[1]ss(rows)
 		}
 
-		func Delete%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[5]s) (%[1]ss, error)  {
-			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[6]s = ANY($1) RETURNING *", %[5]sArrayToPQ(%[3]ss))
+		func Delete%[1]ssBy%[2]ss(tx DB, %[3]s ...%[5]s) (%[1]ss, error)  {
+			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[6]s = ANY($1) RETURNING *", %[5]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[1]ss(rows)
 		}	
-		`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
+		`, goTypeName, fieldName, varNamePlural, sqlTableName, keyTypeName, columnName)
 	}
 
 	return append(out, gen.Declaration{

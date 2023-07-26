@@ -216,23 +216,24 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 			`, fieldName, goTypeName, keyTypeName)
 		}
 
+		varNamePlural := varName + "s_" // to avoid potential shadowing
 		content += fmt.Sprintf(`
-		func Select%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[6]s) (%[1]ss, error) {
-			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[7]s = ANY($1)", %[6]sArrayToPQ(%[3]ss))
+		func Select%[1]ssBy%[2]ss(tx DB, %[3]s ...%[6]s) (%[1]ss, error) {
+			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[7]s = ANY($1)", %[6]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[1]ss(rows)
 		}	
 
-		func Delete%[1]ssBy%[2]ss(tx DB, %[3]ss ...%[6]s) ([]%[5]s, error) {
-			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[7]s = ANY($1) RETURNING id", %[6]sArrayToPQ(%[3]ss))
+		func Delete%[1]ssBy%[2]ss(tx DB, %[3]s ...%[6]s) ([]%[5]s, error) {
+			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[7]s = ANY($1) RETURNING id", %[6]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[5]sArray(rows)
 		}	
-		`, goTypeName, fieldName, varName, sqlTableName, idTypeName, keyTypeName, columnName)
+		`, goTypeName, fieldName, varNamePlural, sqlTableName, idTypeName, keyTypeName, columnName)
 	}
 
 	return append(out,
