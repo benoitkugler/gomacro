@@ -158,7 +158,7 @@ func generateMethod(a httpapi.Endpoint) string {
 		}
 	}
 
-	protected abstract onSuccess%[1]s(%[8]s): void 
+	protected onSuccess%[1]s(%[8]s): void {}
 	`
 	fnName := a.Contract.Name
 	in := typeIn(a)
