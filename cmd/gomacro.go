@@ -93,9 +93,11 @@ func runActions(source string, pkg *packages.Package, actions Actions) (*analysi
 		return nil, nil, err
 	}
 
-	fmt.Printf("Running actions for %s\n", source)
+	fmt.Printf("Running actions for %s...\n", source)
 
 	ana := analysis.NewAnalysisFromFile(pkg, source)
+
+	fmt.Println("Code analysis completed. Generating..")
 
 	hasDart := false
 	var outs []outputFile
@@ -123,7 +125,9 @@ func runActions(source string, pkg *packages.Package, actions Actions) (*analysi
 			code = generator.WriteDeclarations(typescript.Generate(ana))
 			format = generator.TypeScript
 		case typescriptApiGen:
+			fmt.Println("Parsing http routes...")
 			api := httpapi.ParseEcho(ana.Root, fullPath)
+			fmt.Println("Done. Generating", len(api), "routes")
 			code = typescript.GenerateAxios(api)
 			format = generator.TypeScript
 		case dartGen:
