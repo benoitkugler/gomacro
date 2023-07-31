@@ -210,9 +210,9 @@ func GenerateAxios(api []httpapi.Endpoint) string {
 	export abstract class AbstractAPI {
 		constructor(protected baseUrl: string, protected authToken: string) {}
 
-		abstract handleError(error: any): void
+		abstract protected handleError(error: any): void
 
-		abstract startRequest(): void
+		abstract protected startRequest(): void
 
 		getHeaders() {
 			return { Authorization: "Bearer " + this.authToken }
