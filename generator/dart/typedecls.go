@@ -98,7 +98,13 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 		if !v.Const.Exported() {
 			continue
 		}
-		names = append(names, lowerFirst(v.Const.Name()))
+		// trim a xxx_ suffix
+		name := lowerFirst(v.Const.Name())
+		_, after, found := strings.Cut(name, "_")
+		if found {
+			name = after
+		}
+		names = append(names, lowerFirst(name))
 		comments = append(comments, fmt.Sprintf("%q", v.Comment))
 		values = append(values, v.Const.Val().String())
 	}
