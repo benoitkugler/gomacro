@@ -66,7 +66,7 @@ func jsonForBasic(b *an.Basic) string {
 func jsonForTime() string {
 	return `DateTime dateTimeFromJson(dynamic json) => DateTime.parse(json as String);
 
-	dynamic dateTimeToJson(DateTime dt) => dt.toString();
+	dynamic dateTimeToJson(DateTime dt) => dt.toIso8601String();
 	`
 }
 
