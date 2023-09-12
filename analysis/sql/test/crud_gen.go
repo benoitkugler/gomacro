@@ -187,6 +187,19 @@ func ScanExerciceQuestions(rs *sql.Rows) (ExerciceQuestions, error) {
 	return structs, nil
 }
 
+func InsertExerciceQuestion(db DB, item ExerciceQuestion) error {
+	_, err := db.Exec(`INSERT INTO exercice_questions (
+			idexercice, idquestion, bareme, index
+			) VALUES (
+			$1, $2, $3, $4
+			);
+			`, item.IdExercice, item.IdQuestion, item.Bareme, item.Index)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Insert the links ExerciceQuestion in the database.
 // It is a no-op if 'items' is empty.
 func InsertManyExerciceQuestions(tx *sql.Tx, items ...ExerciceQuestion) error {
@@ -374,6 +387,19 @@ func ScanLinks(rs *sql.Rows) (Links, error) {
 		return nil, err
 	}
 	return structs, nil
+}
+
+func InsertLink(db DB, item Link) error {
+	_, err := db.Exec(`INSERT INTO links (
+			repas, idtable1
+			) VALUES (
+			$1, $2
+			);
+			`, item.Repas, item.IdTable1)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Insert the links Link in the database.
@@ -607,6 +633,19 @@ func ScanProgressionQuestions(rs *sql.Rows) (ProgressionQuestions, error) {
 		return nil, err
 	}
 	return structs, nil
+}
+
+func InsertProgressionQuestion(db DB, item ProgressionQuestion) error {
+	_, err := db.Exec(`INSERT INTO progression_questions (
+			idprogression, idexercice, index, history
+			) VALUES (
+			$1, $2, $3, $4
+			);
+			`, item.IdProgression, item.IdExercice, item.Index, item.History)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Insert the links ProgressionQuestion in the database.
@@ -914,6 +953,19 @@ func ScanQuestionTags(rs *sql.Rows) (QuestionTags, error) {
 		return nil, err
 	}
 	return structs, nil
+}
+
+func InsertQuestionTag(db DB, item QuestionTag) error {
+	_, err := db.Exec(`INSERT INTO question_tags (
+			tag, idquestion
+			) VALUES (
+			$1, $2
+			);
+			`, item.Tag, item.IdQuestion)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Insert the links QuestionTag in the database.
@@ -1327,6 +1379,116 @@ func SelectTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
 
 func DeleteTable1sByOthers(tx DB, others_ ...RepasID) ([]int64, error) {
 	rows, err := tx.Query("DELETE FROM table1s WHERE other = ANY($1) RETURNING id", RepasIDArrayToPQ(others_))
+	if err != nil {
+		return nil, err
+	}
+	return Scanint64Array(rows)
+}
+
+func scanOneWithOptionalTime(row scanner) (WithOptionalTime, error) {
+	var item WithOptionalTime
+	err := row.Scan(
+		&item.Id,
+		&item.Deadine,
+		&item.DeadineOpt,
+	)
+	return item, err
+}
+
+func ScanWithOptionalTime(row *sql.Row) (WithOptionalTime, error) {
+	return scanOneWithOptionalTime(row)
+}
+
+// SelectAll returns all the items in the with_optional_times table.
+func SelectAllWithOptionalTimes(db DB) (WithOptionalTimes, error) {
+	rows, err := db.Query("SELECT * FROM with_optional_times")
+	if err != nil {
+		return nil, err
+	}
+	return ScanWithOptionalTimes(rows)
+}
+
+// SelectWithOptionalTime returns the entry matching 'id'.
+func SelectWithOptionalTime(tx DB, id int64) (WithOptionalTime, error) {
+	row := tx.QueryRow("SELECT * FROM with_optional_times WHERE id = $1", id)
+	return ScanWithOptionalTime(row)
+}
+
+// SelectWithOptionalTimes returns the entry matching the given 'ids'.
+func SelectWithOptionalTimes(tx DB, ids ...int64) (WithOptionalTimes, error) {
+	rows, err := tx.Query("SELECT * FROM with_optional_times WHERE id = ANY($1)", int64ArrayToPQ(ids))
+	if err != nil {
+		return nil, err
+	}
+	return ScanWithOptionalTimes(rows)
+}
+
+type WithOptionalTimes map[int64]WithOptionalTime
+
+func (m WithOptionalTimes) IDs() []int64 {
+	out := make([]int64, 0, len(m))
+	for i := range m {
+		out = append(out, i)
+	}
+	return out
+}
+
+func ScanWithOptionalTimes(rs *sql.Rows) (WithOptionalTimes, error) {
+	var (
+		s   WithOptionalTime
+		err error
+	)
+	defer func() {
+		errClose := rs.Close()
+		if err == nil {
+			err = errClose
+		}
+	}()
+	structs := make(WithOptionalTimes, 16)
+	for rs.Next() {
+		s, err = scanOneWithOptionalTime(rs)
+		if err != nil {
+			return nil, err
+		}
+		structs[s.Id] = s
+	}
+	if err = rs.Err(); err != nil {
+		return nil, err
+	}
+	return structs, nil
+}
+
+// Insert one WithOptionalTime in the database and returns the item with id filled.
+func (item WithOptionalTime) Insert(tx DB) (out WithOptionalTime, err error) {
+	row := tx.QueryRow(`INSERT INTO with_optional_times (
+		deadine, deadineopt
+		) VALUES (
+		$1, $2
+		) RETURNING *;
+		`, item.Deadine, item.DeadineOpt)
+	return ScanWithOptionalTime(row)
+}
+
+// Update WithOptionalTime in the database and returns the new version.
+func (item WithOptionalTime) Update(tx DB) (out WithOptionalTime, err error) {
+	row := tx.QueryRow(`UPDATE with_optional_times SET (
+		deadine, deadineopt
+		) = (
+		$1, $2
+		) WHERE id = $3 RETURNING *;
+		`, item.Deadine, item.DeadineOpt, item.Id)
+	return ScanWithOptionalTime(row)
+}
+
+// Deletes the WithOptionalTime and returns the item
+func DeleteWithOptionalTimeById(tx DB, id int64) (WithOptionalTime, error) {
+	row := tx.QueryRow("DELETE FROM with_optional_times WHERE id = $1 RETURNING *;", id)
+	return ScanWithOptionalTime(row)
+}
+
+// Deletes the WithOptionalTime in the database and returns the ids.
+func DeleteWithOptionalTimesByIDs(tx DB, ids ...int64) ([]int64, error) {
+	rows, err := tx.Query("DELETE FROM with_optional_times WHERE id = ANY($1) RETURNING id", int64ArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}

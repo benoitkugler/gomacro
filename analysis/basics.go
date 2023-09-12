@@ -115,9 +115,9 @@ var (
 	dateT = &Time{IsDate: true}
 )
 
-// newTime returns `true` is the underlying type
+// NewTime returns `true` is the underlying type
 // of `typ` is time.Time
-func newTime(typ types.Type) (Type, bool) {
+func NewTime(typ types.Type) (Type, bool) {
 	// since we can't acces the underlying name of named types,
 	// we check against this string, to detect time.Time
 	const timeString = "struct{wall uint64; ext int64; loc *time.Location}"

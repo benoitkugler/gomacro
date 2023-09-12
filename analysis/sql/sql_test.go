@@ -37,4 +37,13 @@ func TestSQL(t *testing.T) {
 
 	exercicesQuestion := NewTable(an.Types[Lookup(an.Root, "ExerciceQuestion")].(*analysis.Struct))
 	Assert(t, len(exercicesQuestion.AdditionalUniqueCols()) == 1)
+
+	withOptTime := NewTable(an.Types[Lookup(an.Root, "WithOptionalTime")].(*analysis.Struct))
+	Assert(t, len(withOptTime.Columns) == 3)
+	bt, ok := withOptTime.Columns[1].SQLType.(Builtin)
+	Assert(t, ok)
+	Assert(t, !bt.IsNullable())
+	bt, ok = withOptTime.Columns[2].SQLType.(Builtin)
+	Assert(t, ok)
+	Assert(t, bt.IsNullable())
 }

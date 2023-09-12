@@ -2,6 +2,7 @@ package test
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/benoitkugler/gomacro/testutils/testsource"
 )
@@ -120,3 +121,9 @@ const (
 	B
 	c
 )
+
+type WithOptionalTime struct {
+	Id         int64
+	Deadine    time.Time
+	DeadineOpt sql.NullTime
+}

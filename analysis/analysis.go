@@ -377,7 +377,7 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 	}
 
 	// special case for time.Time, which require the name information
-	if ti, isTime := newTime(typ); isTime {
+	if ti, isTime := NewTime(typ); isTime {
 		return ti
 	}
 

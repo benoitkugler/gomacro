@@ -15,8 +15,9 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 	var (
 		scanFields        = make([]string, len(ta.Columns))
 		quotedColumnNames = make([]string, len(ta.Columns)) // required for insert statements
-
-		goFields = make([]string, len(ta.Columns)) // required for create/update statements
+		columnNames       = make([]string, len(ta.Columns)) // required for insert statements
+		placeholders      = make([]string, len(ta.Columns)) // required for insert statements
+		goFields          = make([]string, len(ta.Columns)) // required for create/update statements
 	)
 	for i, col := range ta.Columns {
 		fieldName := col.Field.Field.Name()
@@ -24,6 +25,8 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		scanFields[i] = fmt.Sprintf("&item.%s,", fieldName)
 
 		quotedColumnNames[i] = fmt.Sprintf("%q,", columnName)
+		columnNames[i] = columnName
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
 		goFields[i] = fmt.Sprintf("item.%s", fieldName)
 	}
 
@@ -90,6 +93,19 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		return structs, nil
 	}
 
+	func Insert%[1]s(db DB, item %[1]s) error {
+		_, err := db.Exec(`+"`"+`INSERT INTO %[2]s (
+			%[9]s
+			) VALUES (
+			%[10]s
+			);
+			`+"`,"+`%[5]s)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	// Insert the links %[1]s in the database.
 	// It is a no-op if 'items' is empty.
 	func InsertMany%[1]ss(tx *sql.Tx, items ...%[1]s) error {
@@ -131,6 +147,7 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 	`, goTypeName, sqlTableName,
 		strings.Join(scanFields, "\n"), strings.Join(quotedColumnNames, "\n"), strings.Join(goFields, ", "),
 		strings.Join(foreignKeyFields, ", "), strings.Join(foreignKeyComps, " AND "), strings.Join(foreignKeyAccess, ", "),
+		strings.Join(columnNames, ", "), strings.Join(placeholders, ", "),
 	)
 
 	// generate "join like" queries

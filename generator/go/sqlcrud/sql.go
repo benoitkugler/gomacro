@@ -110,7 +110,12 @@ func (ctx context) canImplementValuer(column sql.Column) (string, bool) {
 		panic(fmt.Sprintf("field %s, written as JSON in SQL, is not named: sql.Valuer interface can't be implemented", column.Field.Field.Name()))
 	}
 	goTypeName := named.Obj().Name()
-	return goTypeName, named.Obj().Pkg().Path() == ctx.target.Path()
+	targetPath := ctx.target.Path()
+	columnPath := ""
+	if pkg := named.Obj().Pkg(); pkg != nil {
+		columnPath = pkg.Path()
+	}
+	return goTypeName, columnPath == targetPath
 }
 
 func (ctx context) idArrayConverters(idTypeName string) gen.Declaration {

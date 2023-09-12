@@ -118,6 +118,12 @@ func newType(ty an.Type) Type {
 				if kind, ok := an.NewBasicKind(basic.Info()); ok {
 					return Builtin{t: ty, name: basicTypeName(kind)}
 				}
+			} else if time, ok := an.NewTime(elem.Type()); ok {
+				tyT := time.(*an.Time)
+				if tyT.IsDate {
+					return Builtin{t: ty, name: "date"}
+				}
+				return Builtin{t: ty, name: "timestamp (0) with time zone"}
 			}
 		}
 		return JSON{t: ty}

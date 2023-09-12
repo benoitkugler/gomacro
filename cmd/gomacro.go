@@ -53,7 +53,11 @@ func newAction(value string) (action, error) {
 	case goUnionsGen, goSqlcrudGen, goRanddataGen,
 		sqlGen, typescriptApiGen, typescriptTypesGen, dartGen:
 	default:
-		return action{}, fmt.Errorf("invalid mode %s", m.Mode)
+		const usage = `
+		Supported modes : 
+		"go/unions","go/sqlcrud","go/randdata","sql","typescript/api","typescript/types","dart"
+	`
+		return action{}, fmt.Errorf("invalid mode %s %s", m.Mode, usage)
 	}
 	if m.Output == "" {
 		return action{}, fmt.Errorf("output not specified for mode %s", m.Mode)
