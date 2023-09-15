@@ -318,7 +318,7 @@ func (ctx context) generateSelectByUniques(ta sql.Table) gen.Declaration {
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
 	for _, cols := range ta.AdditionalUniqueCols() {
-		comparison := columsComparison(cols)
+		comparison := columnsComparison(cols)
 		funcTitle := columsFuncTitle(cols)
 		varNames, varDecls := ctx.columsVarDecls(cols)
 
@@ -346,7 +346,7 @@ func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
 	for _, cols := range ta.SelectKeys() {
-		comparison := columsComparison(cols)
+		comparison := columnsComparison(cols)
 		funcTitle := columsFuncTitle(cols)
 		varNames, varDecls := ctx.columsVarDecls(cols)
 
@@ -379,7 +379,7 @@ func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 }
 
 // assume placholders are $1, $2, etc...
-func columsComparison(cols []sql.Column) string {
+func columnsComparison(cols []sql.Column) string {
 	chunks := make([]string, len(cols))
 	for i, c := range cols {
 		chunks[i] = fmt.Sprintf("%s = $%d", c.Field.Field.Name(), i+1)

@@ -3,6 +3,7 @@
 package sql
 
 import (
+	"fmt"
 	"go/types"
 	"reflect"
 	"strings"
@@ -276,7 +277,11 @@ func (ta Table) AdditionalUniqueCols() [][]Column {
 		}
 		cols := make([]Column, len(colNames))
 		for i, name := range colNames {
-			cols[i] = colsByName[name]
+			var ok bool
+			cols[i], ok = colsByName[name]
+			if !ok {
+				panic(fmt.Sprintf("unknown column name %s in table %s", name, ta.TableName()))
+			}
 		}
 
 		out = append(out, cols)
