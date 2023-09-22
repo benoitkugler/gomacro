@@ -52,6 +52,12 @@ func (controller) handler8(c echo.Context) error {
 	return c.JSON(200, code)
 }
 
+// with Blob
+func (controller) handler9(c echo.Context) error {
+	var output []byte
+	return c.Blob(200, "", output)
+}
+
 func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.GET(route, handler)
 	const routeFunc = "const_local_url"
@@ -71,4 +77,6 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.GET("/func litteral", func(ctx echo.Context) error {
 		return ctx.JSON(200, [][]string{{"a"}, {"b"}})
 	})
+
+	e.POST("/download", ct.handler9)
 }

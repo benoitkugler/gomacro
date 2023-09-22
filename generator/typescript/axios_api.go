@@ -83,6 +83,9 @@ func hasNoReturn(a httpapi.Endpoint) bool { return a.Contract.Return == nil }
 
 // assume a named type as return value
 func typeOut(a httpapi.Endpoint) string {
+	if a.Contract.IsReturnBlob {
+		return "Blob"
+	}
 	if hasNoReturn(a) {
 		return "never"
 	}
@@ -102,10 +105,16 @@ func convertTypedQueryParams(c httpapi.Contract) string {
 }
 
 func generateAxiosCall(a httpapi.Endpoint) string {
-	callParams := "{ headers: this.getHeaders() }"
-	if len(a.Contract.InputQueryParams) != 0 {
-		callParams = fmt.Sprintf("{ params: %s, headers : this.getHeaders() }", convertTypedQueryParams(a.Contract))
+	callObjectItems := []string{
+		"headers: this.getHeaders()",
 	}
+	if len(a.Contract.InputQueryParams) != 0 {
+		callObjectItems = append(callObjectItems, fmt.Sprintf("params: %s", convertTypedQueryParams(a.Contract)))
+	}
+	if a.Contract.IsReturnBlob {
+		callObjectItems = append(callObjectItems, "responseType: 'arraybuffer'")
+	}
+	callParams := fmt.Sprintf("{ %s }", strings.Join(callObjectItems, ", "))
 
 	returnAssignment := ""
 	if !hasNoReturn(a) {
@@ -137,13 +146,15 @@ func generateMethod(a httpapi.Endpoint) string {
 	if hasNoReturn(a) {
 		outData = ""
 		dataDecl = ""
+	} else if a.Contract.IsReturnBlob {
+		outData = "out.blob"
 	}
 
 	const template = `
 	protected async raw%[1]s(%[2]s) {
 		const fullUrl = %[3]s;
 		%[4]s;
-		return %[6]s;
+		%[6]s
 	}
 	
 	/** %[1]s wraps raw%[1]s and handles the error */
@@ -162,9 +173,17 @@ func generateMethod(a httpapi.Endpoint) string {
 	`
 	fnName := a.Contract.Name
 	in := typeIn(a)
-	returnValue := "rep.data"
+	returnValue := "return rep.data;"
 	if hasNoReturn(a) {
-		returnValue = "true"
+		returnValue = "return true;"
+	} else if a.Contract.IsReturnBlob {
+		returnValue = `
+		const header = rep.headers["content-disposition"]
+		const startIndex = header.indexOf("filename=") + 9; 
+		const endIndex = header.length; 
+		const filename = header.substring(startIndex, endIndex);
+		return { blob: rep.data, filename: filename};
+		`
 	}
 	return fmt.Sprintf(template,
 		fnName, in, fullUrl(a),

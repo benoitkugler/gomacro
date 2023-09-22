@@ -39,6 +39,8 @@ type Contract struct {
 
 	InputForm        Form
 	InputQueryParams []TypedParam
+
+	IsReturnBlob bool // Return is a []byte, interpreted as a file
 }
 
 type Form struct {

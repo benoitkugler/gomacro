@@ -5,6 +5,7 @@ type Context interface {
 	Bind(interface{}) error
 	JSON(int, interface{}) error
 	QueryParam(string) string
+	Blob(code int, contentType string, b []byte) error
 }
 
 type Echo struct{}

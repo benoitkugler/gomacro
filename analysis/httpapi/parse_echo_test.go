@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 	ti := time.Now()
 	apis := ParseEcho(pack, abs)
 	fmt.Println("Resolved in ", time.Since(ti))
-	if len(apis) != 13 {
+	if len(apis) != 14 {
 		t.Fatal()
 	}
 }

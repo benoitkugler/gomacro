@@ -61,8 +61,9 @@ func echoExtractor(pkg *packages.Package, fi *ast.File) []Endpoint {
 
 // Look for Bind(), QueryParam(), FormValue(), FromFile() and JSON() method calls
 // Some custom parsing method are also supported :
-//	- .QueryParamBool(c, ...) -> convert string to boolean
-//	- .QueryParamInt64(, ...) -> convert string to int64
+//   - .QueryParamBool(c, ...) -> convert string to boolean
+//   - .QueryParamInt64(, ...) -> convert string to int64
+//
 // pkg is the package where the function is defined
 func newContractFromEchoBody(pkg *packages.Package, body *ast.BlockStmt, contractName string) Contract {
 	out := Contract{Name: contractName}
@@ -95,8 +96,8 @@ func parseReturnStmt(stmt *ast.ReturnStmt, pkg *types.Info, out *Contract) {
 	if call, ok := stmt.Results[0].(*ast.CallExpr); ok {
 		if method, ok := call.Fun.(*ast.SelectorExpr); ok {
 			if method.Sel.Name == "JSON" || method.Sel.Name == "JSONPretty" {
-				if len(call.Args) >= 2 {
-					output := call.Args[1] // c.JSON(200, output)
+				if len(call.Args) >= 2 { // c.JSON(200, output)
+					output := call.Args[1]
 					switch output := output.(type) {
 					case *ast.Ident:
 						out.returnT = resolveVarType(output, pkg)
@@ -104,6 +105,17 @@ func parseReturnStmt(stmt *ast.ReturnStmt, pkg *types.Info, out *Contract) {
 						out.returnT = parseCompositeLit(output, pkg)
 					default:
 						panic("unsupported return value")
+					}
+				}
+			} else if method.Sel.Name == "Blob" {
+				if len(call.Args) >= 3 { // c.Blob(200, name, bytes)
+					output := call.Args[2]
+					switch output := output.(type) {
+					case *ast.Ident:
+						out.returnT = resolveVarType(output, pkg)
+						out.IsReturnBlob = true
+					default:
+						panic("unsupported return value in Blob")
 					}
 				}
 			}
