@@ -181,7 +181,7 @@ func generateMethod(a httpapi.Endpoint) string {
 		const header = rep.headers["content-disposition"]
 		const startIndex = header.indexOf("filename=") + 9; 
 		const endIndex = header.length; 
-		const filename = header.substring(startIndex, endIndex);
+		const filename = decodeURIComponent(header.substring(startIndex, endIndex));
 		return { blob: rep.data, filename: filename};
 		`
 	}
