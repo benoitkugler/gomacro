@@ -82,7 +82,7 @@ type Exercice struct {
 type ExerciceQuestion struct {
 	IdExercice int64 `json:"id_exercice" gomacro-sql-foreign:"Exercice" gomacro-sql-on-delete:"CASCADE"`
 	IdQuestion int64 `json:"id_question" gomacro-sql-foreign:"Question"`
-	Bareme     int   `json:"bareme"`
+	Bareme     int16 `json:"bareme"`
 	Index      int   `json:"-" sql:"index"`
 }
 

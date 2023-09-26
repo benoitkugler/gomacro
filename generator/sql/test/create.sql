@@ -12,7 +12,7 @@ CREATE TABLE exercices (
 CREATE TABLE exercice_questions (
     IdExercice integer NOT NULL,
     IdQuestion integer NOT NULL,
-    Bareme integer NOT NULL,
+    Bareme smallint NOT NULL,
     Index integer NOT NULL
 );
 
@@ -58,6 +58,12 @@ CREATE TABLE table1s (
     Ex2 integer NOT NULL,
     L integer,
     Other integer
+);
+
+CREATE TABLE with_optional_times (
+    Id serial PRIMARY KEY,
+    Deadine timestamp(0) with time zone NOT NULL,
+    DeadineOpt timestamp(0) with time zone
 );
 
 -- constraints

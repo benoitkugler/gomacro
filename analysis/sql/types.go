@@ -26,11 +26,15 @@ func (ty Enum) Type() an.Type    { return ty.E }
 func (ty Array) Type() an.Type   { return ty.A }
 func (ty JSON) Type() an.Type    { return ty.t }
 
-func basicTypeName(kind an.BasicKind) string {
+func basicTypeName(ty *types.Basic) string {
+	kind, _ := an.NewBasicKind(ty.Info())
 	switch kind {
 	case an.BKBool:
 		return "boolean"
 	case an.BKInt:
+		if ty.Kind() == types.Int16 {
+			return "smallint"
+		}
 		return "integer"
 	case an.BKFloat:
 		return "real"
@@ -68,8 +72,7 @@ type Enum struct {
 }
 
 func (e Enum) Name() string {
-	kind, _ := an.NewBasicKind(e.E.Underlying().Info())
-	return basicTypeName(kind)
+	return basicTypeName(e.E.Underlying())
 }
 
 type Array struct {
@@ -77,7 +80,7 @@ type Array struct {
 }
 
 func (ar Array) Name() string {
-	return fmt.Sprintf("%s[]", basicTypeName(ar.A.Elem.(*an.Basic).Kind()))
+	return fmt.Sprintf("%s[]", basicTypeName(ar.A.Elem.(*an.Basic).B))
 }
 
 type JSON struct {
@@ -91,7 +94,7 @@ func (JSON) Name() string { return "jsonb" }
 func newType(ty an.Type) Type {
 	switch ty := ty.(type) {
 	case *an.Basic:
-		return Builtin{t: ty, name: basicTypeName(ty.Kind())}
+		return Builtin{t: ty, name: basicTypeName(ty.B)}
 	case *an.Time:
 		if ty.IsDate {
 			return Builtin{t: ty, name: "date"}
@@ -115,8 +118,8 @@ func newType(ty an.Type) Type {
 		// special case for NullXXX types
 		if elem := IsNullXXX(ty.Name); elem != nil {
 			if basic, isBasic := elem.Type().Underlying().(*types.Basic); isBasic {
-				if kind, ok := an.NewBasicKind(basic.Info()); ok {
-					return Builtin{t: ty, name: basicTypeName(kind)}
+				if _, ok := an.NewBasicKind(basic.Info()); ok {
+					return Builtin{t: ty, name: basicTypeName(basic)}
 				}
 			} else if time, ok := an.NewTime(elem.Type()); ok {
 				tyT := time.(*an.Time)
