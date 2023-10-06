@@ -146,7 +146,7 @@ func jsonForMap(ma *an.Map) string {
 func jsonForStruct(st *an.Struct) string {
 	var fieldsFrom, fieldsTo []string
 	for _, field := range st.Fields {
-		if !field.JSONExported() {
+		if !field.Exported() {
 			continue
 		}
 

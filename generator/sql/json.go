@@ -235,7 +235,7 @@ const vStruct = `
 func codeForStruct(ty *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 	var keys, checks []string
 	for _, f := range ty.Fields {
-		if !f.JSONExported() {
+		if !f.Exported() {
 			continue
 		}
 

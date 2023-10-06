@@ -56,10 +56,17 @@ func (st StructField) JSONName() string {
 	return st.Field.Name()
 }
 
-// JSONExported returns `true` is the field is exported
-// and not ignored by the json struct tag "-"
-func (st StructField) JSONExported() bool {
+// Exported returns `true` is the field is exported and should be
+// included in the generated code.
+// Ignored field are either :
+//   - unexported
+//   - with a 'json' tag '-'
+//   - with a 'gomacro' tag 'ignore'
+func (st StructField) Exported() bool {
 	if name := st.Tag.Get("json"); name == "-" {
+		return false
+	}
+	if name := st.Tag.Get("gomacro"); name == "ignore" {
 		return false
 	}
 	return st.Field.Exported()

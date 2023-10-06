@@ -44,5 +44,5 @@ func TestJSONTag(t *testing.T) {
 
 	st := an.Types[structT].(*Struct)
 	Assert(t, st.Fields[0].JSONName() == "with_tag")
-	Assert(t, !st.Fields[1].JSONExported())
+	Assert(t, !st.Fields[1].Exported())
 }

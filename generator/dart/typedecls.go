@@ -178,7 +178,7 @@ func (buf buffer) codeForUnion(typ *an.Union) (gen.Declaration, []string) {
 func (buf buffer) codeForStruct(typ *an.Struct) (gen.Declaration, []string) {
 	var fields, initFields, interpolatedFields, importForFields []string
 	for _, field := range typ.Fields {
-		if !field.JSONExported() {
+		if !field.Exported() {
 			continue
 		}
 

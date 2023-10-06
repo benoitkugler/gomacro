@@ -11,12 +11,12 @@ This module provides a tool taking Go code as input and generating boilerplate c
 
 ## CLI usage
 
-### Single file mode 
+### Single file mode
 
-Provide a go source file as input, followed by the desired generation mode in the form 
+Provide a go source file as input, followed by the desired generation mode in the form
 `<action>:<outputile>`. Several actions may be specified.
 
-```./gomacro myinput.go sql:ouput.sql```
+`./gomacro myinput.go sql:ouput.sql`
 
 ## Module overview
 
@@ -40,6 +40,10 @@ TypeScript types generator could be easily reused to support other methods.
 This module tries to be as smart and general as possible, but relies on special comments when
 desambiguation is required.
 
+- The following struct fields are ignored:
+  - unexported
+  - with a 'json' tag '-'
+  - with a 'gomacro' tag 'ignore'
 - Definition of a constant which is not an enumeration: add `// gomacro:no-enum`
 - Rely on an external generated file: add the `gomacro-extern:"<pkg>:<mode1>:<targetFile1>:<mode2>:<targetFile2>"` tag to struct fields
 - Types with name containing "Date" and with underlying time.Time are considered as date

@@ -189,7 +189,7 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 	var fields []string
 	for _, field := range t.Fields {
-		if !field.JSONExported() {
+		if !field.Exported() {
 			continue
 		}
 
