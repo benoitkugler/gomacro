@@ -124,6 +124,8 @@ func (ctx context) codeForBasic(bs *an.Basic) gen.Declaration {
 		code = fnInt("uint8")
 	case types.Int8:
 		code = fnInt("int8")
+	case types.Int16:
+		code = fnInt("int16")
 	case types.Float64:
 		code = fnFloat64()
 	case types.String:
