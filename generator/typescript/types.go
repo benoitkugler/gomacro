@@ -60,7 +60,7 @@ func typeName(ty an.Type) string {
 		}
 		return "Time"
 	case *an.Map:
-		return fmt.Sprintf("({ [key: %s]: %s } | null)", typeName(ty.Key), typeName(ty.Elem))
+		return fmt.Sprintf("({ [key in %s]: %s } | null)", typeName(ty.Key), typeName(ty.Elem))
 	case *an.Array:
 		if ty.Len >= 1 { // not nullable
 			return fmt.Sprintf("%s[]", typeName(ty.Elem))
@@ -167,21 +167,22 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 	var valueDefs, valueLabels []string
 	for _, val := range enum.Members {
 		varName := val.Const.Name()
-		valueDefs = append(valueDefs, fmt.Sprintf("%s = %s,", varName, val.Const.Val().String()))
+		valueDefs = append(valueDefs, fmt.Sprintf("%s : %s,", varName, val.Const.Val().String()))
 		valueLabels = append(valueLabels, fmt.Sprintf("[%s.%s]: %q,", name, varName, val.Comment))
 	}
 	return gen.Declaration{
 		ID: declID(enum),
-		Content: fmt.Sprintf(`// %s
-			export enum %s {
-				%s
-			};
+		Content: fmt.Sprintf(`// %[1]s
+			export const %[2]s = {
+				%[3]s
+			} as const;
+			type %[2]s = (typeof %[2]s)[keyof typeof %[2]s];
 
-			export const %sLabels: { [key in %s]: string } = {
-				%s
+			export const %[2]sLabels: { [key in %[2]s]: string } = {
+				%[4]s
 			};
 			`, gen.Origin(enum), name, strings.Join(valueDefs, "\n"),
-			name, name, strings.Join(valueLabels, "\n"),
+			strings.Join(valueLabels, "\n"),
 		),
 	}
 }

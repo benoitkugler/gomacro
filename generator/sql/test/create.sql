@@ -328,7 +328,7 @@ BEGIN
     END IF;
     is_valid := (
         SELECT
-            bool_and(key IN ('with_tag', 'Time', 'B', 'Value', 'L', 'A', 'E', 'E2', 'Date', 'F', 'Imported'))
+            bool_and(key IN ('with_tag', 'Time', 'B', 'Value', 'L', 'A', 'E', 'E2', 'Date', 'F', 'Imported', 'EnumMap'))
         FROM
             jsonb_each(data))
         AND gomacro_validate_json_map_number (data -> 'with_tag')
@@ -341,7 +341,8 @@ BEGIN
         AND gomacro_validate_json_test_EnumUInt (data -> 'E2')
         AND gomacro_validate_json_string (data -> 'Date')
         AND gomacro_validate_json_array_5_number (data -> 'F')
-        AND gomacro_validate_json_subp_StructWithComment (data -> 'Imported');
+        AND gomacro_validate_json_subp_StructWithComment (data -> 'Imported')
+        AND gomacro_validate_json_map_boolean (data -> 'EnumMap');
     RETURN is_valid;
 END;
 $$

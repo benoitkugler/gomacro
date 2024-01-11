@@ -27,8 +27,17 @@ func randMapintint() map[int]int {
 	return out
 }
 
-func randSliceint() []int {
+func randMaptes_EnumIntbool() map[testsource.EnumInt]bool {
 	l := 40 + rand.Intn(10)
+	out := make(map[testsource.EnumInt]bool, l)
+	for i := 0; i < l; i++ {
+		out[randtes_EnumInt()] = randbool()
+	}
+	return out
+}
+
+func randSliceint() []int {
+	l := 3 + rand.Intn(5)
 	out := make([]int, l)
 	for i := range out {
 		out[i] = randint()
@@ -37,7 +46,7 @@ func randSliceint() []int {
 }
 
 func randSlicesub_Enum() []subpackage.Enum {
-	l := 40 + rand.Intn(10)
+	l := 3 + rand.Intn(5)
 	out := make([]subpackage.Enum, l)
 	for i := range out {
 		out[i] = randsub_Enum()
@@ -46,7 +55,7 @@ func randSlicesub_Enum() []subpackage.Enum {
 }
 
 func randSlicetes_ItfType() []testsource.ItfType {
-	l := 40 + rand.Intn(10)
+	l := 3 + rand.Intn(5)
 	out := make([]testsource.ItfType, l)
 	for i := range out {
 		out[i] = randtes_ItfType()
@@ -55,7 +64,7 @@ func randSlicetes_ItfType() []testsource.ItfType {
 }
 
 func randSlicetes_RecursiveType() []testsource.RecursiveType {
-	l := 40 + rand.Intn(10)
+	l := 3 + rand.Intn(5)
 	out := make([]testsource.RecursiveType, l)
 	for i := range out {
 		out[i] = randtes_RecursiveType()
@@ -79,7 +88,7 @@ func randint() int {
 var letterRunes2 = []rune("azertyuiopqsdfghjklmwxcvbn123456789é@!?&èïab ")
 
 func randstring() string {
-	b := make([]rune, 50)
+	b := make([]rune, 10)
 	maxLength := len(letterRunes2)
 	for i := range b {
 		b[i] = letterRunes2[rand.Intn(maxLength)]
@@ -98,9 +107,10 @@ func randsub_NamedSlice() subpackage.NamedSlice {
 }
 
 func randsub_StructWithComment() subpackage.StructWithComment {
-	return subpackage.StructWithComment{
-		A: randint(),
-	}
+	var s subpackage.StructWithComment
+	s.A = randint()
+
+	return s
 }
 
 func randtTime() time.Time {
@@ -124,33 +134,37 @@ func randtes_Basic4() testsource.Basic4 {
 }
 
 func randtes_ComplexStruct() testsource.ComplexStruct {
-	return testsource.ComplexStruct{
-		DictWithTag: randMapintint(),
-		NoJSON:      randtes_EnumInt(),
-		Time:        randtTime(),
-		B:           randstring(),
-		Value:       randtes_ItfType(),
-		L:           randtes_ItfList(),
-		A:           randint(),
-		E:           randtes_EnumInt(),
-		E2:          randtes_EnumUInt(),
-		Date:        randtes_MyDate(),
-		F:           randArray5int(),
-		Imported:    randsub_StructWithComment(),
-	}
+	var s testsource.ComplexStruct
+	s.DictWithTag = randMapintint()
+	s.NoJSON = randtes_EnumInt()
+	s.Time = randtTime()
+	s.B = randstring()
+	s.Value = randtes_ItfType()
+	s.L = randtes_ItfList()
+	s.A = randint()
+	s.E = randtes_EnumInt()
+	s.E2 = randtes_EnumUInt()
+	s.Date = randtes_MyDate()
+	s.F = randArray5int()
+	s.Imported = randsub_StructWithComment()
+	s.EnumMap = randMaptes_EnumIntbool()
+
+	return s
 }
 
 func randtes_ConcretType1() testsource.ConcretType1 {
-	return testsource.ConcretType1{
-		List2: randSliceint(),
-		V:     randint(),
-	}
+	var s testsource.ConcretType1
+	s.List2 = randSliceint()
+	s.V = randint()
+
+	return s
 }
 
 func randtes_ConcretType2() testsource.ConcretType2 {
-	return testsource.ConcretType2{
-		D: randfloat64(),
-	}
+	var s testsource.ConcretType2
+	s.D = randfloat64()
+
+	return s
 }
 
 func randtes_EnumInt() testsource.EnumInt {
@@ -191,15 +205,26 @@ func randtes_MyDate() testsource.MyDate {
 }
 
 func randtes_RecursiveType() testsource.RecursiveType {
-	return testsource.RecursiveType{
-		Children: randSlicetes_RecursiveType(),
-	}
+	var s testsource.RecursiveType
+	s.Children = randSlicetes_RecursiveType()
+
+	return s
 }
 
 func randtes_StructWithExternalRef() testsource.StructWithExternalRef {
-	return testsource.StructWithExternalRef{
-		Field1: randsub_NamedSlice(),
-		Field2: randsub_NamedSlice(),
-		Field3: randint(),
-	}
+	var s testsource.StructWithExternalRef
+	s.Field1 = randsub_NamedSlice()
+	s.Field2 = randsub_NamedSlice()
+	s.Field3 = randint()
+
+	return s
+}
+
+func randtes_WithOpaque() testsource.WithOpaque {
+	var s testsource.WithOpaque
+	s.F1 = randtes_StructWithExternalRef()
+	s.F2 = randtes_RecursiveType()
+	s.F3 = randtes_StructWithExternalRef()
+
+	return s
 }

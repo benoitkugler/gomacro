@@ -55,6 +55,7 @@ type ComplexStruct struct {
 	Date        MyDate
 	F           [5]int
 	Imported    subpackage.StructWithComment
+	EnumMap     map[EnumInt]bool
 }
 
 type ItfList []ItfType

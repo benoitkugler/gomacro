@@ -39,18 +39,18 @@ func Test_isUniquesConstraint(t *testing.T) {
 	}
 }
 
-func Test_isDeleteKey(t *testing.T) {
+func Test_isSelectKey(t *testing.T) {
 	tests := []struct {
 		ct   string
 		want []string
 	}{
-		{ct: "_DELETE KEY(IdTeacher, IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
-		{ct: "_DELETE KEY (IdTeacher , IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
-		{ct: "_DELETE (IdTeacher, IdTrivial)", want: nil},
+		{ct: "_SELECT KEY(IdTeacher, IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
+		{ct: "_SELECT KEY (IdTeacher , IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
+		{ct: "_SELECT (IdTeacher, IdTrivial)", want: nil},
 	}
 	for _, tt := range tests {
 		if got := isSelectKey(tt.ct); !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("isDeleteKey() = %v, want %v", got, tt.want)
+			t.Errorf("isSelectKey() = %v, want %v", got, tt.want)
 		}
 	}
 }

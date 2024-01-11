@@ -28,13 +28,14 @@ class ComplexStruct {
   final MyDate date;
   final List<int> f;
   final StructWithComment imported;
+  final Map<EnumInt, bool> enumMap;
 
   const ComplexStruct(this.with_tag, this.time, this.b, this.value, this.l,
-      this.a, this.e, this.e2, this.date, this.f, this.imported);
+      this.a, this.e, this.e2, this.date, this.f, this.imported, this.enumMap);
 
   @override
   String toString() {
-    return "ComplexStruct($with_tag, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported)";
+    return "ComplexStruct($with_tag, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported, $enumMap)";
   }
 }
 
@@ -51,7 +52,8 @@ ComplexStruct complexStructFromJson(dynamic json_) {
       enumUIntFromJson(json['E2']),
       dateTimeFromJson(json['Date']),
       listIntFromJson(json['F']),
-      structWithCommentFromJson(json['Imported']));
+      structWithCommentFromJson(json['Imported']),
+      dictEnumIntToBoolFromJson(json['EnumMap']));
 }
 
 Map<String, dynamic> complexStructToJson(ComplexStruct item) {
@@ -66,7 +68,8 @@ Map<String, dynamic> complexStructToJson(ComplexStruct item) {
     "E2": enumUIntToJson(item.e2),
     "Date": dateTimeToJson(item.date),
     "F": listIntToJson(item.f),
-    "Imported": structWithCommentToJson(item.imported)
+    "Imported": structWithCommentToJson(item.imported),
+    "EnumMap": dictEnumIntToBoolToJson(item.enumMap)
   };
 }
 
@@ -287,6 +290,19 @@ Map<String, dynamic> withOpaqueToJson(WithOpaque item) {
     "F2": item.f2,
     "F3": structWithExternalRefToJson(item.f3)
   };
+}
+
+Map<EnumInt, bool> dictEnumIntToBoolFromJson(dynamic json) {
+  if (json == null) {
+    return {};
+  }
+  return (json as Map<String, dynamic>)
+      .map((k, v) => MapEntry(k as EnumInt, boolFromJson(v)));
+}
+
+Map<String, dynamic> dictEnumIntToBoolToJson(Map<EnumInt, bool> item) {
+  return item
+      .map((k, v) => MapEntry(enumIntToJson(k).toString(), boolToJson(v)));
 }
 
 Map<int, int> dictIntToIntFromJson(dynamic json) {

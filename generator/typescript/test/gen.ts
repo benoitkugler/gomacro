@@ -22,7 +22,7 @@ export type Basic3 = number;
 export type Basic4 = string;
 // github.com/benoitkugler/gomacro/testutils/testsource.ComplexStruct
 export interface ComplexStruct {
-  with_tag: { [key: number]: number } | null;
+  with_tag: { [key in number]: number } | null;
   Time: Time;
   B: string;
   Value: ItfType;
@@ -33,6 +33,7 @@ export interface ComplexStruct {
   Date: MyDate;
   F: number[];
   Imported: StructWithComment;
+  EnumMap: { [key in EnumInt]: boolean } | null;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.ConcretType1
 export interface ConcretType1 {
@@ -44,12 +45,13 @@ export interface ConcretType2 {
   D: number;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.EnumInt
-export enum EnumInt {
-  Ai = 0,
-  Bi = 1,
-  Ci = 2,
-  Di = 4,
-}
+export const EnumInt = {
+  Ai: 0,
+  Bi: 1,
+  Ci: 2,
+  Di: 4,
+} as const;
+type EnumInt = (typeof EnumInt)[keyof typeof EnumInt];
 
 export const EnumIntLabels: { [key in EnumInt]: string } = {
   [EnumInt.Ai]: "sdsd",
@@ -59,13 +61,14 @@ export const EnumIntLabels: { [key in EnumInt]: string } = {
 };
 
 // github.com/benoitkugler/gomacro/testutils/testsource.EnumUInt
-export enum EnumUInt {
-  A = 0,
-  B = 1,
-  C = 2,
-  D = 3,
-  e = 4,
-}
+export const EnumUInt = {
+  A: 0,
+  B: 1,
+  C: 2,
+  D: 3,
+  e: 4,
+} as const;
+type EnumUInt = (typeof EnumUInt)[keyof typeof EnumUInt];
 
 export const EnumUIntLabels: { [key in EnumUInt]: string } = {
   [EnumUInt.A]: "sdsd",
@@ -117,11 +120,12 @@ export interface WithOpaque {
   F3: unknown;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource/subpackage.Enum
-export enum Enum {
-  A = 0,
-  B = 1,
-  C = 2,
-}
+export const Enum = {
+  A: 0,
+  B: 1,
+  C: 2,
+} as const;
+type Enum = (typeof Enum)[keyof typeof Enum];
 
 export const EnumLabels: { [key in Enum]: string } = {
   [Enum.A]: "",
