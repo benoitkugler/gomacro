@@ -176,7 +176,7 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 			export const %[2]s = {
 				%[3]s
 			} as const;
-			type %[2]s = (typeof %[2]s)[keyof typeof %[2]s];
+			export type %[2]s = (typeof %[2]s)[keyof typeof %[2]s];
 
 			export const %[2]sLabels: { [key in %[2]s]: string } = {
 				%[4]s
