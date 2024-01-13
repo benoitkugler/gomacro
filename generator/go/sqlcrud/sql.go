@@ -352,7 +352,7 @@ func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 
 		content += fmt.Sprintf(`
 		// Select%[1]ssBy%[2]s selects the items matching the given fields.
-		func Select%[1]ssBy%[2]s(tx DB, %[3]s) (item []%[1]s, err error) {
+		func Select%[1]ssBy%[2]s(tx DB, %[3]s) (item %[1]ss, err error) {
 			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[5]s", %[6]s)
 			if err != nil {
 				return nil, err
@@ -362,7 +362,7 @@ func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 
 		// Delete%[1]ssBy%[2]s deletes the item matching the given fields, returning 
 		// the deleted items.
-		func Delete%[1]ssBy%[2]s(tx DB, %[3]s) (item []%[1]s, err error) {
+		func Delete%[1]ssBy%[2]s(tx DB, %[3]s) (item %[1]ss, err error) {
 			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[5]s RETURNING *", %[6]s)
 			if err != nil {
 				return nil, err
