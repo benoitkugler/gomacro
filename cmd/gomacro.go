@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -68,6 +69,15 @@ func newAction(value string) (action, error) {
 
 type Actions []action
 
+func (acs Actions) hasDart() bool {
+	for _, ac := range acs {
+		if ac.Mode == dartGen {
+			return true
+		}
+	}
+	return false
+}
+
 func (i *Actions) String() string {
 	if i == nil {
 		return ""
@@ -91,7 +101,11 @@ type outputFile struct {
 }
 
 // special case for dart actions, which are returned for latter processsing
-func runActions(source string, pkg *packages.Package, actions Actions) (*analysis.Analysis, []outputFile, error) {
+func runActions(source string, pkg *packages.Package, actions Actions, dartOnly bool) (*analysis.Analysis, []outputFile, error) {
+	if dartOnly && !actions.hasDart() {
+		return nil, nil, nil
+	}
+
 	fullPath, err := filepath.Abs(source)
 	if err != nil {
 		return nil, nil, err
@@ -111,6 +125,10 @@ func runActions(source string, pkg *packages.Package, actions Actions) (*analysi
 			format generator.Format // format if true
 			output = m.Output
 		)
+
+		if dartOnly && m.Mode != dartGen {
+			continue
+		}
 
 		switch m.Mode {
 		case goUnionsGen:
@@ -145,22 +163,6 @@ func runActions(source string, pkg *packages.Package, actions Actions) (*analysi
 		if code != "" {
 			outs = append(outs, outputFile{format: format, file: output, content: code})
 		}
-
-		// err := os.WriteFile(output, []byte(code), os.ModePerm)
-		// if err != nil {
-		// 	return nil, err
-		// }
-
-		// fmt.Printf("\tCode for action <%s> written to %s (pending formatting).\n", m.Mode, output)
-
-		// go func() {
-		// 	err = fmts.FormatFile(format, output)
-		// 	if err != nil {
-		// 		panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
-		// 	}
-		// 	wg.Done()
-		// }()
-
 	}
 	if hasDart {
 		return ana, outs, nil
@@ -224,7 +226,7 @@ func newConfigFromJSON(configFile string) (Config, error) {
 	return conf, nil
 }
 
-func (conf Config) run() error {
+func (conf Config) run(dartOnly bool) error {
 	dartOutputDir := ""
 	if dart, ok := conf["_dart"]; ok {
 		dartOutputDir = dart[0].Output
@@ -252,7 +254,7 @@ func (conf Config) run() error {
 	for i, file := range files {
 		actions := conf[file]
 		pkg := pkgs[i]
-		dartAna, outs, err := runActions(file, pkg, actions)
+		dartAna, outs, err := runActions(file, pkg, actions, dartOnly)
 		if err != nil {
 			return err
 		}
@@ -265,7 +267,7 @@ func (conf Config) run() error {
 	return saveOutputs(commonDir, dartOutputDir, dartAnas, allOutputs)
 }
 
-func runFromConfig(configFile string) error {
+func runFromConfig(configFile string, dartOnly bool) error {
 	f, err := os.Open(configFile)
 	if err != nil {
 		return err
@@ -277,28 +279,33 @@ func runFromConfig(configFile string) error {
 		return err
 	}
 
-	return conf.run()
+	return conf.run(dartOnly)
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Please provide a configuration file.")
+	isConfig := flag.Bool("config", false, "Use a config file")
+	isDartOnly := flag.Bool("dart-only", false, "Only run Dart actions")
+	flag.Parse()
+
+	fileArgs := flag.Args()
+	if len(fileArgs) < 1 {
+		log.Fatal("Please provide a configuration file or an input file.")
 	}
 
 	var (
 		conf Config
 		err  error
 	)
-	if len(os.Args) == 2 { // config mode
-		configFile := os.Args[1]
+	if *isConfig { // config mode
+		configFile := fileArgs[0]
 		conf, err = newConfigFromJSON(configFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else { // single file mode
-		inputFile := os.Args[1]
+		inputFile := fileArgs[0]
 		conf = make(Config)
-		for _, actionString := range os.Args[2:] {
+		for _, actionString := range fileArgs[1:] {
 			action, err := newAction(actionString)
 			if err != nil {
 				log.Fatal(err)
@@ -307,7 +314,7 @@ func main() {
 		}
 	}
 
-	if err := conf.run(); err != nil {
+	if err := conf.run(*isDartOnly); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Done.")
