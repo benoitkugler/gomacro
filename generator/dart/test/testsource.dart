@@ -130,6 +130,13 @@ extension _EnumIntExt on EnumInt {
   }
 }
 
+const EnumIntLabels = {
+  EnumInt.ai: "sdsd",
+  EnumInt.bi: "sdsdB",
+  EnumInt.ci: "sdsdC",
+  EnumInt.di: "sdsdD",
+};
+
 EnumInt enumIntFromJson(dynamic json) => _EnumIntExt.fromValue(json as int);
 
 dynamic enumIntToJson(EnumInt item) => item.toValue();
@@ -146,6 +153,13 @@ extension _EnumUIntExt on EnumUInt {
     return index;
   }
 }
+
+const EnumUIntLabels = {
+  EnumUInt.a: "sdsd",
+  EnumUInt.b: "sdsdB",
+  EnumUInt.c: "sdsdC",
+  EnumUInt.d: "sdsdD",
+};
 
 EnumUInt enumUIntFromJson(dynamic json) => _EnumUIntExt.fromValue(json as int);
 

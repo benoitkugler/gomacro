@@ -93,23 +93,24 @@ func (buf buffer) codeForMap(typ *an.Map, parentOutputFile string) (gen.Declarat
 }
 
 func codeForEnum(typ *an.Enum) gen.Declaration {
-	var names, values, comments []string
+	name := typeName(typ)
+
+	var names, values, comments, labels []string
 	for _, v := range typ.Members {
 		if !v.Const.Exported() {
 			continue
 		}
 		// trim a xxx_ suffix
-		name := lowerFirst(v.Const.Name())
-		_, after, found := strings.Cut(name, "_")
+		vName := lowerFirst(v.Const.Name())
+		_, after, found := strings.Cut(vName, "_")
 		if found {
-			name = after
+			vName = after
 		}
-		names = append(names, lowerFirst(name))
+		names = append(names, lowerFirst(vName))
 		comments = append(comments, fmt.Sprintf("%q", v.Comment))
 		values = append(values, v.Const.Val().String())
+		labels = append(labels, fmt.Sprintf("%s.%s: %q,", name, vName, v.Comment))
 	}
-
-	name := typeName(typ)
 
 	var fromValue string
 	if typ.IsIota { // we can just use Dart builtin enums
@@ -147,7 +148,14 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 	extension _%sExt on %s {
 		%s
 	}
-	`, name, strings.Join(names, ", "), name, name, fromValue)
+
+	const %sLabels = {
+		%s
+	};
+	`, name, strings.Join(names, ", "),
+		name, name, fromValue,
+		name, strings.Join(labels, "\n"),
+	)
 
 	content := "// " + gen.Origin(typ) + "\n" + enumDecl
 	content += "\n" + jsonForEnum(typ)

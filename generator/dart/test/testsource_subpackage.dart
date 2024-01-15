@@ -15,6 +15,12 @@ extension _EnumExt on Enum {
   }
 }
 
+const EnumLabels = {
+  Enum.a: "",
+  Enum.b: "",
+  Enum.c: "",
+};
+
 Enum enumFromJson(dynamic json) => _EnumExt.fromValue(json as int);
 
 dynamic enumToJson(Enum item) => item.toValue();
