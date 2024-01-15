@@ -154,7 +154,7 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 	};
 	`, name, strings.Join(names, ", "),
 		name, name, fromValue,
-		name, strings.Join(labels, "\n"),
+		lowerFirst(name), strings.Join(labels, "\n"),
 	)
 
 	content := "// " + gen.Origin(typ) + "\n" + enumDecl

@@ -15,7 +15,7 @@ extension _EnumExt on Enum {
   }
 }
 
-const EnumLabels = {
+const enumLabels = {
   Enum.a: "",
   Enum.b: "",
   Enum.c: "",

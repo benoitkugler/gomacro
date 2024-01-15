@@ -130,7 +130,7 @@ extension _EnumIntExt on EnumInt {
   }
 }
 
-const EnumIntLabels = {
+const enumIntLabels = {
   EnumInt.ai: "sdsd",
   EnumInt.bi: "sdsdB",
   EnumInt.ci: "sdsdC",
@@ -154,7 +154,7 @@ extension _EnumUIntExt on EnumUInt {
   }
 }
 
-const EnumUIntLabels = {
+const enumUIntLabels = {
   EnumUInt.a: "sdsd",
   EnumUInt.b: "sdsdB",
   EnumUInt.c: "sdsdC",
