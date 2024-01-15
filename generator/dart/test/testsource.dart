@@ -130,12 +130,18 @@ extension _EnumIntExt on EnumInt {
   }
 }
 
-const enumIntLabels = {
-  EnumInt.ai: "sdsd",
-  EnumInt.bi: "sdsdB",
-  EnumInt.ci: "sdsdC",
-  EnumInt.di: "sdsdD",
-};
+String enumIntLabel(EnumInt v) {
+  switch (v) {
+    case EnumInt.ai:
+      return "sdsd";
+    case EnumInt.bi:
+      return "sdsdB";
+    case EnumInt.ci:
+      return "sdsdC";
+    case EnumInt.di:
+      return "sdsdD";
+  }
+}
 
 EnumInt enumIntFromJson(dynamic json) => _EnumIntExt.fromValue(json as int);
 
@@ -154,12 +160,18 @@ extension _EnumUIntExt on EnumUInt {
   }
 }
 
-const enumUIntLabels = {
-  EnumUInt.a: "sdsd",
-  EnumUInt.b: "sdsdB",
-  EnumUInt.c: "sdsdC",
-  EnumUInt.d: "sdsdD",
-};
+String enumUIntLabel(EnumUInt v) {
+  switch (v) {
+    case EnumUInt.a:
+      return "sdsd";
+    case EnumUInt.b:
+      return "sdsdB";
+    case EnumUInt.c:
+      return "sdsdC";
+    case EnumUInt.d:
+      return "sdsdD";
+  }
+}
 
 EnumUInt enumUIntFromJson(dynamic json) => _EnumUIntExt.fromValue(json as int);
 

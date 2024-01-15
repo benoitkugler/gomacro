@@ -15,11 +15,16 @@ extension _EnumExt on Enum {
   }
 }
 
-const enumLabels = {
-  Enum.a: "",
-  Enum.b: "",
-  Enum.c: "",
-};
+String enumLabel(Enum v) {
+  switch (v) {
+    case Enum.a:
+      return "";
+    case Enum.b:
+      return "";
+    case Enum.c:
+      return "";
+  }
+}
 
 Enum enumFromJson(dynamic json) => _EnumExt.fromValue(json as int);
 

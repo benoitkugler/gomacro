@@ -109,7 +109,7 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 		names = append(names, lowerFirst(vName))
 		comments = append(comments, fmt.Sprintf("%q", v.Comment))
 		values = append(values, v.Const.Val().String())
-		labels = append(labels, fmt.Sprintf("%s.%s: %q,", name, vName, v.Comment))
+		labels = append(labels, fmt.Sprintf("case %s.%s: return %q;", name, vName, v.Comment))
 	}
 
 	var fromValue string
@@ -149,12 +149,14 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 		%s
 	}
 
-	const %sLabels = {
-		%s
-	};
+	String %sLabel(%s v) {
+		switch (v) {
+			%s
+		}
+	}
 	`, name, strings.Join(names, ", "),
 		name, name, fromValue,
-		lowerFirst(name), strings.Join(labels, "\n"),
+		lowerFirst(name), name, strings.Join(labels, "\n"),
 	)
 
 	content := "// " + gen.Origin(typ) + "\n" + enumDecl
