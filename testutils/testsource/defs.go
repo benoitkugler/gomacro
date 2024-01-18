@@ -53,7 +53,7 @@ type ComplexStruct struct {
 	E2          EnumUInt
 	e3          enumString
 	Date        MyDate
-	F           [5]int
+	F           [5][5]bool
 	Imported    subpackage.StructWithComment
 	EnumMap     map[EnumInt]bool
 }

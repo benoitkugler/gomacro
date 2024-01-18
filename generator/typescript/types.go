@@ -62,9 +62,21 @@ func typeName(ty an.Type) string {
 	case *an.Map:
 		return fmt.Sprintf("({ [key in %s]: %s } | null)", typeName(ty.Key), typeName(ty.Elem))
 	case *an.Array:
-		if ty.Len >= 1 { // not nullable
-			return fmt.Sprintf("%s[]", typeName(ty.Elem))
+		if ty.Len >= 1 {
+			// use an alias
+
+			switch elem := ty.Elem.(type) {
+			case *an.Array:
+				if elem.Len == -1 {
+					panic("Fixed array of slices not supported")
+				}
+			case *an.Map:
+				panic("Fixed array of maps not supported")
+			}
+
+			return fmt.Sprintf("Ar%d_%s", ty.Len, typeName(ty.Elem))
 		}
+		// nullable since empty slice may be JSONized as null
 		return fmt.Sprintf("( %s[] | null)", typeName(ty.Elem))
 	case *an.Named, *an.Enum, *an.Struct, *an.Union:
 		return an.LocalName(ty)
@@ -158,8 +170,17 @@ func codeForMap(ty *an.Map, cache gen.Cache) []gen.Declaration {
 }
 
 func codeForArray(ty *an.Array, cache gen.Cache) []gen.Declaration {
-	// the array itself has no additional declarations
-	return generate(ty.Elem, cache)
+	// recurse
+	out := generate(ty.Elem, cache)
+
+	// generate an alias for fixed size arrays
+	if ty.Len >= 0 {
+		code := fmt.Sprintf("export type %s = [%s]", typeName(ty), strings.Repeat(typeName(ty.Elem)+",", ty.Len))
+		out = append(out, gen.Declaration{ID: declID(ty), Content: code})
+	}
+
+	// otherwise the array itself has no additional declarations
+	return out
 }
 
 func codeForEnum(enum *an.Enum) gen.Declaration {

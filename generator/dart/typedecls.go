@@ -109,7 +109,7 @@ func codeForEnum(typ *an.Enum) gen.Declaration {
 		names = append(names, lowerFirst(vName))
 		comments = append(comments, fmt.Sprintf("%q", v.Comment))
 		values = append(values, v.Const.Val().String())
-		labels = append(labels, fmt.Sprintf("case %s.%s: return %q;", name, vName, v.Comment))
+		labels = append(labels, fmt.Sprintf("case %s.%s: return %q;", name, lowerFirst(vName), v.Comment))
 	}
 
 	var fromValue string

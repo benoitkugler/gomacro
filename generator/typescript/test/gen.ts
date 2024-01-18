@@ -1,3 +1,12 @@
+export type Ar5_Ar5_boolean = [
+  Ar5_boolean,
+  Ar5_boolean,
+  Ar5_boolean,
+  Ar5_boolean,
+  Ar5_boolean,
+];
+export type Ar5_boolean = [boolean, boolean, boolean, boolean, boolean];
+
 class DateTag {
   private _ = "D" as const;
 }
@@ -31,7 +40,7 @@ export interface ComplexStruct {
   E: EnumInt;
   E2: EnumUInt;
   Date: MyDate;
-  F: number[];
+  F: Ar5_Ar5_boolean;
   Imported: StructWithComment;
   EnumMap: { [key in EnumInt]: boolean } | null;
 }
@@ -51,7 +60,7 @@ export const EnumInt = {
   Ci: 2,
   Di: 4,
 } as const;
-type EnumInt = (typeof EnumInt)[keyof typeof EnumInt];
+export type EnumInt = (typeof EnumInt)[keyof typeof EnumInt];
 
 export const EnumIntLabels: { [key in EnumInt]: string } = {
   [EnumInt.Ai]: "sdsd",
@@ -68,7 +77,7 @@ export const EnumUInt = {
   D: 3,
   e: 4,
 } as const;
-type EnumUInt = (typeof EnumUInt)[keyof typeof EnumUInt];
+export type EnumUInt = (typeof EnumUInt)[keyof typeof EnumUInt];
 
 export const EnumUIntLabels: { [key in EnumUInt]: string } = {
   [EnumUInt.A]: "sdsd",
@@ -125,7 +134,7 @@ export const Enum = {
   B: 1,
   C: 2,
 } as const;
-type Enum = (typeof Enum)[keyof typeof Enum];
+export type Enum = (typeof Enum)[keyof typeof Enum];
 
 export const EnumLabels: { [key in Enum]: string } = {
   [Enum.A]: "",

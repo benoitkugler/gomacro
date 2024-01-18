@@ -61,7 +61,7 @@ func (ctx context) functionID(ty an.Type) string {
 		return ctx.functionID(ty.Elem) + "Ptr"
 	case *an.Array:
 		if L := ty.Len; L != -1 {
-			return fmt.Sprintf("Array%d%s", L, ctx.functionID(ty.Elem))
+			return fmt.Sprintf("Ar%d_%s", L, ctx.functionID(ty.Elem))
 		}
 		return fmt.Sprintf("Slice%s", ctx.functionID(ty.Elem))
 	case *an.Map:
