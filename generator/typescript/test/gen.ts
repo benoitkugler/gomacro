@@ -14,6 +14,8 @@ class DateTag {
 // AAAA-MM-YY date format
 export type Date_ = string & DateTag;
 
+export type Int = number;
+
 class TimeTag {
   private _ = "T" as const;
 }
@@ -22,7 +24,7 @@ class TimeTag {
 export type Time = string & TimeTag;
 
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic1
-export type Basic1 = number;
+export type Basic1 = Int;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic2
 export type Basic2 = boolean;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic3
@@ -31,12 +33,12 @@ export type Basic3 = number;
 export type Basic4 = string;
 // github.com/benoitkugler/gomacro/testutils/testsource.ComplexStruct
 export interface ComplexStruct {
-  with_tag: { [key in number]: number } | null;
+  with_tag: { [key in Int]: Int } | null;
   Time: Time;
   B: string;
   Value: ItfType;
   L: ItfList;
-  A: number;
+  A: Int;
   E: EnumInt;
   E2: EnumUInt;
   Date: MyDate;
@@ -46,8 +48,8 @@ export interface ComplexStruct {
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.ConcretType1
 export interface ConcretType1 {
-  List2: number[] | null;
-  V: number;
+  List2: Int[] | null;
+  V: Int;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.ConcretType2
 export interface ConcretType2 {
@@ -120,7 +122,7 @@ export interface RecursiveType {
 export interface StructWithExternalRef {
   Field1: NamedSlice;
   Field2: NamedSlice;
-  Field3: number;
+  Field3: Int;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.WithOpaque
 export interface WithOpaque {
@@ -146,5 +148,5 @@ export const EnumLabels: { [key in Enum]: string } = {
 export type NamedSlice = Enum[] | null;
 // github.com/benoitkugler/gomacro/testutils/testsource/subpackage.StructWithComment
 export interface StructWithComment {
-  A: number;
+  A: Int;
 }

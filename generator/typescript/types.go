@@ -47,7 +47,9 @@ func typeName(ty an.Type) string {
 		switch ty.Kind() {
 		case an.BKString:
 			return "string"
-		case an.BKInt, an.BKFloat:
+		case an.BKInt:
+			return "Int"
+		case an.BKFloat:
 			return "number"
 		case an.BKBool:
 			return "boolean"
@@ -64,7 +66,6 @@ func typeName(ty an.Type) string {
 	case *an.Array:
 		if ty.Len >= 1 {
 			// use an alias
-
 			switch elem := ty.Elem.(type) {
 			case *an.Array:
 				if elem.Len == -1 {
@@ -91,7 +92,11 @@ func generate(ty an.Type, cache gen.Cache) []gen.Declaration {
 	}
 
 	switch ty := ty.(type) {
-	case *an.Basic: // nothing to do
+	case *an.Basic:
+		if ty.Kind() == an.BKInt {
+			return []gen.Declaration{intDecl}
+		}
+		// nothing to do
 		return nil
 	case *an.Pointer:
 		panic("pointers not handled by Typescript generator")
@@ -115,6 +120,11 @@ func generate(ty an.Type, cache gen.Cache) []gen.Declaration {
 }
 
 var (
+	intDecl = gen.Declaration{
+		ID:      "__int_def",
+		Content: "export type Int = number;",
+	}
+
 	timeDecl = gen.Declaration{
 		ID: "__time_def",
 		Content: `
