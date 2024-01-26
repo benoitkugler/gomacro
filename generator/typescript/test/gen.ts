@@ -7,21 +7,13 @@ export type Ar5_Ar5_boolean = [
 ];
 export type Ar5_boolean = [boolean, boolean, boolean, boolean, boolean];
 
-class DateTag {
-  private _ = "D" as const;
-}
-
 // AAAA-MM-YY date format
-export type Date_ = string & DateTag;
+export type Date_ = string & { __opaque__: "Date" };
 
-export type Int = number;
-
-class TimeTag {
-  private _ = "T" as const;
-}
+export type Int = number & { __opaque__: "Int" };
 
 // ISO date-time string
-export type Time = string & TimeTag;
+export type Time = string & { __opaque__: "Time" };
 
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic1
 export type Basic1 = Int;

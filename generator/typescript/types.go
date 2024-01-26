@@ -122,30 +122,22 @@ func generate(ty an.Type, cache gen.Cache) []gen.Declaration {
 var (
 	intDecl = gen.Declaration{
 		ID:      "__int_def",
-		Content: "export type Int = number;",
+		Content: "export type Int = number & { __opaque__: 'Int' };",
 	}
 
 	timeDecl = gen.Declaration{
 		ID: "__time_def",
-		Content: `
-	class TimeTag {
-		private _ = "T" as const;
-	}
-	
+		Content: ` 
 	// ISO date-time string
-	export type Time = string & TimeTag
+	export type Time = string & { __opaque__: 'Time' }
 	`,
 	}
 
 	dateDecl = gen.Declaration{
 		ID: "__date_def",
-		Content: `
-	class DateTag {
-		private _ = "D" as const;
-	}
-	
+		Content: ` 
 	// AAAA-MM-YY date format
-	export type Date_ = string & DateTag
+	export type Date_ = string & { __opaque__: 'Date' }
 	`,
 	}
 )
