@@ -17,6 +17,7 @@ type Table1 struct {
 	Ex2   RepasID
 	L     sql.NullInt64 `gomacro-sql-foreign:"Link"`
 	Other optionalID    `gomacro-sql-foreign:"Repas"`
+	F     FixedArray
 }
 
 // gomacro:SQL ADD CHECK (V = #[LocalEnum.A] OR V = #[LocalEnum.B])
@@ -25,6 +26,8 @@ type Repas struct {
 	Id    RepasID
 	V     LocalEnum
 }
+
+type FixedArray [5]int32
 
 type Link struct {
 	Repas    RepasID

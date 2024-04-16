@@ -251,18 +251,45 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 				case an.BKBool:
 					pqType = "pq.BoolArray"
 				case an.BKInt:
-					pqType = "pq.Int64Array"
+					basic := arr.A.Elem.Type().Underlying().(*types.Basic)
+					if basic.Kind() == types.Int32 {
+						pqType = "pq.Int32Array"
+					} else {
+						pqType = "pq.Int64Array"
+					}
 				case an.BKFloat:
 					pqType = "pq.Float64Array"
 				case an.BKString:
 					pqType = "pq.StringArray"
 				}
+				isGoArray := arr.A.Len >= 0
+				// return (*%s)(s).Scan(src)
+
+				scanCode := fmt.Sprintf("return (*%s) (s).Scan(src)", pqType)
+				valueCode := fmt.Sprintf("return %s(s).Value()", pqType)
+				if isGoArray { // convert from slice to array
+					scanCode = fmt.Sprintf(`var tmp %s
+					err := tmp.Scan(src)
+					if err != nil {
+						return err
+					}
+					if len(tmp) != %d {
+						return fmt.Errorf("unexpected length %%d", len(tmp))
+					}
+					copy(s[:], tmp)
+					return nil
+					`, pqType, arr.A.Len)
+					valueCode = fmt.Sprintf("return %s(s[:]).Value()", pqType)
+				}
 				decls = append(decls, gen.Declaration{
 					ID: "array_value" + goTypeName,
 					Content: fmt.Sprintf(`
-						func (s *%s) Scan(src interface{}) error  { return (*%s)(s).Scan(src) }
-						func (s %s) Value() (driver.Value, error) { return %s(s).Value() }
-						`, goTypeName, pqType, goTypeName, pqType),
+					func (s *%s) Scan(src interface{}) error  { 
+						%s
+					}
+					func (s %s) Value() (driver.Value, error) { 
+						%s
+					}`, goTypeName, scanCode, goTypeName, valueCode),
 				})
 			}
 		} else if _, isJSON := col.SQLType.(sql.JSON); isJSON {

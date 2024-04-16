@@ -53,6 +53,8 @@ func (ctx context) functionID(ty an.Type) string {
 	case *an.Basic:
 		if ty.B.Name() == "byte" {
 			return "uint8" // prefer not to use the alias
+		} else if ty.B.Name() == "rune" {
+			return "int32"
 		}
 		return ty.B.Name()
 	case *an.Time:
@@ -116,8 +118,8 @@ func (ctx context) codeForBasic(bs *an.Basic) gen.Declaration {
 		code = fnBool()
 	case types.Int:
 		code = fnInt("int")
-	case types.Rune:
-		code = fnInt("rune")
+	case types.Int32:
+		code = fnInt("int32")
 	case types.Int64:
 		code = fnInt("int64")
 	case types.Uint8:

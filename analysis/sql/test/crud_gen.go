@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/benoitkugler/gomacro/analysis/sql/test/pq"
 )
@@ -314,7 +315,7 @@ func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (Exercic
 }
 
 // SelectExerciceQuestionsByIdQuestionAndBareme selects the items matching the given fields.
-func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item []ExerciceQuestion, err error) {
+func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
 	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2", idQuestion, bareme)
 	if err != nil {
 		return nil, err
@@ -324,7 +325,7 @@ func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, barem
 
 // DeleteExerciceQuestionsByIdQuestionAndBareme deletes the item matching the given fields, returning
 // the deleted items.
-func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item []ExerciceQuestion, err error) {
+func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
 	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING *", idQuestion, bareme)
 	if err != nil {
 		return nil, err
@@ -1169,6 +1170,7 @@ func scanOneTable1(row scanner) (Table1, error) {
 		&item.Ex2,
 		&item.L,
 		&item.Other,
+		&item.F,
 	)
 	return item, err
 }
@@ -1237,22 +1239,22 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		ex1, ex2, l, other
+		ex1, ex2, l, other, f
 		) VALUES (
-		$1, $2, $3, $4
+		$1, $2, $3, $4, $5
 		) RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other)
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F)
 	return ScanTable1(row)
 }
 
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		ex1, ex2, l, other
+		ex1, ex2, l, other, f
 		) = (
-		$1, $2, $3, $4
-		) WHERE id = $5 RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.Id)
+		$1, $2, $3, $4, $5
+		) WHERE id = $6 RETURNING *;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Id)
 	return ScanTable1(row)
 }
 
@@ -1512,6 +1514,23 @@ func dumpJSON(s interface{}) (driver.Value, error) {
 		return nil, err
 	}
 	return driver.Value(string(b)), nil
+}
+
+func (s *FixedArray) Scan(src interface{}) error {
+	var tmp pq.Int32Array
+	err := tmp.Scan(src)
+	if err != nil {
+		return err
+	}
+	if len(tmp) != 5 {
+		return fmt.Errorf("unexpected length %d", len(tmp))
+	}
+	copy(s[:], tmp)
+	return nil
+
+}
+func (s FixedArray) Value() (driver.Value, error) {
+	return pq.Int32Array(s[:]).Value()
 }
 
 func IdExerciceArrayToPQ(ids []IdExercice) pq.Int64Array {
