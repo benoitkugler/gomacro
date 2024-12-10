@@ -150,6 +150,10 @@ func generateMethod(a httpapi.Endpoint) string {
 		outData = "out.blob"
 	}
 
+	// we do not include a hook anymore
+	//			this.onSuccess%[1]s(%[7]s);
+	// protected onSuccess%[1]s(%[8]s): void {}
+
 	const template = `
 	protected async raw%[1]s(%[2]s) {
 		const fullUrl = %[3]s;
@@ -162,14 +166,11 @@ func generateMethod(a httpapi.Endpoint) string {
 		this.startRequest();
 		try {
 			const out = await this.raw%[1]s(%[5]s);
-			this.onSuccess%[1]s(%[7]s);
 			return out
 		} catch (error) {
 			this.handleError(error);
 		}
 	}
-
-	protected onSuccess%[1]s(%[8]s): void {}
 	`
 	fnName := a.Contract.Name
 	in := typeIn(a)
