@@ -187,12 +187,12 @@ func (ctx context) idArrayConverters(idTypeName string) gen.Declaration {
 	return out
 }
 
-func isUnderlyingTime(ty an.Type) bool {
+func isUnderlyingTime(ty an.Type) (*an.Time, bool) {
 	if named, isNamed := ty.(*an.Named); isNamed {
 		ty = named.Underlying
 	}
-	_, isTime := ty.(*an.Time)
-	return isTime
+	t, isTime := ty.(*an.Time)
+	return t, isTime
 }
 
 // return the field name of sql.NullInt64 like types
@@ -221,27 +221,48 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 
 	// generate the value interface method
 	for _, col := range ta.Columns {
-		if isUnderlyingTime(col.Field.Type) {
+		if ty, ok := isUnderlyingTime(col.Field.Type); ok {
 			goTypeName, isLocal := ctx.canImplementValuer(col)
 			if isLocal {
-				decls = append(decls, gen.Declaration{
-					ID: "datetime_value" + goTypeName,
-					Content: fmt.Sprintf(`
-					func (s *%s) Scan(src interface{}) error {
-						var tmp pq.NullTime
-						err := tmp.Scan(src)
-						if err != nil {
-							return err
+				if ty.IsDate {
+					decls = append(decls, gen.Declaration{
+						ID: "date_value" + goTypeName,
+						Content: fmt.Sprintf(`
+						func (s *%s) Scan(src interface{}) error {
+							var tmp pq.NullTime
+							err := tmp.Scan(src)
+							if err != nil {
+								return err
+							}
+							*s = NewDateFrom(tmp.Time)
+							return nil
 						}
-						*s = %s(tmp.Time)
-						return nil
-					}
-		
-					func (s %s) Value() (driver.Value, error) {
-						return pq.NullTime{Time: time.Time(s), Valid: true}.Value()
-					}
-					`, goTypeName, goTypeName, goTypeName),
-				})
+			
+						func (s %s) Value() (driver.Value, error) {
+							return pq.NullTime{Time: s.Time(), Valid: true}.Value()
+						}
+						`, goTypeName, goTypeName),
+					})
+				} else {
+					decls = append(decls, gen.Declaration{
+						ID: "datetime_value" + goTypeName,
+						Content: fmt.Sprintf(`
+						func (s *%s) Scan(src interface{}) error {
+							var tmp pq.NullTime
+							err := tmp.Scan(src)
+							if err != nil {
+								return err
+							}
+							*s = %s(tmp.Time)
+							return nil
+						}
+			
+						func (s %s) Value() (driver.Value, error) {
+							return pq.NullTime{Time: time.Time(s), Valid: true}.Value()
+						}
+						`, goTypeName, goTypeName, goTypeName),
+					})
+				}
 			}
 		} else if arr, isArray := col.SQLType.(sql.Array); isArray {
 			goTypeName, isLocal := ctx.canImplementValuer(col)

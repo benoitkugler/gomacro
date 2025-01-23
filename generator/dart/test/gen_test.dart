@@ -14,7 +14,11 @@ main(List<String> args) {
       EnumInt.bi,
       EnumUInt.c,
       DateTime.now(),
-      [456, 456, 456],
+      [
+        [true],
+        [false, true],
+        []
+      ],
       StructWithComment(5),
       {});
   final json = complexStructToJson(m);

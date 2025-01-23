@@ -26,7 +26,7 @@ class ComplexStruct {
   final EnumInt e;
   final EnumUInt e2;
   final MyDate date;
-  final List<int> f;
+  final List<List<bool>> f;
   final StructWithComment imported;
   final Map<EnumInt, bool> enumMap;
 
@@ -51,7 +51,7 @@ ComplexStruct complexStructFromJson(dynamic json_) {
       enumIntFromJson(json['E']),
       enumUIntFromJson(json['E2']),
       dateTimeFromJson(json['Date']),
-      listIntFromJson(json['F']),
+      listListBoolFromJson(json['F']),
       structWithCommentFromJson(json['Imported']),
       dictEnumIntToBoolFromJson(json['EnumMap']));
 }
@@ -67,7 +67,7 @@ Map<String, dynamic> complexStructToJson(ComplexStruct item) {
     "E": enumIntToJson(item.e),
     "E2": enumUIntToJson(item.e2),
     "Date": dateTimeToJson(item.date),
-    "F": listIntToJson(item.f),
+    "F": listListBoolToJson(item.f),
     "Imported": structWithCommentToJson(item.imported),
     "EnumMap": dictEnumIntToBoolToJson(item.enumMap)
   };
@@ -343,6 +343,17 @@ Map<String, dynamic> dictIntToIntToJson(Map<int, int> item) {
   return item.map((k, v) => MapEntry(intToJson(k).toString(), intToJson(v)));
 }
 
+List<bool> listBoolFromJson(dynamic json) {
+  if (json == null) {
+    return [];
+  }
+  return (json as List<dynamic>).map(boolFromJson).toList();
+}
+
+List<dynamic> listBoolToJson(List<bool> item) {
+  return item.map(boolToJson).toList();
+}
+
 List<int> listIntFromJson(dynamic json) {
   if (json == null) {
     return [];
@@ -363,6 +374,17 @@ List<ItfType> listItfTypeFromJson(dynamic json) {
 
 List<dynamic> listItfTypeToJson(List<ItfType> item) {
   return item.map(itfTypeToJson).toList();
+}
+
+List<List<bool>> listListBoolFromJson(dynamic json) {
+  if (json == null) {
+    return [];
+  }
+  return (json as List<dynamic>).map(listBoolFromJson).toList();
+}
+
+List<dynamic> listListBoolToJson(List<List<bool>> item) {
+  return item.map(listBoolToJson).toList();
 }
 
 List<RecursiveType> listRecursiveTypeFromJson(dynamic json) {

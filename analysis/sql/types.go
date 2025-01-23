@@ -96,6 +96,9 @@ func newType(ty an.Type) Type {
 	case *an.Basic:
 		return Builtin{t: ty, name: basicTypeName(ty.B)}
 	case *an.Time:
+		if ty.IsDate {
+			return Builtin{t: ty, name: "date"}
+		}
 		return Builtin{t: ty, name: "timestamp (0) with time zone"}
 	case *an.Array:
 		// special case for []byte

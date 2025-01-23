@@ -122,7 +122,7 @@ func NewTime(typ types.Type) (Type, bool) {
 	// we check against this string, to detect time.Time
 	const timeString = "struct{wall uint64; ext int64; loc *time.Location}"
 
-	if typ.Underlying().String() != timeString {
+	if s := typ.Underlying().String(); s != timeString {
 		return nil, false
 	}
 	name, isNamed := typ.(*types.Named)

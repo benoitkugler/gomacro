@@ -57,7 +57,8 @@ CREATE TABLE table1s (
     Ex1 integer NOT NULL,
     Ex2 integer NOT NULL,
     L integer,
-    Other integer
+    Other integer,
+    F integer[] CHECK (array_length(F, 1) = 5) NOT NULL
 );
 
 CREATE TABLE with_optional_times (
@@ -126,7 +127,7 @@ ALTER TABLE progression_questions
 ALTER TABLE progression_questions
     ADD FOREIGN KEY (IdExercice) REFERENCES exercices ON DELETE CASCADE;
 
-CREATE OR REPLACE FUNCTION gomacro_validate_json_array_5_number (data jsonb)
+CREATE OR REPLACE FUNCTION gomacro_validate_json_array_5_array_5_boolean (data jsonb)
     RETURNS boolean
     AS $$
 BEGIN
@@ -135,7 +136,25 @@ BEGIN
     END IF;
     RETURN (
         SELECT
-            bool_and(gomacro_validate_json_number (value))
+            bool_and(gomacro_validate_json_array_5_boolean (value))
+        FROM
+            jsonb_array_elements(data))
+        AND jsonb_array_length(data) = 5;
+END;
+$$
+LANGUAGE 'plpgsql'
+IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION gomacro_validate_json_array_5_boolean (data jsonb)
+    RETURNS boolean
+    AS $$
+BEGIN
+    IF jsonb_typeof(data) != 'array' THEN
+        RETURN FALSE;
+    END IF;
+    RETURN (
+        SELECT
+            bool_and(gomacro_validate_json_boolean (value))
         FROM
             jsonb_array_elements(data))
         AND jsonb_array_length(data) = 5;
@@ -340,7 +359,7 @@ BEGIN
         AND gomacro_validate_json_test_EnumInt (data -> 'E')
         AND gomacro_validate_json_test_EnumUInt (data -> 'E2')
         AND gomacro_validate_json_string (data -> 'Date')
-        AND gomacro_validate_json_array_5_number (data -> 'F')
+        AND gomacro_validate_json_array_5_array_5_boolean (data -> 'F')
         AND gomacro_validate_json_subp_StructWithComment (data -> 'Imported')
         AND gomacro_validate_json_map_boolean (data -> 'EnumMap');
     RETURN is_valid;

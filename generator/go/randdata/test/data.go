@@ -121,6 +121,10 @@ func randsub_StructWithComment() subpackage.StructWithComment {
 	return s
 }
 
+func randtDate() time.Time {
+	return time.Unix(int64(rand.Int31()), 5)
+}
+
 func randtTime() time.Time {
 	return time.Unix(int64(rand.Int31()), 5)
 }
@@ -209,7 +213,7 @@ func randtes_ItfType2() testsource.ItfType2 {
 }
 
 func randtes_MyDate() testsource.MyDate {
-	return testsource.MyDate(randtTime())
+	return testsource.MyDate(randtDate())
 }
 
 func randtes_RecursiveType() testsource.RecursiveType {

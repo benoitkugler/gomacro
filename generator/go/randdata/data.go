@@ -58,6 +58,9 @@ func (ctx context) functionID(ty an.Type) string {
 		}
 		return ty.B.Name()
 	case *an.Time:
+		if ty.IsDate {
+			return "tDate"
+		}
 		return "tTime"
 	case *an.Pointer:
 		return ctx.functionID(ty.Elem) + "Ptr"
@@ -178,11 +181,12 @@ func fnString() string {
 
 func (ctx context) codeForTime(ty *an.Time) gen.Declaration {
 	id := ctx.functionID(ty)
-	return gen.Declaration{ID: id, Content: fmt.Sprintf(`
+	content := fmt.Sprintf(`
 	func rand%s() time.Time {
 		return time.Unix(int64(rand.Int31()), 5)
 	}
-	`, id)}
+	`, id)
+	return gen.Declaration{ID: id, Content: content}
 }
 
 func (ctx context) codeForPointer(ty *an.Pointer) []gen.Declaration {
