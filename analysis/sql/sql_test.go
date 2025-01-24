@@ -24,6 +24,9 @@ func TestSQL(t *testing.T) {
 	Assert(t, table1.ForeignKeys()[2].TargetIDType().String() == "int64")
 	Assert(t, table1.ForeignKeys()[3].TargetIDType() == Lookup(an.Root, "RepasID"))
 
+	_, ok := table1.Columns[6].SQLType.(Array)
+	Assert(t, ok)
+
 	repas := NewTable(an.Types[Lookup(an.Root, "Repas")].(*analysis.Struct))
 	Assert(t, len(repas.ForeignKeys()) == 0)
 	Assert(t, repas.Primary() == 1)
