@@ -32,10 +32,12 @@ func basicTypeName(ty *types.Basic) string {
 	case an.BKBool:
 		return "boolean"
 	case an.BKInt:
-		if ty.Kind() == types.Int16 {
+		switch ty.Kind() {
+		case types.Int16, types.Uint8:
 			return "smallint"
+		default:
+			return "integer"
 		}
-		return "integer"
 	case an.BKFloat:
 		return "real"
 	case an.BKString:
