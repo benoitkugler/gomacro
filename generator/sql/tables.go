@@ -116,6 +116,7 @@ func generateTable(ta sql.Table) []gen.Declaration {
 		decls    []gen.Declaration
 		colTypes = make([]string, len(ta.Columns))
 	)
+	tablePkg := ta.Name.Obj().Pkg()
 	for i, f := range ta.Columns {
 		statement, colDecls := createStmt(f, ta.Primary() == i)
 
@@ -123,11 +124,14 @@ func generateTable(ta sql.Table) []gen.Declaration {
 
 		// add the composite type decl
 		if composite, isComposite := f.SQLType.(sql.Composite); isComposite {
-			decls = append(decls, gen.Declaration{
-				ID:       prefixDeclCompositeType + f.Field.Type.Type().String(),
-				Content:  compositeDecl(composite),
-				Priority: true,
-			})
+			isLocal := tablePkg == composite.Type().(*an.Struct).Name.Obj().Pkg()
+			if isLocal {
+				decls = append(decls, gen.Declaration{
+					ID:       prefixDeclCompositeType + composite.Name(),
+					Content:  compositeDecl(composite),
+					Priority: true,
+				})
+			}
 		}
 
 		// add the eventual JSON validation function

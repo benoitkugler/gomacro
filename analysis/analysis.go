@@ -203,8 +203,8 @@ type PkgSelector struct {
 func NewPkgSelector(root *packages.Package) PkgSelector {
 	chunks := strings.Split(root.PkgPath, "/")
 	var prefix string
-	if len(chunks) >= 3 {
-		prefix = strings.Join(chunks[:3], "/")
+	if len(chunks) >= 2 {
+		prefix = strings.Join(chunks[:2], "/")
 	}
 	return PkgSelector{prefix: prefix}
 }
@@ -232,6 +232,7 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 
 	var accuFunc func(*packages.Package)
 	accuFunc = func(p *packages.Package) {
+		fmt.Println("saercing into", p.PkgPath)
 		// handle the current package and merge the result into `out`
 		for k, v := range fetchPkgEnums(p) {
 			outEnums[k] = v
@@ -242,6 +243,7 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 
 		// recurse if needed
 		for _, imp := range p.Imports {
+			fmt.Println("should we ignore", imp)
 			if selector.Ignore(imp) {
 				continue
 			}

@@ -14,14 +14,15 @@ type IDInvalid string
 type Strings []string
 
 type Table1 struct {
-	Id      int64
-	Ex1     RepasID
-	Ex2     RepasID
-	L       sql.NullInt64 `gomacro-sql-foreign:"Link"`
-	Other   optionalID    `gomacro-sql-foreign:"Repas"`
-	F       FixedArray
-	Strings Strings
-	Cp      Composite
+	Id       int64
+	Ex1      RepasID
+	Ex2      RepasID
+	L        sql.NullInt64 `gomacro-sql-foreign:"Link"`
+	Other    optionalID    `gomacro-sql-foreign:"Repas"`
+	F        FixedArray
+	Strings  Strings
+	Cp       Composite
+	External testsource.Comp
 }
 
 // gomacro:SQL ADD CHECK (V = #[LocalEnum.A] OR V = #[LocalEnum.B])

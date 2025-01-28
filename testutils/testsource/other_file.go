@@ -67,3 +67,7 @@ type WithEmbeded struct {
 
 	ComplexStruct
 }
+
+type Comp struct {
+	A, B uint8
+}
