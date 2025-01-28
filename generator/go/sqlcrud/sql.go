@@ -284,7 +284,6 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 					pqType = "pq.StringArray"
 				}
 				isGoArray := arr.A.Len >= 0
-				// return (*%s)(s).Scan(src)
 
 				scanCode := fmt.Sprintf("return (*%s) (s).Scan(src)", pqType)
 				valueCode := fmt.Sprintf("return %s(s).Value()", pqType)
@@ -312,6 +311,48 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						%s
 					}`, goTypeName, scanCode, goTypeName, valueCode),
 				})
+			}
+		} else if composite, isComposite := col.SQLType.(sql.Composite); isComposite {
+			goTypeName, isLocal := ctx.canImplementValuer(col)
+			if isLocal {
+				st := composite.Type().(*an.Struct)
+				placholders, selectors := make([]string, len(st.Fields)), make([]string, len(st.Fields))
+				scanFields := make([]string, len(st.Fields))
+				for i, field := range st.Fields {
+					name := field.Field.Name()
+					placholders[i] = "%d"
+					selectors[i] = "s." + name
+					scanFields[i] = fmt.Sprintf(`
+						val%s, err := strconv.Atoi(fields[%d])
+						if err != nil {
+							return err
+						}
+						s.%s = %s(val%s)
+					`, name, i, name, ctx.typeName(field.Field.Type()), name)
+				}
+
+				decls = append(decls, gen.Declaration{
+					ID: "composite_value" + goTypeName,
+					Content: fmt.Sprintf(`
+						func (s *%s) Scan(src interface{}) error { 
+							bs, ok := src.([]byte)
+							if !ok {
+								return fmt.Errorf("unsupported type %%T", src)
+							}
+							fields := strings.Split(string(bs[1:len(bs)-1]), ",")
+							if len(fields) != %d {
+								return fmt.Errorf("unsupported number of fields %%d", len(fields))
+							}
+							%s
+							return nil 
+						}
+						func (s %s) Value() (driver.Value, error) { 
+							bs := fmt.Appendf(nil, "(%s)", %s)
+							return driver.Value(bs), nil
+						}
+						`, goTypeName, len(st.Fields), strings.Join(scanFields, "\n"),
+						goTypeName, strings.Join(placholders, ", "), strings.Join(selectors, ", ")),
+				}, jsonValuer)
 			}
 		} else if _, isJSON := col.SQLType.(sql.JSON); isJSON {
 			goTypeName, isLocal := ctx.canImplementValuer(col)

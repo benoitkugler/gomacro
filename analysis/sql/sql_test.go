@@ -49,4 +49,7 @@ func TestSQL(t *testing.T) {
 	bt, ok = withOptTime.Columns[2].SQLType.(Builtin)
 	Assert(t, ok)
 	Assert(t, bt.IsNullable())
+
+	composite := an.Types[Lookup(an.Root, "Composite")].(*analysis.Struct)
+	Assert(t, isComposite(composite))
 }

@@ -8,8 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/benoitkugler/gomacro/analysis/sql/test/pq"
+	"github.com/benoitkugler/gomacro/testutils/testsource"
 )
 
 type scanner interface {
@@ -1171,6 +1174,8 @@ func scanOneTable1(row scanner) (Table1, error) {
 		&item.L,
 		&item.Other,
 		&item.F,
+		&item.Strings,
+		&item.Cp,
 	)
 	return item, err
 }
@@ -1239,22 +1244,22 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		ex1, ex2, l, other, f
+		ex1, ex2, l, other, f, strings, cp
 		) VALUES (
-		$1, $2, $3, $4, $5
+		$1, $2, $3, $4, $5, $6, $7
 		) RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F)
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp)
 	return ScanTable1(row)
 }
 
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		ex1, ex2, l, other, f
+		ex1, ex2, l, other, f, strings, cp
 		) = (
-		$1, $2, $3, $4, $5
-		) WHERE id = $6 RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Id)
+		$1, $2, $3, $4, $5, $6, $7
+		) WHERE id = $8 RETURNING *;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.Id)
 	return ScanTable1(row)
 }
 
@@ -1531,6 +1536,48 @@ func (s *FixedArray) Scan(src interface{}) error {
 }
 func (s FixedArray) Value() (driver.Value, error) {
 	return pq.Int32Array(s[:]).Value()
+}
+
+func (s *Strings) Scan(src interface{}) error {
+	return (*pq.StringArray)(s).Scan(src)
+}
+func (s Strings) Value() (driver.Value, error) {
+	return pq.StringArray(s).Value()
+}
+
+func (s *Composite) Scan(src interface{}) error {
+	bs, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("unsupported type %T", src)
+	}
+	fields := strings.Split(string(bs[1:len(bs)-1]), ",")
+	if len(fields) != 3 {
+		return fmt.Errorf("unsupported number of fields %d", len(fields))
+	}
+
+	valA, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return err
+	}
+	s.A = int(valA)
+
+	valB, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return err
+	}
+	s.B = uint8(valB)
+
+	valC, err := strconv.Atoi(fields[2])
+	if err != nil {
+		return err
+	}
+	s.C = testsource.EnumUInt(valC)
+
+	return nil
+}
+func (s Composite) Value() (driver.Value, error) {
+	bs := fmt.Appendf(nil, "(%d, %d, %d)", s.A, s.B, s.C)
+	return driver.Value(bs), nil
 }
 
 func IdExerciceArrayToPQ(ids []IdExercice) pq.Int64Array {

@@ -21,10 +21,11 @@ type Type interface {
 	Name() string
 }
 
-func (ty Builtin) Type() an.Type { return ty.t }
-func (ty Enum) Type() an.Type    { return ty.E }
-func (ty Array) Type() an.Type   { return ty.A }
-func (ty JSON) Type() an.Type    { return ty.t }
+func (ty Builtin) Type() an.Type   { return ty.t }
+func (ty Enum) Type() an.Type      { return ty.E }
+func (ty Array) Type() an.Type     { return ty.A }
+func (ty Composite) Type() an.Type { return ty.t }
+func (ty JSON) Type() an.Type      { return ty.t }
 
 func basicTypeName(ty *types.Basic) string {
 	kind, _ := an.NewBasicKind(ty.Info())
@@ -85,6 +86,39 @@ func (ar Array) Name() string {
 	return fmt.Sprintf("%s[]", basicTypeName(ar.A.Elem.(*an.Basic).B))
 }
 
+type Composite struct {
+	t *an.Struct
+}
+
+func (ty Composite) Name() string { return ty.t.Name.Obj().Name() }
+
+func (ty Composite) SQLType(fieldIndex int) Type {
+	return newType(ty.t.Fields[fieldIndex].Type)
+}
+
+// isComposite returns true if the struct has only integer fields (including enums)
+func isComposite(st *an.Struct) bool {
+	for _, field := range st.Fields {
+		switch fieldType := field.Type.(type) {
+		case *an.Enum:
+			if fieldType.IsInteger() {
+				// OK
+			} else {
+				return false
+			}
+		case *an.Basic:
+			if fieldType.Kind() == an.BKInt {
+				// OK
+			} else {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 type JSON struct {
 	t an.Type
 }
@@ -130,6 +164,8 @@ func newType(ty an.Type) Type {
 				}
 				return Builtin{t: ty, name: "timestamp (0) with time zone"}
 			}
+		} else if isComposite(ty) {
+			return Composite{t: ty}
 		}
 		return JSON{t: ty}
 	case *an.Pointer:

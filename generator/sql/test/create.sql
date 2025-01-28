@@ -1,4 +1,10 @@
 -- Code genererated by gomacro/generator/sql. DO NOT EDIT.
+CREATE TYPE Composite AS (
+    A integer,
+    B smallint,
+    C integer
+);
+
 CREATE TABLE exercices (
     Id serial PRIMARY KEY,
     Title text NOT NULL,
@@ -49,7 +55,7 @@ CREATE TABLE question_tags (
 
 CREATE TABLE repass ( Order text NOT NULL,
     Id serial PRIMARY KEY,
-    V integer CHECK (V IN (0, 1, 2)) NOT NULL
+    V smallint CHECK (V IN (0, 1, 2)) NOT NULL
 );
 
 CREATE TABLE table1s (
@@ -58,7 +64,9 @@ CREATE TABLE table1s (
     Ex2 integer NOT NULL,
     L integer,
     Other integer,
-    F integer[] CHECK (array_length(F, 1) = 5) NOT NULL
+    F integer[] CHECK (array_length(F, 1) = 5) NOT NULL,
+    Strings text[],
+    Cp Composite NOT NULL
 );
 
 CREATE TABLE with_optional_times (

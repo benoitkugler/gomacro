@@ -15,6 +15,7 @@ const (
 	prefixDeclCreate         = "ab_"
 	prefixDeclConstraint     = "ac_"
 	prefixDeclJSONConstraint = "zz_"
+	prefixDeclCompositeType  = "aaa_"
 )
 
 // Generate returns the SQL statements required to create
@@ -120,6 +121,15 @@ func generateTable(ta sql.Table) []gen.Declaration {
 
 		colTypes[i] = "\t" + statement
 
+		// add the composite type decl
+		if composite, isComposite := f.SQLType.(sql.Composite); isComposite {
+			decls = append(decls, gen.Declaration{
+				ID:       prefixDeclCompositeType + f.Field.Type.Type().String(),
+				Content:  compositeDecl(composite),
+				Priority: true,
+			})
+		}
+
 		// add the eventual JSON validation function
 		if js, isJSON := f.SQLType.(sql.JSON); isJSON {
 			jsonDecls, jsonFuncName := jsonValidations(js)
@@ -184,6 +194,8 @@ func typeConstraint(field sql.Column) string {
 			return fmt.Sprintf(" CHECK (array_length(%s, 1) = %d) NOT NULL", field.Field.Field.Name(), L)
 		}
 		return ""
+	case sql.Composite:
+		return "NOT NULL"
 	case sql.JSON:
 		return "NOT NULL"
 	default:
@@ -201,4 +213,13 @@ func enumTuple(e *an.Enum) string {
 	}
 	out := fmt.Sprintf("(%s)", strings.Join(chunks, ", "))
 	return strings.ReplaceAll(out, `"`, `'`) // SQL uses single quote
+}
+
+func compositeDecl(cp sql.Composite) string {
+	st := cp.Type().(*an.Struct)
+	fields := make([]string, len(st.Fields))
+	for i, field := range st.Fields {
+		fields[i] = fmt.Sprintf("%s %s", field.JSONName(), cp.SQLType(i).Name())
+	}
+	return fmt.Sprintf("CREATE TYPE %s AS (%s);", cp.Name(), strings.Join(fields, ", "))
 }
