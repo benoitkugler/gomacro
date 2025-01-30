@@ -48,12 +48,18 @@ func (e *Enum) Underlying() *types.Basic {
 	return e.Type().Underlying().(*types.Basic)
 }
 
+func (e *Enum) Kind() BasicKind {
+	info := e.Underlying().Info()
+	out, ok := NewBasicKind(info)
+	if !ok {
+		panic("unsupported basic kind")
+	}
+	return out
+}
+
 // IsInteger returns `true` is this enum is backed by
 // integers (which may be negative and not contiguous)
-func (e *Enum) IsInteger() bool {
-	info := e.Underlying().Info()
-	return info&types.IsInteger != 0
-}
+func (e *Enum) IsInteger() bool { return e.Kind() == BKInt }
 
 // Get return the enum value with Go name [name].
 // It panics if [name] is not found

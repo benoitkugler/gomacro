@@ -267,92 +267,12 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 		} else if arr, isArray := col.SQLType.(sql.Array); isArray {
 			goTypeName, isLocal := ctx.canImplementValuer(col)
 			if isLocal {
-				var pqType string
-				switch arr.A.Elem.(*an.Basic).Kind() {
-				case an.BKBool:
-					pqType = "pq.BoolArray"
-				case an.BKInt:
-					basic := arr.A.Elem.Type().Underlying().(*types.Basic)
-					if basic.Kind() == types.Int32 {
-						pqType = "pq.Int32Array"
-					} else {
-						pqType = "pq.Int64Array"
-					}
-				case an.BKFloat:
-					pqType = "pq.Float64Array"
-				case an.BKString:
-					pqType = "pq.StringArray"
-				}
-				isGoArray := arr.A.Len >= 0
-
-				scanCode := fmt.Sprintf("return (*%s) (s).Scan(src)", pqType)
-				valueCode := fmt.Sprintf("return %s(s).Value()", pqType)
-				if isGoArray { // convert from slice to array
-					scanCode = fmt.Sprintf(`var tmp %s
-					err := tmp.Scan(src)
-					if err != nil {
-						return err
-					}
-					if len(tmp) != %d {
-						return fmt.Errorf("unexpected length %%d", len(tmp))
-					}
-					copy(s[:], tmp)
-					return nil
-					`, pqType, arr.A.Len)
-					valueCode = fmt.Sprintf("return %s(s[:]).Value()", pqType)
-				}
-				decls = append(decls, gen.Declaration{
-					ID: "array_value" + goTypeName,
-					Content: fmt.Sprintf(`
-					func (s *%s) Scan(src interface{}) error  { 
-						%s
-					}
-					func (s %s) Value() (driver.Value, error) { 
-						%s
-					}`, goTypeName, scanCode, goTypeName, valueCode),
-				})
+				decls = append(decls, ctx.arrayConverters(goTypeName, arr))
 			}
 		} else if composite, isComposite := col.SQLType.(sql.Composite); isComposite {
 			goTypeName, isLocal := ctx.canImplementValuer(col)
 			if isLocal {
-				st := composite.Type().(*an.Struct)
-				placholders, selectors := make([]string, len(st.Fields)), make([]string, len(st.Fields))
-				scanFields := make([]string, len(st.Fields))
-				for i, field := range st.Fields {
-					name := field.Field.Name()
-					placholders[i] = "%d"
-					selectors[i] = "s." + name
-					scanFields[i] = fmt.Sprintf(`
-						val%s, err := strconv.Atoi(fields[%d])
-						if err != nil {
-							return err
-						}
-						s.%s = %s(val%s)
-					`, name, i, name, ctx.typeName(field.Field.Type()), name)
-				}
-
-				decls = append(decls, gen.Declaration{
-					ID: "composite_value" + goTypeName,
-					Content: fmt.Sprintf(`
-						func (s *%s) Scan(src interface{}) error { 
-							bs, ok := src.([]byte)
-							if !ok {
-								return fmt.Errorf("unsupported type %%T", src)
-							}
-							fields := strings.Split(string(bs[1:len(bs)-1]), ",")
-							if len(fields) != %d {
-								return fmt.Errorf("unsupported number of fields %%d", len(fields))
-							}
-							%s
-							return nil 
-						}
-						func (s %s) Value() (driver.Value, error) { 
-							bs := fmt.Appendf(nil, "(%s)", %s)
-							return driver.Value(bs), nil
-						}
-						`, goTypeName, len(st.Fields), strings.Join(scanFields, "\n"),
-						goTypeName, strings.Join(placholders, ", "), strings.Join(selectors, ", ")),
-				}, jsonValuer)
+				decls = append(decls, ctx.compositeConverters(goTypeName, composite), jsonValuer)
 			}
 		} else if _, isJSON := col.SQLType.(sql.JSON); isJSON {
 			goTypeName, isLocal := ctx.canImplementValuer(col)
@@ -368,29 +288,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 		} else if field := isLocalNullInt64(col); field != nil {
 			goTypeName, isLocal := ctx.canImplementValuer(col)
 			if isLocal {
-				decls = append(decls, gen.Declaration{
-					ID: "nullable_valuer" + goTypeName,
-					Content: fmt.Sprintf(`
-						func (s *%[1]s) Scan(src interface{}) error {
-							var tmp sql.NullInt64
-							err := tmp.Scan(src)
-							if err != nil {
-								return err
-							}
-							*s = %[1]s{
-								Valid: tmp.Valid,
-								%[2]s: %[3]s(tmp.Int64),
-							}
-							return nil
-						}
-						
-						func (s %[1]s) Value() (driver.Value, error) {
-							return sql.NullInt64{
-								Int64: int64(s.%[2]s), 
-								Valid: s.Valid}.Value()
-						}
-						`, goTypeName, field.Name(), ctx.typeName(field.Type())),
-				}, jsonValuer)
+				decls = append(decls, ctx.optionnalIdConverters(goTypeName, field))
 			}
 		}
 	}
@@ -493,4 +391,162 @@ func (ctx context) columsVarDecls(cols []sql.Column) (string, string) {
 		varDecls[i] = fmt.Sprintf("%s %s", varName, ctx.typeName(c.Field.Field.Type()))
 	}
 	return strings.Join(varNames, ", "), strings.Join(varDecls, ", ")
+}
+
+func (ctx context) optionnalIdConverters(goTypeName string, field *types.Var) gen.Declaration {
+	return gen.Declaration{
+		ID: "nullable_valuer" + goTypeName,
+		Content: fmt.Sprintf(`
+			func (s *%[1]s) Scan(src interface{}) error {
+				var tmp sql.NullInt64
+				err := tmp.Scan(src)
+				if err != nil {
+					return err
+				}
+				*s = %[1]s{
+					Valid: tmp.Valid,
+					%[2]s: %[3]s(tmp.Int64),
+				}
+				return nil
+			}
+			
+			func (s %[1]s) Value() (driver.Value, error) {
+				return sql.NullInt64{
+					Int64: int64(s.%[2]s), 
+					Valid: s.Valid}.Value()
+			}
+			`, goTypeName, field.Name(), ctx.typeName(field.Type())),
+	}
+}
+
+func (ctx context) compositeConverters(goTypeName string, composite sql.Composite) gen.Declaration {
+	st := composite.Type().(*an.Struct)
+	placholders, selectors := make([]string, len(st.Fields)), make([]string, len(st.Fields))
+	scanFields := make([]string, len(st.Fields))
+	for i, field := range st.Fields {
+		name := field.Field.Name()
+		placholders[i] = "%d"
+		selectors[i] = "s." + name
+		scanFields[i] = fmt.Sprintf(`
+			val%s, err := strconv.Atoi(fields[%d])
+			if err != nil {
+				return err
+			}
+			s.%s = %s(val%s)
+		`, name, i, name, ctx.typeName(field.Field.Type()), name)
+	}
+
+	return gen.Declaration{
+		ID: "composite_value" + goTypeName,
+		Content: fmt.Sprintf(`
+			func (s *%s) Scan(src interface{}) error { 
+				bs, ok := src.([]byte)
+				if !ok {
+					return fmt.Errorf("unsupported type %%T", src)
+				}
+				fields := strings.Split(string(bs[1:len(bs)-1]), ",")
+				if len(fields) != %d {
+					return fmt.Errorf("unsupported number of fields %%d", len(fields))
+				}
+				%s
+				return nil 
+			}
+			func (s %s) Value() (driver.Value, error) { 
+				bs := fmt.Appendf(nil, "(%s)", %s)
+				return driver.Value(bs), nil
+			}
+			`, goTypeName, len(st.Fields), strings.Join(scanFields, "\n"),
+			goTypeName, strings.Join(placholders, ", "), strings.Join(selectors, ", ")),
+	}
+}
+
+// elems are Basic or (integer) Enums
+func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declaration {
+	var (
+		pqType             string
+		elemUnderlyingType *types.Basic
+		elemKind           an.BasicKind
+
+		elemType types.Type // noy nil if conversion is required
+	)
+
+	if basic, isBasic := arr.A.Elem.(*an.Basic); isBasic {
+		elemUnderlyingType = basic.B
+		elemKind = basic.Kind()
+	} else if enum, isEnum := arr.A.Elem.(*an.Enum); isEnum {
+		elemType = enum.Type()
+		elemUnderlyingType = enum.Underlying()
+		elemKind = enum.Kind()
+	} else {
+		panic("unsupported array element")
+	}
+
+	switch elemKind {
+	case an.BKBool:
+		pqType = "pq.BoolArray"
+	case an.BKInt:
+		switch elemUnderlyingType.Kind() {
+		case types.Int64, types.Uint64, types.Int, types.Uint:
+			pqType = "pq.Int64Array"
+		default:
+			pqType = "pq.Int32Array"
+		}
+	case an.BKFloat:
+		pqType = "pq.Float64Array"
+	case an.BKString:
+		pqType = "pq.StringArray"
+	}
+	isGoArray := arr.A.Len >= 0
+
+	var scanCode, valueCode string
+	if isGoArray { // convert from slice to array
+		scanCode = fmt.Sprintf(`var tmp %s
+					err := tmp.Scan(src)
+					if err != nil {
+						return err
+					}
+					if len(tmp) != %d {
+						return fmt.Errorf("unexpected length %%d", len(tmp))
+					}
+					copy(s[:], tmp)
+					return nil
+					`, pqType, arr.A.Len)
+		valueCode = fmt.Sprintf("return %s(s[:]).Value()", pqType)
+	} else {
+		if elemType != nil { // we have to build a temporary array
+			pqElemType := strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(pqType, "pq."), "Array"))
+
+			scanCode = fmt.Sprintf(`var tmp %s
+					err := tmp.Scan(src)
+					if err != nil {
+						return err
+					}
+					*s = make([]%s, len(tmp))
+					for i, v := range tmp {
+						(*s)[i] = %s(v)
+					}
+					return nil`,
+				pqType, ctx.typeName(elemType), ctx.typeName(elemType))
+			valueCode = fmt.Sprintf(`tmp := make(%s, len(s))
+				for i, v := range s {
+						tmp[i] = %s(v)
+					}
+				return tmp.Value()`,
+				pqType, pqElemType)
+		} else { // nothing to do, nice !
+			scanCode = fmt.Sprintf("return (*%s) (s).Scan(src)", pqType)
+			valueCode = fmt.Sprintf("return %s(s).Value()", pqType)
+		}
+	}
+
+	return gen.Declaration{
+		ID: "array_value" + goTypeName,
+		Content: fmt.Sprintf(`
+		func (s *%s) Scan(src interface{}) error  { 
+			%s
+		}
+		func (s %s) Value() (driver.Value, error) { 
+			%s
+		}`, goTypeName, scanCode, goTypeName, valueCode),
+	}
 }

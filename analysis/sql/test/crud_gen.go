@@ -1176,6 +1176,7 @@ func scanOneTable1(row scanner) (Table1, error) {
 		&item.F,
 		&item.Strings,
 		&item.Cp,
+		&item.External,
 	)
 	return item, err
 }
@@ -1244,22 +1245,22 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		ex1, ex2, l, other, f, strings, cp
+		ex1, ex2, l, other, f, strings, cp, external
 		) VALUES (
-		$1, $2, $3, $4, $5, $6, $7
+		$1, $2, $3, $4, $5, $6, $7, $8
 		) RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp)
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External)
 	return ScanTable1(row)
 }
 
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		ex1, ex2, l, other, f, strings, cp
+		ex1, ex2, l, other, f, strings, cp, external
 		) = (
-		$1, $2, $3, $4, $5, $6, $7
-		) WHERE id = $8 RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.Id)
+		$1, $2, $3, $4, $5, $6, $7, $8
+		) WHERE id = $9 RETURNING *;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.Id)
 	return ScanTable1(row)
 }
 
@@ -1521,6 +1522,28 @@ func dumpJSON(s interface{}) (driver.Value, error) {
 	return driver.Value(string(b)), nil
 }
 
+func (s *EnumArray) Scan(src interface{}) error {
+	var tmp pq.Int64Array
+	err := tmp.Scan(src)
+	if err != nil {
+		return err
+	}
+	*s = make([]testsource.EnumUInt, len(tmp))
+	for i, v := range tmp {
+		(*s)[i] = testsource.EnumUInt(v)
+	}
+	return nil
+
+}
+func (s EnumArray) Value() (driver.Value, error) {
+	tmp := make(pq.Int64Array, len(s))
+	for i, v := range s {
+		tmp[i] = int64(v)
+	}
+	return tmp.Value()
+
+}
+
 func (s *FixedArray) Scan(src interface{}) error {
 	var tmp pq.Int32Array
 	err := tmp.Scan(src)
@@ -1769,9 +1792,6 @@ func (s int64Set) Keys() []int64 {
 	}
 	return out
 }
-
-func (s *EnumArray) Scan(src interface{}) error  { return loadJSON(s, src) }
-func (s EnumArray) Value() (driver.Value, error) { return dumpJSON(s) }
 
 func (s *Map) Scan(src interface{}) error  { return loadJSON(s, src) }
 func (s Map) Value() (driver.Value, error) { return dumpJSON(s) }

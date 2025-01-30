@@ -79,10 +79,13 @@ func (e Enum) Name() string {
 }
 
 type Array struct {
-	A *an.Array // Elem is *Basic
+	A *an.Array // Elem is *Basic or *Enum
 }
 
 func (ar Array) Name() string {
+	if enum, isEnum := ar.A.Elem.(*an.Enum); isEnum {
+		return fmt.Sprintf("%s[]", basicTypeName(enum.Underlying()))
+	}
 	return fmt.Sprintf("%s[]", basicTypeName(ar.A.Elem.(*an.Basic).B))
 }
 
@@ -143,6 +146,8 @@ func newType(ty an.Type) Type {
 		}
 		// check if the elem is a basic type, else use JSON
 		if _, isElemBasic := ty.Elem.(*an.Basic); isElemBasic {
+			return Array{A: ty}
+		} else if enum, isEnum := ty.Elem.(*an.Enum); isEnum && enum.IsInteger() {
 			return Array{A: ty}
 		}
 		return JSON{t: ty}
