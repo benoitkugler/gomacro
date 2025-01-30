@@ -93,7 +93,7 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		return structs, nil
 	}
 
-	func Insert%[1]s(db DB, item %[1]s) error {
+	func (item %[1]s) Insert(db DB) error {
 		_, err := db.Exec(`+"`"+`INSERT INTO %[2]s (
 			%[9]s
 			) VALUES (
