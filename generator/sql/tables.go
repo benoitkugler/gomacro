@@ -91,9 +91,17 @@ func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) str
 		gen.SQLTableName(sourceTable), fk.F.Field.Name(), gen.SQLTableName(fk.Target), onDelete)
 }
 
-var reEnums = regexp.MustCompile(`#\[(\w+)\.(\w+)\]`)
+var (
+	reEnums      = regexp.MustCompile(`#\[(\w+)\.(\w+)\]`)
+	reReferences = regexp.MustCompile(`REFERENCES (\w+)`)
+)
 
 func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep replacer, content string) string {
+	content = reReferences.ReplaceAllStringFunc(content, func(s string) string {
+		ref, name, _ := strings.Cut(s, " ")
+		return ref + " " + gen.SQLTableName(sql.TableName(name))
+	})
+
 	content = rep.Replace(content)
 	// replace enum values
 	content = reEnums.ReplaceAllStringFunc(content, func(s string) string {

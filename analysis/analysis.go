@@ -256,7 +256,7 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 // Analysis is the result of analyzing one package.
 type Analysis struct {
 	// Types adds the additional analysis of this package,
-	// and contains all the types needed by `Outline` and
+	// and contains all the types needed by `Source` and
 	// their dependencies.
 	Types map[types.Type]Type
 
