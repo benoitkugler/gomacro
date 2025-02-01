@@ -142,6 +142,9 @@ func parseAssignments(rhs []ast.Expr, pkg *packages.Package, out *Contract) {
 		if queryParam := parseCallWithString(rh, "QueryParamBool", pkg); queryParam != "" { // special converter
 			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Bool]})
 		}
+		if queryParam := parseCallWithString(rh, "QueryParamInt", pkg); queryParam != "" { // special converter
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Int]})
+		}
 		if queryParam := parseCallWithString(rh, "QueryParamInt64", pkg); queryParam != "" { // special converter
 			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Int]})
 		}
