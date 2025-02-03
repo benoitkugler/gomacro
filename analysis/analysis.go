@@ -203,7 +203,9 @@ type PkgSelector struct {
 func NewPkgSelector(root *packages.Package) PkgSelector {
 	chunks := strings.Split(root.PkgPath, "/")
 	var prefix string
-	if len(chunks) >= 2 {
+	if len(chunks) == 1 {
+		prefix = root.PkgPath
+	} else if len(chunks) >= 2 {
 		prefix = strings.Join(chunks[:2], "/")
 	}
 	return PkgSelector{prefix: prefix}
