@@ -184,8 +184,14 @@ func tryParseBindCall(expr ast.Expr, pkg *types.Info) types.Type {
 
 func parseCallWithString(expr ast.Expr, methodName string, pkg *packages.Package) string {
 	if call, ok := expr.(*ast.CallExpr); ok {
+		function := call.Fun
+		// generic support
+		if index, isGeneric := function.(*ast.IndexExpr); isGeneric {
+			function = index.X
+		}
+
 		var name string
-		switch caller := call.Fun.(type) {
+		switch caller := function.(type) {
 		case *ast.SelectorExpr:
 			name = caller.Sel.Name
 		case *ast.Ident:

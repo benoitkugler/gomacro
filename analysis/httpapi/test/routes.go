@@ -11,8 +11,9 @@ const route = "/const_url_from_package/"
 
 type controller struct{}
 
-func (controller) QueryParamInt64(echo.Context, string) int64 { return 0 }
-func (controller) QueryParamBool(echo.Context, string) bool   { return false }
+func QueryParamInt[T ~int64](echo.Context, string) (int64, error) { return 0, nil }
+func (controller) QueryParamInt64(echo.Context, string) int64     { return 0 }
+func (controller) QueryParamBool(echo.Context, string) bool       { return false }
 
 func (controller) handle1(c echo.Context) error {
 	var (
@@ -58,6 +59,17 @@ func (controller) handler9(c echo.Context) error {
 	return c.Blob(200, "", output)
 }
 
+// with Generic
+func (controller) handler10(c echo.Context) error {
+	v, err := QueryParamInt[int64](c, "param-name")
+	if err != nil {
+		return err
+	}
+	_ = v
+	var output []byte
+	return c.Blob(200, "", output)
+}
+
 func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.GET(route, handler)
 	const routeFunc = "const_local_url"
@@ -79,4 +91,5 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	})
 
 	e.POST("/download", ct.handler9)
+	e.DELETE("/with_generic", ct.handler10)
 }
