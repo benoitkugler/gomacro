@@ -557,6 +557,8 @@ func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declara
 
 // columnsCode exposes various SQL or Go code
 // generated from columns
+//
+// The SQL guards are excluded from this code
 type columnsCode struct {
 	// required for create/update statements
 
@@ -572,11 +574,11 @@ type columnsCode struct {
 
 func newColumnsCode(ta sql.Table) columnsCode {
 	var (
-		scanFields        = make([]string, len(ta.Columns))
-		valueFields       = make([]string, len(ta.Columns))
-		quotedColumnNames = make([]string, len(ta.Columns))
-		columnNames       = make([]string, len(ta.Columns))
-		placeholders      = make([]string, len(ta.Columns))
+		scanFields        []string
+		valueFields       []string
+		quotedColumnNames []string
+		columnNames       []string
+		placeholders      []string
 
 		valueFieldsNoPrimary  []string
 		columnNamesNoPrimary  []string
@@ -584,14 +586,19 @@ func newColumnsCode(ta sql.Table) columnsCode {
 	)
 	primaryIndex := ta.Primary()
 	for i, col := range ta.Columns {
+		if _, isGuard := col.Field.IsSQLGuard(); isGuard {
+			// ignore this field from the operations
+			continue
+		}
 		fieldName := col.Field.Field.Name()
 		columnName := sqlColumnName(col.Field)
-		scanFields[i] = fmt.Sprintf("&item.%s,", fieldName)
-		valueFields[i] = fmt.Sprintf("item.%s", fieldName)
+		scanFields = append(scanFields, fmt.Sprintf("&item.%s,", fieldName))
+		valueFields = append(valueFields, fmt.Sprintf("item.%s", fieldName))
 
-		quotedColumnNames[i] = fmt.Sprintf("%q,", columnName)
-		columnNames[i] = columnName
-		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		quotedColumnNames = append(quotedColumnNames, fmt.Sprintf("%q,", columnName))
+		columnNames = append(columnNames, columnName)
+		// placeholders like $1 $2 ...
+		placeholders = append(placeholders, fmt.Sprintf("$%d", len(placeholders)+1))
 
 		if i != primaryIndex {
 			valueFieldsNoPrimary = append(valueFieldsNoPrimary, fmt.Sprintf("item.%s", fieldName))

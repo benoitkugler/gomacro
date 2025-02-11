@@ -42,6 +42,12 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 		for _, foreign := range ta.ForeignKeys() {
 			constraints = append(constraints, generateForeignConstraint(ta.TableName(), foreign))
 		}
+
+		for _, column := range ta.Columns {
+			if value, ok := column.Field.IsSQLGuard(); ok {
+				constraints = append(constraints, generateQuardConstraint(ana, ta, column, value)...)
+			}
+		}
 	}
 
 	decls = append(decls,
@@ -57,6 +63,14 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 		})
 
 	return decls
+}
+
+func generateQuardConstraint(ana *an.Analysis, ta sql.Table, column sql.Column, value string) []string {
+	value = replaceEnums(ana, ta, value)
+	return []string{
+		fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", gen.SQLTableName(ta.TableName()), column.Field.Field.Name(), value),
+		fmt.Sprintf("ALTER TABLE %s ADD CHECK(%s = %s);", gen.SQLTableName(ta.TableName()), column.Field.Field.Name(), value),
+	}
 }
 
 type replacer map[string]string
@@ -96,6 +110,17 @@ var (
 	reReferences = regexp.MustCompile(`REFERENCES (\w+)`)
 )
 
+// replace enum values
+func replaceEnums(ana *an.Analysis, ta sql.Table, content string) string {
+	return reEnums.ReplaceAllStringFunc(content, func(s string) string {
+		s = s[2 : len(s)-1] // trim starting #[ and leading ]
+		typeName, varName, _ := strings.Cut(s, ".")
+		enum := ana.GetByName(ta.Name, typeName).(*an.Enum)
+		enumValue := enum.Get(varName)
+		return fmt.Sprintf("%s /* %s.%s */", enumValue.Const.Val().ExactString(), typeName, varName)
+	})
+}
+
 func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep replacer, content string) string {
 	content = reReferences.ReplaceAllStringFunc(content, func(s string) string {
 		ref, name, _ := strings.Cut(s, " ")
@@ -103,14 +128,7 @@ func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep replacer, cont
 	})
 
 	content = rep.Replace(content)
-	// replace enum values
-	content = reEnums.ReplaceAllStringFunc(content, func(s string) string {
-		s = s[2 : len(s)-1] // trim starting #[ and leading ]
-		typeName, varName, _ := strings.Cut(s, ".")
-		enum := ana.GetByName(ta.Name, typeName).(*an.Enum)
-		enumValue := enum.Get(varName)
-		return fmt.Sprintf("%s /* %s.%s */", enumValue.Const.Val().ExactString(), typeName, varName)
-	})
+	content = replaceEnums(ana, ta, content)
 
 	if strings.HasPrefix(content, "ADD") {
 		return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(ta.TableName()), content)

@@ -1178,7 +1178,6 @@ func scanOneTable1(row scanner) (Table1, error) {
 		&item.Cp,
 		&item.External,
 		&item.BoolArray,
-		&item.guard,
 	)
 	return item, err
 }
@@ -1187,7 +1186,7 @@ func ScanTable1(row *sql.Row) (Table1, error) { return scanOneTable1(row) }
 
 // SelectAll returns all the items in the table1s table.
 func SelectAllTable1s(db DB) (Table1s, error) {
-	rows, err := db.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s")
+	rows, err := db.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s")
 	if err != nil {
 		return nil, err
 	}
@@ -1196,13 +1195,13 @@ func SelectAllTable1s(db DB) (Table1s, error) {
 
 // SelectTable1 returns the entry matching 'id'.
 func SelectTable1(tx DB, id int64) (Table1, error) {
-	row := tx.QueryRow("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE id = $1", id)
+	row := tx.QueryRow("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s WHERE id = $1", id)
 	return ScanTable1(row)
 }
 
 // SelectTable1s returns the entry matching the given 'ids'.
 func SelectTable1s(tx DB, ids ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE id = ANY($1)", int64ArrayToPQ(ids))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s WHERE id = ANY($1)", int64ArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -1247,28 +1246,28 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		ex1, ex2, l, other, f, strings, cp, external, boolarray, guard
+		ex1, ex2, l, other, f, strings, cp, external, boolarray
 		) VALUES (
-		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-		) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.guard)
+		$1, $2, $3, $4, $5, $6, $7, $8, $9
+		) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray)
 	return ScanTable1(row)
 }
 
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		ex1, ex2, l, other, f, strings, cp, external, boolarray, guard
+		ex1, ex2, l, other, f, strings, cp, external, boolarray
 		) = (
-		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-		) WHERE id = $11 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.guard, item.Id)
+		$1, $2, $3, $4, $5, $6, $7, $8, $9
+		) WHERE id = $11 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.Id)
 	return ScanTable1(row)
 }
 
 // Deletes the Table1 and returns the item
 func DeleteTable1ById(tx DB, id int64) (Table1, error) {
-	row := tx.QueryRow("DELETE FROM table1s WHERE id = $1 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard;", id)
+	row := tx.QueryRow("DELETE FROM table1s WHERE id = $1 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray;", id)
 	return ScanTable1(row)
 }
 
@@ -1307,7 +1306,7 @@ func (items Table1s) Ex1s() []RepasID {
 }
 
 func SelectTable1sByEx1s(tx DB, ex1s_ ...RepasID) (Table1s, error) {
-	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s_))
 	if err != nil {
 		return nil, err
 	}
@@ -1348,7 +1347,7 @@ func (items Table1s) Ex2s() []RepasID {
 }
 
 func SelectTable1sByEx2s(tx DB, ex2s_ ...RepasID) (Table1s, error) {
-	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE ex2 = ANY($1)", RepasIDArrayToPQ(ex2s_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s WHERE ex2 = ANY($1)", RepasIDArrayToPQ(ex2s_))
 	if err != nil {
 		return nil, err
 	}
@@ -1364,7 +1363,7 @@ func DeleteTable1sByEx2s(tx DB, ex2s_ ...RepasID) ([]int64, error) {
 }
 
 func SelectTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls_))
 	if err != nil {
 		return nil, err
 	}
@@ -1380,7 +1379,7 @@ func DeleteTable1sByLs(tx DB, ls_ ...int64) ([]int64, error) {
 }
 
 func SelectTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
-	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE other = ANY($1)", RepasIDArrayToPQ(others_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray FROM table1s WHERE other = ANY($1)", RepasIDArrayToPQ(others_))
 	if err != nil {
 		return nil, err
 	}

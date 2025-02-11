@@ -36,7 +36,7 @@ CREATE TABLE progression_questions (
     IdProgression integer NOT NULL,
     IdExercice integer NOT NULL,
     Index integer NOT NULL,
-    History jsonb NOT NULL
+    History integer[]
 );
 
 CREATE TABLE questions (
@@ -66,7 +66,10 @@ CREATE TABLE table1s (
     Other integer,
     F integer[] CHECK (array_length(F, 1) = 5) NOT NULL,
     Strings text[],
-    Cp Composite NOT NULL
+    Cp Composite NOT NULL,
+    External Comp NOT NULL,
+    BoolArray boolean[] CHECK (array_length(BoolArray, 1) = 3) NOT NULL,
+    guard smallint CHECK (guard IN (0, 1, 2)) NOT NULL
 );
 
 CREATE TABLE with_optional_times (
@@ -87,6 +90,15 @@ ALTER TABLE table1s
 
 ALTER TABLE table1s
     ADD FOREIGN KEY (Other) REFERENCES repass;
+
+ALTER TABLE table1s
+    ALTER COLUMN guard SET DEFAULT 0
+    /* LocalEnum.A */
+;
+
+ALTER TABLE table1s
+    ADD CHECK (guard = 0
+    /* LocalEnum.A */);
 
 ALTER TABLE repass
     ADD CHECK (V = 0
@@ -124,10 +136,10 @@ ALTER TABLE progression_questions
     ADD UNIQUE (IdProgression, INDEX);
 
 ALTER TABLE progression_questions
-    ADD FOREIGN KEY (IdExercice, INDEX) REFERENCES exercice_questions ON DELETE CASCADE;
+    ADD FOREIGN KEY (IdExercice, INDEX) REFERENCES exercice_questionss ON DELETE CASCADE;
 
 ALTER TABLE progression_questions
-    ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressions (Id, IdExercice) ON DELETE CASCADE;
+    ADD FOREIGN KEY (IdProgression, IdExercice) REFERENCES progressionss (Id, IdExercice) ON DELETE CASCADE;
 
 ALTER TABLE progression_questions
     ADD FOREIGN KEY (IdProgression) REFERENCES progressions ON DELETE CASCADE;
@@ -187,29 +199,6 @@ BEGIN
     RETURN (
         SELECT
             bool_and(gomacro_validate_json_number (value))
-        FROM
-            jsonb_array_elements(data));
-END;
-$$
-LANGUAGE 'plpgsql'
-IMMUTABLE;
-
-CREATE OR REPLACE FUNCTION gomacro_validate_json_array_test_EnumUInt (data jsonb)
-    RETURNS boolean
-    AS $$
-BEGIN
-    IF jsonb_typeof(data) = 'null' THEN
-        RETURN TRUE;
-    END IF;
-    IF jsonb_typeof(data) != 'array' THEN
-        RETURN FALSE;
-    END IF;
-    IF jsonb_array_length(data) = 0 THEN
-        RETURN TRUE;
-    END IF;
-    RETURN (
-        SELECT
-            bool_and(gomacro_validate_json_test_EnumUInt (value))
         FROM
             jsonb_array_elements(data));
 END;
@@ -469,9 +458,6 @@ END;
 $$
 LANGUAGE 'plpgsql'
 IMMUTABLE;
-
-ALTER TABLE progression_questions
-    ADD CONSTRAINT History_gomacro CHECK (gomacro_validate_json_array_test_EnumUInt (History));
 
 ALTER TABLE exercices
     ADD CONSTRAINT Parameters_gomacro CHECK (gomacro_validate_json_map_boolean (Parameters));
