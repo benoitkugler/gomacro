@@ -8,27 +8,9 @@ import (
 	gen "github.com/benoitkugler/gomacro/generator"
 )
 
-func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
+func (ctx context) generateLinkTable(ta sql.Table, cols columnsCode) (out []gen.Declaration) {
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
-
-	var (
-		scanFields        = make([]string, len(ta.Columns))
-		quotedColumnNames = make([]string, len(ta.Columns)) // required for insert statements
-		columnNames       = make([]string, len(ta.Columns)) // required for insert statements
-		placeholders      = make([]string, len(ta.Columns)) // required for insert statements
-		goFields          = make([]string, len(ta.Columns)) // required for create/update statements
-	)
-	for i, col := range ta.Columns {
-		fieldName := col.Field.Field.Name()
-		columnName := sqlColumnName(col.Field)
-		scanFields[i] = fmt.Sprintf("&item.%s,", fieldName)
-
-		quotedColumnNames[i] = fmt.Sprintf("%q,", columnName)
-		columnNames[i] = columnName
-		placeholders[i] = fmt.Sprintf("$%d", i+1)
-		goFields[i] = fmt.Sprintf("item.%s", fieldName)
-	}
 
 	var (
 		foreignKeyFields []string
@@ -59,7 +41,7 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 
 	// SelectAll returns all the items in the %[2]s table.
 	func SelectAll%[1]ss(db DB) (%[1]ss, error) {
-		rows, err := db.Query("SELECT * FROM %[2]s")
+		rows, err := db.Query("SELECT %[9]s FROM %[2]s")
 		if err != nil {
 			return nil, err
 		}
@@ -145,9 +127,9 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		return err
 	}
 	`, goTypeName, sqlTableName,
-		strings.Join(scanFields, "\n"), strings.Join(quotedColumnNames, "\n"), strings.Join(goFields, ", "),
+		cols.goScanFields, cols.sqlQuotedColumnNames, cols.goValueFields,
 		strings.Join(foreignKeyFields, ", "), strings.Join(foreignKeyComps, " AND "), strings.Join(foreignKeyAccess, ", "),
-		strings.Join(columnNames, ", "), strings.Join(placeholders, ", "),
+		cols.sqlColumnNames, cols.sqlPlaceholders,
 	)
 
 	// generate "join like" queries
@@ -204,20 +186,21 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 			content += fmt.Sprintf(`
 			// Select%[1]sBy%[2]s return zero or one item, thanks to a UNIQUE SQL constraint.
 			func Select%[1]sBy%[2]s(tx DB, %[3]s %[5]s) (item %[1]s, found bool, err error) {
-				row := tx.QueryRow("SELECT * FROM %[4]s WHERE %[6]s = $1", %[3]s)
+				row := tx.QueryRow("SELECT %[7]s FROM %[4]s WHERE %[6]s = $1", %[3]s)
 				item, err = Scan%[1]s(row)
 				if err == sql.ErrNoRows {
 					return item, false, nil
 				}
 				return item, true, err
 			}
-			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
+			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName,
+				cols.sqlColumnNames)
 		}
 
 		varNamePlural := varName + "s_" // to avoid potential shadowing
 		content += fmt.Sprintf(`
 		func Select%[1]ssBy%[2]ss(tx DB, %[3]s ...%[5]s) (%[1]ss, error) {
-			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[6]s = ANY($1)", %[5]sArrayToPQ(%[3]s))
+			rows, err := tx.Query("SELECT %[7]s FROM %[4]s WHERE %[6]s = ANY($1)", %[5]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
@@ -225,13 +208,14 @@ func (ctx context) generateLinkTable(ta sql.Table) (out []gen.Declaration) {
 		}
 
 		func Delete%[1]ssBy%[2]ss(tx DB, %[3]s ...%[5]s) (%[1]ss, error)  {
-			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[6]s = ANY($1) RETURNING *", %[5]sArrayToPQ(%[3]s))
+			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[6]s = ANY($1) RETURNING %[7]s", %[5]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[1]ss(rows)
 		}	
-		`, goTypeName, fieldName, varNamePlural, sqlTableName, keyTypeName, columnName)
+		`, goTypeName, fieldName, varNamePlural, sqlTableName, keyTypeName, columnName,
+			cols.sqlColumnNames)
 	}
 
 	return append(out, gen.Declaration{

@@ -46,7 +46,7 @@ func ScanExercice(row *sql.Row) (Exercice, error) { return scanOneExercice(row) 
 
 // SelectAll returns all the items in the exercices table.
 func SelectAllExercices(db DB) (Exercices, error) {
-	rows, err := db.Query("SELECT * FROM exercices")
+	rows, err := db.Query("SELECT id, title, description, parameters, flow, idteacher, public FROM exercices")
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +55,13 @@ func SelectAllExercices(db DB) (Exercices, error) {
 
 // SelectExercice returns the entry matching 'id'.
 func SelectExercice(tx DB, id int64) (Exercice, error) {
-	row := tx.QueryRow("SELECT * FROM exercices WHERE id = $1", id)
+	row := tx.QueryRow("SELECT id, title, description, parameters, flow, idteacher, public FROM exercices WHERE id = $1", id)
 	return ScanExercice(row)
 }
 
 // SelectExercices returns the entry matching the given 'ids'.
 func SelectExercices(tx DB, ids ...int64) (Exercices, error) {
-	rows, err := tx.Query("SELECT * FROM exercices WHERE id = ANY($1)", int64ArrayToPQ(ids))
+	rows, err := tx.Query("SELECT id, title, description, parameters, flow, idteacher, public FROM exercices WHERE id = ANY($1)", int64ArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (item Exercice) Insert(tx DB) (out Exercice, err error) {
 		title, description, parameters, flow, idteacher, public
 		) VALUES (
 		$1, $2, $3, $4, $5, $6
-		) RETURNING *;
+		) RETURNING id, title, description, parameters, flow, idteacher, public;
 		`, item.Title, item.Description, item.Parameters, item.Flow, item.IdTeacher, item.Public)
 	return ScanExercice(row)
 }
@@ -120,14 +120,14 @@ func (item Exercice) Update(tx DB) (out Exercice, err error) {
 		title, description, parameters, flow, idteacher, public
 		) = (
 		$1, $2, $3, $4, $5, $6
-		) WHERE id = $7 RETURNING *;
+		) WHERE id = $7 RETURNING id, title, description, parameters, flow, idteacher, public;
 		`, item.Title, item.Description, item.Parameters, item.Flow, item.IdTeacher, item.Public, item.Id)
 	return ScanExercice(row)
 }
 
 // Deletes the Exercice and returns the item
 func DeleteExerciceById(tx DB, id int64) (Exercice, error) {
-	row := tx.QueryRow("DELETE FROM exercices WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM exercices WHERE id = $1 RETURNING id, title, description, parameters, flow, idteacher, public;", id)
 	return ScanExercice(row)
 }
 
@@ -157,7 +157,7 @@ func ScanExerciceQuestion(row *sql.Row) (ExerciceQuestion, error) {
 
 // SelectAll returns all the items in the exercice_questions table.
 func SelectAllExerciceQuestions(db DB) (ExerciceQuestions, error) {
-	rows, err := db.Query("SELECT * FROM exercice_questions")
+	rows, err := db.Query("SELECT idexercice, idquestion, bareme, index FROM exercice_questions")
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func ScanExerciceQuestions(rs *sql.Rows) (ExerciceQuestions, error) {
 	return structs, nil
 }
 
-func InsertExerciceQuestion(db DB, item ExerciceQuestion) error {
+func (item ExerciceQuestion) Insert(db DB) error {
 	_, err := db.Exec(`INSERT INTO exercice_questions (
 			idexercice, idquestion, bareme, index
 			) VALUES (
@@ -266,7 +266,7 @@ func (items ExerciceQuestions) IdExercices() []int64 {
 }
 
 func SelectExerciceQuestionsByIdExercices(tx DB, idExercices_ ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE idexercice = ANY($1)", int64ArrayToPQ(idExercices_))
+	rows, err := tx.Query("SELECT idexercice, idquestion, bareme, index FROM exercice_questions WHERE idexercice = ANY($1)", int64ArrayToPQ(idExercices_))
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func SelectExerciceQuestionsByIdExercices(tx DB, idExercices_ ...int64) (Exercic
 }
 
 func DeleteExerciceQuestionsByIdExercices(tx DB, idExercices_ ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idexercice = ANY($1) RETURNING *", int64ArrayToPQ(idExercices_))
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idexercice = ANY($1) RETURNING idexercice, idquestion, bareme, index", int64ArrayToPQ(idExercices_))
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +302,7 @@ func (items ExerciceQuestions) IdQuestions() []int64 {
 }
 
 func SelectExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE idquestion = ANY($1)", int64ArrayToPQ(idQuestions_))
+	rows, err := tx.Query("SELECT idexercice, idquestion, bareme, index FROM exercice_questions WHERE idquestion = ANY($1)", int64ArrayToPQ(idQuestions_))
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func SelectExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (Exercic
 }
 
 func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (ExerciceQuestions, error) {
-	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idquestion = ANY($1) RETURNING *", int64ArrayToPQ(idQuestions_))
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idquestion = ANY($1) RETURNING idexercice, idquestion, bareme, index", int64ArrayToPQ(idQuestions_))
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +319,7 @@ func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (Exercic
 
 // SelectExerciceQuestionsByIdQuestionAndBareme selects the items matching the given fields.
 func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
-	rows, err := tx.Query("SELECT * FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2", idQuestion, bareme)
+	rows, err := tx.Query("SELECT idexercice, idquestion, bareme, index FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2", idQuestion, bareme)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, barem
 // DeleteExerciceQuestionsByIdQuestionAndBareme deletes the item matching the given fields, returning
 // the deleted items.
 func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
-	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING *", idQuestion, bareme)
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING idexercice, idquestion, bareme, index", idQuestion, bareme)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, barem
 
 // SelectExerciceQuestionByIdExerciceAndIndex return zero or one item, thanks to a UNIQUE SQL constraint.
 func SelectExerciceQuestionByIdExerciceAndIndex(tx DB, idExercice int64, index int) (item ExerciceQuestion, found bool, err error) {
-	row := tx.QueryRow("SELECT * FROM exercice_questions WHERE IdExercice = $1 AND Index = $2", idExercice, index)
+	row := tx.QueryRow("SELECT idexercice, idquestion, bareme, index FROM exercice_questions WHERE IdExercice = $1 AND Index = $2", idExercice, index)
 	item, err = ScanExerciceQuestion(row)
 	if err == sql.ErrNoRows {
 		return item, false, nil
@@ -359,7 +359,7 @@ func ScanLink(row *sql.Row) (Link, error) { return scanOneLink(row) }
 
 // SelectAll returns all the items in the links table.
 func SelectAllLinks(db DB) (Links, error) {
-	rows, err := db.Query("SELECT * FROM links")
+	rows, err := db.Query("SELECT repas, idtable1 FROM links")
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func ScanLinks(rs *sql.Rows) (Links, error) {
 	return structs, nil
 }
 
-func InsertLink(db DB, item Link) error {
+func (item Link) Insert(db DB) error {
 	_, err := db.Exec(`INSERT INTO links (
 			repas, idtable1
 			) VALUES (
@@ -466,7 +466,7 @@ func (items Links) Repass() []RepasID {
 }
 
 func SelectLinksByRepass(tx DB, repass_ ...RepasID) (Links, error) {
-	rows, err := tx.Query("SELECT * FROM links WHERE repas = ANY($1)", RepasIDArrayToPQ(repass_))
+	rows, err := tx.Query("SELECT repas, idtable1 FROM links WHERE repas = ANY($1)", RepasIDArrayToPQ(repass_))
 	if err != nil {
 		return nil, err
 	}
@@ -474,7 +474,7 @@ func SelectLinksByRepass(tx DB, repass_ ...RepasID) (Links, error) {
 }
 
 func DeleteLinksByRepass(tx DB, repass_ ...RepasID) (Links, error) {
-	rows, err := tx.Query("DELETE FROM links WHERE repas = ANY($1) RETURNING *", RepasIDArrayToPQ(repass_))
+	rows, err := tx.Query("DELETE FROM links WHERE repas = ANY($1) RETURNING repas, idtable1", RepasIDArrayToPQ(repass_))
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +494,7 @@ func ScanProgression(row *sql.Row) (Progression, error) { return scanOneProgress
 
 // SelectAll returns all the items in the progressions table.
 func SelectAllProgressions(db DB) (Progressions, error) {
-	rows, err := db.Query("SELECT * FROM progressions")
+	rows, err := db.Query("SELECT id, idexercice FROM progressions")
 	if err != nil {
 		return nil, err
 	}
@@ -503,13 +503,13 @@ func SelectAllProgressions(db DB) (Progressions, error) {
 
 // SelectProgression returns the entry matching 'id'.
 func SelectProgression(tx DB, id IdProgression) (Progression, error) {
-	row := tx.QueryRow("SELECT * FROM progressions WHERE id = $1", id)
+	row := tx.QueryRow("SELECT id, idexercice FROM progressions WHERE id = $1", id)
 	return ScanProgression(row)
 }
 
 // SelectProgressions returns the entry matching the given 'ids'.
 func SelectProgressions(tx DB, ids ...IdProgression) (Progressions, error) {
-	rows, err := tx.Query("SELECT * FROM progressions WHERE id = ANY($1)", IdProgressionArrayToPQ(ids))
+	rows, err := tx.Query("SELECT id, idexercice FROM progressions WHERE id = ANY($1)", IdProgressionArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +557,7 @@ func (item Progression) Insert(tx DB) (out Progression, err error) {
 		idexercice
 		) VALUES (
 		$1
-		) RETURNING *;
+		) RETURNING id, idexercice;
 		`, item.IdExercice)
 	return ScanProgression(row)
 }
@@ -568,14 +568,14 @@ func (item Progression) Update(tx DB) (out Progression, err error) {
 		idexercice
 		) = (
 		$1
-		) WHERE id = $2 RETURNING *;
+		) WHERE id = $2 RETURNING id, idexercice;
 		`, item.IdExercice, item.Id)
 	return ScanProgression(row)
 }
 
 // Deletes the Progression and returns the item
 func DeleteProgressionById(tx DB, id IdProgression) (Progression, error) {
-	row := tx.QueryRow("DELETE FROM progressions WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM progressions WHERE id = $1 RETURNING id, idexercice;", id)
 	return ScanProgression(row)
 }
 
@@ -605,7 +605,7 @@ func ScanProgressionQuestion(row *sql.Row) (ProgressionQuestion, error) {
 
 // SelectAll returns all the items in the progression_questions table.
 func SelectAllProgressionQuestions(db DB) (ProgressionQuestions, error) {
-	rows, err := db.Query("SELECT * FROM progression_questions")
+	rows, err := db.Query("SELECT idprogression, idexercice, index, history FROM progression_questions")
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +639,7 @@ func ScanProgressionQuestions(rs *sql.Rows) (ProgressionQuestions, error) {
 	return structs, nil
 }
 
-func InsertProgressionQuestion(db DB, item ProgressionQuestion) error {
+func (item ProgressionQuestion) Insert(db DB) error {
 	_, err := db.Exec(`INSERT INTO progression_questions (
 			idprogression, idexercice, index, history
 			) VALUES (
@@ -714,7 +714,7 @@ func (items ProgressionQuestions) IdProgressions() []IdProgression {
 }
 
 func SelectProgressionQuestionsByIdProgressions(tx DB, idProgressions_ ...IdProgression) (ProgressionQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM progression_questions WHERE idprogression = ANY($1)", IdProgressionArrayToPQ(idProgressions_))
+	rows, err := tx.Query("SELECT idprogression, idexercice, index, history FROM progression_questions WHERE idprogression = ANY($1)", IdProgressionArrayToPQ(idProgressions_))
 	if err != nil {
 		return nil, err
 	}
@@ -722,7 +722,7 @@ func SelectProgressionQuestionsByIdProgressions(tx DB, idProgressions_ ...IdProg
 }
 
 func DeleteProgressionQuestionsByIdProgressions(tx DB, idProgressions_ ...IdProgression) (ProgressionQuestions, error) {
-	rows, err := tx.Query("DELETE FROM progression_questions WHERE idprogression = ANY($1) RETURNING *", IdProgressionArrayToPQ(idProgressions_))
+	rows, err := tx.Query("DELETE FROM progression_questions WHERE idprogression = ANY($1) RETURNING idprogression, idexercice, index, history", IdProgressionArrayToPQ(idProgressions_))
 	if err != nil {
 		return nil, err
 	}
@@ -750,7 +750,7 @@ func (items ProgressionQuestions) IdExercices() []IdExercice {
 }
 
 func SelectProgressionQuestionsByIdExercices(tx DB, idExercices_ ...IdExercice) (ProgressionQuestions, error) {
-	rows, err := tx.Query("SELECT * FROM progression_questions WHERE idexercice = ANY($1)", IdExerciceArrayToPQ(idExercices_))
+	rows, err := tx.Query("SELECT idprogression, idexercice, index, history FROM progression_questions WHERE idexercice = ANY($1)", IdExerciceArrayToPQ(idExercices_))
 	if err != nil {
 		return nil, err
 	}
@@ -758,7 +758,7 @@ func SelectProgressionQuestionsByIdExercices(tx DB, idExercices_ ...IdExercice) 
 }
 
 func DeleteProgressionQuestionsByIdExercices(tx DB, idExercices_ ...IdExercice) (ProgressionQuestions, error) {
-	rows, err := tx.Query("DELETE FROM progression_questions WHERE idexercice = ANY($1) RETURNING *", IdExerciceArrayToPQ(idExercices_))
+	rows, err := tx.Query("DELETE FROM progression_questions WHERE idexercice = ANY($1) RETURNING idprogression, idexercice, index, history", IdExerciceArrayToPQ(idExercices_))
 	if err != nil {
 		return nil, err
 	}
@@ -767,7 +767,7 @@ func DeleteProgressionQuestionsByIdExercices(tx DB, idExercices_ ...IdExercice) 
 
 // SelectProgressionQuestionByIdProgressionAndIndex return zero or one item, thanks to a UNIQUE SQL constraint.
 func SelectProgressionQuestionByIdProgressionAndIndex(tx DB, idProgression IdProgression, index int) (item ProgressionQuestion, found bool, err error) {
-	row := tx.QueryRow("SELECT * FROM progression_questions WHERE IdProgression = $1 AND Index = $2", idProgression, index)
+	row := tx.QueryRow("SELECT idprogression, idexercice, index, history FROM progression_questions WHERE IdProgression = $1 AND Index = $2", idProgression, index)
 	item, err = ScanProgressionQuestion(row)
 	if err == sql.ErrNoRows {
 		return item, false, nil
@@ -777,7 +777,7 @@ func SelectProgressionQuestionByIdProgressionAndIndex(tx DB, idProgression IdPro
 
 // SelectProgressionByIdAndIdExercice return zero or one item, thanks to a UNIQUE SQL constraint.
 func SelectProgressionByIdAndIdExercice(tx DB, id IdProgression, idExercice int64) (item Progression, found bool, err error) {
-	row := tx.QueryRow("SELECT * FROM progressions WHERE Id = $1 AND IdExercice = $2", id, idExercice)
+	row := tx.QueryRow("SELECT id, idexercice FROM progressions WHERE Id = $1 AND IdExercice = $2", id, idExercice)
 	item, err = ScanProgression(row)
 	if err == sql.ErrNoRows {
 		return item, false, nil
@@ -802,7 +802,7 @@ func ScanQuestion(row *sql.Row) (Question, error) { return scanOneQuestion(row) 
 
 // SelectAll returns all the items in the questions table.
 func SelectAllQuestions(db DB) (Questions, error) {
-	rows, err := db.Query("SELECT * FROM questions")
+	rows, err := db.Query("SELECT id, page, public, idteacher, description, needexercice FROM questions")
 	if err != nil {
 		return nil, err
 	}
@@ -811,13 +811,13 @@ func SelectAllQuestions(db DB) (Questions, error) {
 
 // SelectQuestion returns the entry matching 'id'.
 func SelectQuestion(tx DB, id int64) (Question, error) {
-	row := tx.QueryRow("SELECT * FROM questions WHERE id = $1", id)
+	row := tx.QueryRow("SELECT id, page, public, idteacher, description, needexercice FROM questions WHERE id = $1", id)
 	return ScanQuestion(row)
 }
 
 // SelectQuestions returns the entry matching the given 'ids'.
 func SelectQuestions(tx DB, ids ...int64) (Questions, error) {
-	rows, err := tx.Query("SELECT * FROM questions WHERE id = ANY($1)", int64ArrayToPQ(ids))
+	rows, err := tx.Query("SELECT id, page, public, idteacher, description, needexercice FROM questions WHERE id = ANY($1)", int64ArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -865,7 +865,7 @@ func (item Question) Insert(tx DB) (out Question, err error) {
 		page, public, idteacher, description, needexercice
 		) VALUES (
 		$1, $2, $3, $4, $5
-		) RETURNING *;
+		) RETURNING id, page, public, idteacher, description, needexercice;
 		`, item.Page, item.Public, item.IdTeacher, item.Description, item.NeedExercice)
 	return ScanQuestion(row)
 }
@@ -876,14 +876,14 @@ func (item Question) Update(tx DB) (out Question, err error) {
 		page, public, idteacher, description, needexercice
 		) = (
 		$1, $2, $3, $4, $5
-		) WHERE id = $6 RETURNING *;
+		) WHERE id = $6 RETURNING id, page, public, idteacher, description, needexercice;
 		`, item.Page, item.Public, item.IdTeacher, item.Description, item.NeedExercice, item.Id)
 	return ScanQuestion(row)
 }
 
 // Deletes the Question and returns the item
 func DeleteQuestionById(tx DB, id int64) (Question, error) {
-	row := tx.QueryRow("DELETE FROM questions WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM questions WHERE id = $1 RETURNING id, page, public, idteacher, description, needexercice;", id)
 	return ScanQuestion(row)
 }
 
@@ -897,7 +897,7 @@ func DeleteQuestionsByIDs(tx DB, ids ...int64) ([]int64, error) {
 }
 
 func SelectQuestionsByNeedExercices(tx DB, needExercices_ ...int64) (Questions, error) {
-	rows, err := tx.Query("SELECT * FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needExercices_))
+	rows, err := tx.Query("SELECT id, page, public, idteacher, description, needexercice FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needExercices_))
 	if err != nil {
 		return nil, err
 	}
@@ -925,7 +925,7 @@ func ScanQuestionTag(row *sql.Row) (QuestionTag, error) { return scanOneQuestion
 
 // SelectAll returns all the items in the question_tags table.
 func SelectAllQuestionTags(db DB) (QuestionTags, error) {
-	rows, err := db.Query("SELECT * FROM question_tags")
+	rows, err := db.Query("SELECT tag, idquestion FROM question_tags")
 	if err != nil {
 		return nil, err
 	}
@@ -959,7 +959,7 @@ func ScanQuestionTags(rs *sql.Rows) (QuestionTags, error) {
 	return structs, nil
 }
 
-func InsertQuestionTag(db DB, item QuestionTag) error {
+func (item QuestionTag) Insert(db DB) error {
 	_, err := db.Exec(`INSERT INTO question_tags (
 			tag, idquestion
 			) VALUES (
@@ -1032,7 +1032,7 @@ func (items QuestionTags) IdQuestions() []int64 {
 }
 
 func SelectQuestionTagsByIdQuestions(tx DB, idQuestions_ ...int64) (QuestionTags, error) {
-	rows, err := tx.Query("SELECT * FROM question_tags WHERE idquestion = ANY($1)", int64ArrayToPQ(idQuestions_))
+	rows, err := tx.Query("SELECT tag, idquestion FROM question_tags WHERE idquestion = ANY($1)", int64ArrayToPQ(idQuestions_))
 	if err != nil {
 		return nil, err
 	}
@@ -1040,7 +1040,7 @@ func SelectQuestionTagsByIdQuestions(tx DB, idQuestions_ ...int64) (QuestionTags
 }
 
 func DeleteQuestionTagsByIdQuestions(tx DB, idQuestions_ ...int64) (QuestionTags, error) {
-	rows, err := tx.Query("DELETE FROM question_tags WHERE idquestion = ANY($1) RETURNING *", int64ArrayToPQ(idQuestions_))
+	rows, err := tx.Query("DELETE FROM question_tags WHERE idquestion = ANY($1) RETURNING tag, idquestion", int64ArrayToPQ(idQuestions_))
 	if err != nil {
 		return nil, err
 	}
@@ -1049,7 +1049,7 @@ func DeleteQuestionTagsByIdQuestions(tx DB, idQuestions_ ...int64) (QuestionTags
 
 // SelectQuestionTagByIdQuestionAndTag return zero or one item, thanks to a UNIQUE SQL constraint.
 func SelectQuestionTagByIdQuestionAndTag(tx DB, idQuestion int64, tag string) (item QuestionTag, found bool, err error) {
-	row := tx.QueryRow("SELECT * FROM question_tags WHERE IdQuestion = $1 AND Tag = $2", idQuestion, tag)
+	row := tx.QueryRow("SELECT tag, idquestion FROM question_tags WHERE IdQuestion = $1 AND Tag = $2", idQuestion, tag)
 	item, err = ScanQuestionTag(row)
 	if err == sql.ErrNoRows {
 		return item, false, nil
@@ -1071,7 +1071,7 @@ func ScanRepas(row *sql.Row) (Repas, error) { return scanOneRepas(row) }
 
 // SelectAll returns all the items in the repass table.
 func SelectAllRepass(db DB) (Repass, error) {
-	rows, err := db.Query("SELECT * FROM repass")
+	rows, err := db.Query("SELECT order, id, v FROM repass")
 	if err != nil {
 		return nil, err
 	}
@@ -1080,13 +1080,13 @@ func SelectAllRepass(db DB) (Repass, error) {
 
 // SelectRepas returns the entry matching 'id'.
 func SelectRepas(tx DB, id RepasID) (Repas, error) {
-	row := tx.QueryRow("SELECT * FROM repass WHERE id = $1", id)
+	row := tx.QueryRow("SELECT order, id, v FROM repass WHERE id = $1", id)
 	return ScanRepas(row)
 }
 
 // SelectRepass returns the entry matching the given 'ids'.
 func SelectRepass(tx DB, ids ...RepasID) (Repass, error) {
-	rows, err := tx.Query("SELECT * FROM repass WHERE id = ANY($1)", RepasIDArrayToPQ(ids))
+	rows, err := tx.Query("SELECT order, id, v FROM repass WHERE id = ANY($1)", RepasIDArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -1134,7 +1134,7 @@ func (item Repas) Insert(tx DB) (out Repas, err error) {
 		order, v
 		) VALUES (
 		$1, $2
-		) RETURNING *;
+		) RETURNING order, id, v;
 		`, item.Order, item.V)
 	return ScanRepas(row)
 }
@@ -1145,14 +1145,14 @@ func (item Repas) Update(tx DB) (out Repas, err error) {
 		order, v
 		) = (
 		$1, $2
-		) WHERE id = $3 RETURNING *;
+		) WHERE id = $3 RETURNING order, id, v;
 		`, item.Order, item.V, item.Id)
 	return ScanRepas(row)
 }
 
 // Deletes the Repas and returns the item
 func DeleteRepasById(tx DB, id RepasID) (Repas, error) {
-	row := tx.QueryRow("DELETE FROM repass WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM repass WHERE id = $1 RETURNING order, id, v;", id)
 	return ScanRepas(row)
 }
 
@@ -1177,6 +1177,8 @@ func scanOneTable1(row scanner) (Table1, error) {
 		&item.Strings,
 		&item.Cp,
 		&item.External,
+		&item.BoolArray,
+		&item.guard,
 	)
 	return item, err
 }
@@ -1185,7 +1187,7 @@ func ScanTable1(row *sql.Row) (Table1, error) { return scanOneTable1(row) }
 
 // SelectAll returns all the items in the table1s table.
 func SelectAllTable1s(db DB) (Table1s, error) {
-	rows, err := db.Query("SELECT * FROM table1s")
+	rows, err := db.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s")
 	if err != nil {
 		return nil, err
 	}
@@ -1194,13 +1196,13 @@ func SelectAllTable1s(db DB) (Table1s, error) {
 
 // SelectTable1 returns the entry matching 'id'.
 func SelectTable1(tx DB, id int64) (Table1, error) {
-	row := tx.QueryRow("SELECT * FROM table1s WHERE id = $1", id)
+	row := tx.QueryRow("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE id = $1", id)
 	return ScanTable1(row)
 }
 
 // SelectTable1s returns the entry matching the given 'ids'.
 func SelectTable1s(tx DB, ids ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE id = ANY($1)", int64ArrayToPQ(ids))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE id = ANY($1)", int64ArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -1245,28 +1247,28 @@ func ScanTable1s(rs *sql.Rows) (Table1s, error) {
 // Insert one Table1 in the database and returns the item with id filled.
 func (item Table1) Insert(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`INSERT INTO table1s (
-		ex1, ex2, l, other, f, strings, cp, external
+		ex1, ex2, l, other, f, strings, cp, external, boolarray, guard
 		) VALUES (
-		$1, $2, $3, $4, $5, $6, $7, $8
-		) RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External)
+		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+		) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.guard)
 	return ScanTable1(row)
 }
 
 // Update Table1 in the database and returns the new version.
 func (item Table1) Update(tx DB) (out Table1, err error) {
 	row := tx.QueryRow(`UPDATE table1s SET (
-		ex1, ex2, l, other, f, strings, cp, external
+		ex1, ex2, l, other, f, strings, cp, external, boolarray, guard
 		) = (
-		$1, $2, $3, $4, $5, $6, $7, $8
-		) WHERE id = $9 RETURNING *;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.Id)
+		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+		) WHERE id = $11 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard;
+		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.guard, item.Id)
 	return ScanTable1(row)
 }
 
 // Deletes the Table1 and returns the item
 func DeleteTable1ById(tx DB, id int64) (Table1, error) {
-	row := tx.QueryRow("DELETE FROM table1s WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM table1s WHERE id = $1 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard;", id)
 	return ScanTable1(row)
 }
 
@@ -1305,7 +1307,7 @@ func (items Table1s) Ex1s() []RepasID {
 }
 
 func SelectTable1sByEx1s(tx DB, ex1s_ ...RepasID) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE ex1 = ANY($1)", RepasIDArrayToPQ(ex1s_))
 	if err != nil {
 		return nil, err
 	}
@@ -1346,7 +1348,7 @@ func (items Table1s) Ex2s() []RepasID {
 }
 
 func SelectTable1sByEx2s(tx DB, ex2s_ ...RepasID) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE ex2 = ANY($1)", RepasIDArrayToPQ(ex2s_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE ex2 = ANY($1)", RepasIDArrayToPQ(ex2s_))
 	if err != nil {
 		return nil, err
 	}
@@ -1362,7 +1364,7 @@ func DeleteTable1sByEx2s(tx DB, ex2s_ ...RepasID) ([]int64, error) {
 }
 
 func SelectTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls_))
 	if err != nil {
 		return nil, err
 	}
@@ -1378,7 +1380,7 @@ func DeleteTable1sByLs(tx DB, ls_ ...int64) ([]int64, error) {
 }
 
 func SelectTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
-	rows, err := tx.Query("SELECT * FROM table1s WHERE other = ANY($1)", RepasIDArrayToPQ(others_))
+	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, guard FROM table1s WHERE other = ANY($1)", RepasIDArrayToPQ(others_))
 	if err != nil {
 		return nil, err
 	}
@@ -1409,7 +1411,7 @@ func ScanWithOptionalTime(row *sql.Row) (WithOptionalTime, error) {
 
 // SelectAll returns all the items in the with_optional_times table.
 func SelectAllWithOptionalTimes(db DB) (WithOptionalTimes, error) {
-	rows, err := db.Query("SELECT * FROM with_optional_times")
+	rows, err := db.Query("SELECT id, deadine, deadineopt FROM with_optional_times")
 	if err != nil {
 		return nil, err
 	}
@@ -1418,13 +1420,13 @@ func SelectAllWithOptionalTimes(db DB) (WithOptionalTimes, error) {
 
 // SelectWithOptionalTime returns the entry matching 'id'.
 func SelectWithOptionalTime(tx DB, id int64) (WithOptionalTime, error) {
-	row := tx.QueryRow("SELECT * FROM with_optional_times WHERE id = $1", id)
+	row := tx.QueryRow("SELECT id, deadine, deadineopt FROM with_optional_times WHERE id = $1", id)
 	return ScanWithOptionalTime(row)
 }
 
 // SelectWithOptionalTimes returns the entry matching the given 'ids'.
 func SelectWithOptionalTimes(tx DB, ids ...int64) (WithOptionalTimes, error) {
-	rows, err := tx.Query("SELECT * FROM with_optional_times WHERE id = ANY($1)", int64ArrayToPQ(ids))
+	rows, err := tx.Query("SELECT id, deadine, deadineopt FROM with_optional_times WHERE id = ANY($1)", int64ArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -1472,7 +1474,7 @@ func (item WithOptionalTime) Insert(tx DB) (out WithOptionalTime, err error) {
 		deadine, deadineopt
 		) VALUES (
 		$1, $2
-		) RETURNING *;
+		) RETURNING id, deadine, deadineopt;
 		`, item.Deadine, item.DeadineOpt)
 	return ScanWithOptionalTime(row)
 }
@@ -1483,14 +1485,14 @@ func (item WithOptionalTime) Update(tx DB) (out WithOptionalTime, err error) {
 		deadine, deadineopt
 		) = (
 		$1, $2
-		) WHERE id = $3 RETURNING *;
+		) WHERE id = $3 RETURNING id, deadine, deadineopt;
 		`, item.Deadine, item.DeadineOpt, item.Id)
 	return ScanWithOptionalTime(row)
 }
 
 // Deletes the WithOptionalTime and returns the item
 func DeleteWithOptionalTimeById(tx DB, id int64) (WithOptionalTime, error) {
-	row := tx.QueryRow("DELETE FROM with_optional_times WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM with_optional_times WHERE id = $1 RETURNING id, deadine, deadineopt;", id)
 	return ScanWithOptionalTime(row)
 }
 
@@ -1533,7 +1535,6 @@ func (s *EnumArray) Scan(src interface{}) error {
 		(*s)[i] = testsource.EnumUInt(v)
 	}
 	return nil
-
 }
 func (s EnumArray) Value() (driver.Value, error) {
 	tmp := make(pq.Int64Array, len(s))
@@ -1541,7 +1542,6 @@ func (s EnumArray) Value() (driver.Value, error) {
 		tmp[i] = int64(v)
 	}
 	return tmp.Value()
-
 }
 
 func (s *FixedArray) Scan(src interface{}) error {
@@ -1566,6 +1566,23 @@ func (s *Strings) Scan(src interface{}) error {
 }
 func (s Strings) Value() (driver.Value, error) {
 	return pq.StringArray(s).Value()
+}
+
+func (s *ba) Scan(src interface{}) error {
+	var tmp pq.BoolArray
+	err := tmp.Scan(src)
+	if err != nil {
+		return err
+	}
+	if len(tmp) != 3 {
+		return fmt.Errorf("unexpected length %d", len(tmp))
+	}
+	copy(s[:], tmp)
+	return nil
+
+}
+func (s ba) Value() (driver.Value, error) {
+	return pq.BoolArray(s[:]).Value()
 }
 
 func (s *Composite) Scan(src interface{}) error {

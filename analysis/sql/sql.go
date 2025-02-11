@@ -163,7 +163,8 @@ type Table struct {
 
 	uniqueColumns map[string]bool
 
-	// Columns only exposes exported struct fields.
+	// Columns only exposes exported struct fields,
+	// including guards.
 	Columns []Column
 
 	// CustomComments are the user provided constraints
@@ -180,7 +181,7 @@ func NewTable(s *an.Struct) Table {
 		Name: s.Name,
 	}
 	for _, fi := range s.Fields {
-		if !fi.Field.Exported() {
+		if _, isGuard := fi.IsSQLGuard(); !isGuard && !fi.Field.Exported() {
 			continue
 		}
 

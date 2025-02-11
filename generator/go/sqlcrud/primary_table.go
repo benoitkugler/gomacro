@@ -2,36 +2,16 @@ package sqlcrud
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/benoitkugler/gomacro/analysis/sql"
 	gen "github.com/benoitkugler/gomacro/generator"
 )
 
-func (ctx context) generatePrimaryTable(ta sql.Table) []gen.Declaration {
+func (ctx context) generatePrimaryTable(ta sql.Table, cols columnsCode) []gen.Declaration {
 	primaryIndex := ta.Primary()
 	idTypeName := ctx.typeName(ta.Columns[primaryIndex].Field.Type.Type())
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
-
-	var (
-		scanFields                 = make([]string, len(ta.Columns))
-		columnNamesWithoutPrimary  []string // required for create/update statements
-		placeholdersWithoutPrimary []string // required for create/update statements
-		goFieldsWithoutPrimary     []string // required for create/update statements
-	)
-	for i, col := range ta.Columns {
-		fieldName := col.Field.Field.Name()
-		columnName := sqlColumnName(col.Field)
-		scanFields[i] = fmt.Sprintf("&item.%s,", fieldName)
-
-		if i != primaryIndex {
-			columnNamesWithoutPrimary = append(columnNamesWithoutPrimary, columnName)
-			// placeholders like $1 $2 ...
-			placeholdersWithoutPrimary = append(placeholdersWithoutPrimary, fmt.Sprintf("$%d", len(placeholdersWithoutPrimary)+1))
-			goFieldsWithoutPrimary = append(goFieldsWithoutPrimary, fmt.Sprintf("item.%s", fieldName))
-		}
-	}
 
 	content := fmt.Sprintf(`
 func scanOne%[1]s(row scanner) (%[1]s, error) {
@@ -46,7 +26,7 @@ func Scan%[1]s(row *sql.Row) (%[1]s, error) { return scanOne%[1]s(row) }
 
 // SelectAll returns all the items in the %[3]s table.
 func SelectAll%[1]ss(db DB) (%[1]ss, error) {
-	rows, err := db.Query("SELECT * FROM %[3]s")
+	rows, err := db.Query("SELECT %[10]s FROM %[3]s")
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +35,13 @@ func SelectAll%[1]ss(db DB) (%[1]ss, error) {
 
 // Select%[1]s returns the entry matching 'id'.
 func Select%[1]s(tx DB, id %[2]s) (%[1]s, error) {
-	row := tx.QueryRow("SELECT * FROM %[3]s WHERE id = $1", id)
+	row := tx.QueryRow("SELECT %[10]s FROM %[3]s WHERE id = $1", id)
 	return Scan%[1]s(row)
 }
 
 // Select%[1]ss returns the entry matching the given 'ids'.
 func Select%[1]ss(tx DB, ids ...%[2]s) (%[1]ss, error) {
-	rows, err := tx.Query("SELECT * FROM %[3]s WHERE id = ANY($1)", %[2]sArrayToPQ(ids))
+	rows, err := tx.Query("SELECT %[10]s FROM %[3]s WHERE id = ANY($1)", %[2]sArrayToPQ(ids))
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +89,7 @@ func (item %[1]s) Insert(tx DB) (out %[1]s, err error) {
 		%[5]s
 		) VALUES (
 		%[6]s
-		) RETURNING *;
+		) RETURNING %[10]s;
 		`+"`,"+`%[7]s)
 	return Scan%[1]s(row)
 }
@@ -120,14 +100,14 @@ func (item %[1]s) Update(tx DB) (out %[1]s, err error) {
 		%[5]s
 		) = (
 		%[6]s
-		) WHERE id = $%[8]d RETURNING *;
+		) WHERE id = $%[8]d RETURNING %[10]s;
 		`+"`,"+`%[7]s, item.%[9]s)
 	return Scan%[1]s(row)
 }
 
 // Deletes the %[1]s and returns the item
 func Delete%[1]sById(tx DB, id %[2]s) (%[1]s, error) {
-	row := tx.QueryRow("DELETE FROM %[3]s WHERE id = $1 RETURNING *;", id)
+	row := tx.QueryRow("DELETE FROM %[3]s WHERE id = $1 RETURNING %[10]s;", id)
 	return Scan%[1]s(row)
 }
 
@@ -140,8 +120,9 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 	return Scan%[2]sArray(rows)
 }	
 `, goTypeName, idTypeName, sqlTableName,
-		strings.Join(scanFields, "\n"), strings.Join(columnNamesWithoutPrimary, ", "), strings.Join(placeholdersWithoutPrimary, ", "), strings.Join(goFieldsWithoutPrimary, ", "),
+		cols.goScanFields, cols.sqlColumnNamesNoPrimary, cols.sqlPlaceholdersNoPrimary, cols.goValueFieldsNoPrimary,
 		len(ta.Columns), ta.Columns[primaryIndex].Field.Field.Name(),
+		cols.sqlColumnNames,
 	)
 
 	var out []gen.Declaration
@@ -163,14 +144,16 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 			content += fmt.Sprintf(`
 			// Select%[1]sBy%[2]s return zero or one item, thanks to a UNIQUE SQL constraint.
 			func Select%[1]sBy%[2]s(tx DB, %[3]s %[5]s) (item %[1]s, found bool, err error) {
-				row := tx.QueryRow("SELECT * FROM %[4]s WHERE %[6]s = $1", %[3]s)
+				row := tx.QueryRow("SELECT %[7]s FROM %[4]s WHERE %[6]s = $1", %[3]s)
 				item, err = Scan%[1]s(row)
 				if err == sql.ErrNoRows {
 					return item, false, nil
 				}
 				return item, true, err
 			}	
-			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName)
+			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName,
+				cols.sqlColumnNames,
+			)
 		}
 
 		if !key.IsNullable() {
@@ -219,7 +202,7 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 		varNamePlural := varName + "s_" // to avoid potential shadowing
 		content += fmt.Sprintf(`
 		func Select%[1]ssBy%[2]ss(tx DB, %[3]s ...%[6]s) (%[1]ss, error) {
-			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[7]s = ANY($1)", %[6]sArrayToPQ(%[3]s))
+			rows, err := tx.Query("SELECT %[8]s FROM %[4]s WHERE %[7]s = ANY($1)", %[6]sArrayToPQ(%[3]s))
 			if err != nil {
 				return nil, err
 			}
@@ -233,7 +216,9 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 			}
 			return Scan%[5]sArray(rows)
 		}	
-		`, goTypeName, fieldName, varNamePlural, sqlTableName, idTypeName, keyTypeName, columnName)
+		`, goTypeName, fieldName, varNamePlural, sqlTableName, idTypeName, keyTypeName, columnName,
+			cols.sqlColumnNames,
+		)
 	}
 
 	return append(out,

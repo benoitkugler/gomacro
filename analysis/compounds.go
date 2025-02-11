@@ -62,6 +62,8 @@ func (st StructField) JSONName() string {
 //   - unexported
 //   - with a 'json' tag '-'
 //   - with a 'gomacro' tag 'ignore'
+//
+// Note that [IsSQLGuard] takes precedences over this function.
 func (st StructField) Exported() bool {
 	if name := st.Tag.Get("json"); name == "-" {
 		return false
@@ -70,6 +72,13 @@ func (st StructField) Exported() bool {
 		return false
 	}
 	return st.Field.Exported()
+}
+
+// IsSQLGuard returns true if the field has a "gomacro-sql-guard" tag,
+// with its value
+func (st StructField) IsSQLGuard() (value string, ok bool) {
+	val := st.Tag.Get("gomacro-sql-guard")
+	return val, val != ""
 }
 
 // IsOpaqueFor returns true if the field should be considered

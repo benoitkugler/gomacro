@@ -33,6 +33,9 @@ func TestSQL(t *testing.T) {
 	_, ok = table1.Columns[9].SQLType.(Array)
 	Assert(t, ok)
 
+	_, ok = table1.Columns[10].Field.IsSQLGuard()
+	Assert(t, ok)
+
 	repas := NewTable(an.Types[Lookup(an.Root, "Repas")].(*analysis.Struct))
 	Assert(t, len(repas.ForeignKeys()) == 0)
 	Assert(t, repas.Primary() == 1)

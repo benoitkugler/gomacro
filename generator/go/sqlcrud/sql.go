@@ -210,14 +210,15 @@ func isLocalNullInt64(col sql.Column) *types.Var {
 }
 
 func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
+	code := newColumnsCode(ta)
 	if ta.Primary() >= 0 { // we have an ID
-		decls = append(decls, ctx.generatePrimaryTable(ta)...)
+		decls = append(decls, ctx.generatePrimaryTable(ta, code)...)
 	} else { // "link" table
-		decls = append(decls, ctx.generateLinkTable(ta)...)
+		decls = append(decls, ctx.generateLinkTable(ta, code)...)
 	}
 
-	decls = append(decls, ctx.generateSelectByUniques(ta))
-	decls = append(decls, ctx.generateSelectByKeys(ta))
+	decls = append(decls, ctx.generateSelectByUniques(ta, code))
+	decls = append(decls, ctx.generateSelectByKeys(ta, code))
 
 	// generate the value interface method
 	for _, col := range ta.Columns {
@@ -300,7 +301,7 @@ func sqlColumnName(fi an.StructField) string {
 	return strings.ToLower(fi.Field.Name())
 }
 
-func (ctx context) generateSelectByUniques(ta sql.Table) gen.Declaration {
+func (ctx context) generateSelectByUniques(ta sql.Table, code columnsCode) gen.Declaration {
 	var content string
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
@@ -312,14 +313,16 @@ func (ctx context) generateSelectByUniques(ta sql.Table) gen.Declaration {
 		content += fmt.Sprintf(`
 		// Select%[1]sBy%[2]s return zero or one item, thanks to a UNIQUE SQL constraint.
 		func Select%[1]sBy%[2]s(tx DB, %[3]s) (item %[1]s, found bool, err error) {
-			row := tx.QueryRow("SELECT * FROM %[4]s WHERE %[5]s", %[6]s)
+			row := tx.QueryRow("SELECT %[7]s FROM %[4]s WHERE %[5]s", %[6]s)
 			item, err = Scan%[1]s(row)
 			if err == sql.ErrNoRows {
 				return item, false, nil
 			}
 			return item, true, err
 		}
-		`, goTypeName, funcTitle, varDecls, sqlTableName, comparison, varNames)
+		`, goTypeName, funcTitle, varDecls, sqlTableName, comparison, varNames,
+			code.sqlColumnNames,
+		)
 	}
 
 	return gen.Declaration{
@@ -328,7 +331,7 @@ func (ctx context) generateSelectByUniques(ta sql.Table) gen.Declaration {
 	}
 }
 
-func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
+func (ctx context) generateSelectByKeys(ta sql.Table, code columnsCode) gen.Declaration {
 	var content string
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
@@ -340,7 +343,7 @@ func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 		content += fmt.Sprintf(`
 		// Select%[1]ssBy%[2]s selects the items matching the given fields.
 		func Select%[1]ssBy%[2]s(tx DB, %[3]s) (item %[1]ss, err error) {
-			rows, err := tx.Query("SELECT * FROM %[4]s WHERE %[5]s", %[6]s)
+			rows, err := tx.Query("SELECT %[7]s FROM %[4]s WHERE %[5]s", %[6]s)
 			if err != nil {
 				return nil, err
 			}
@@ -350,13 +353,14 @@ func (ctx context) generateSelectByKeys(ta sql.Table) gen.Declaration {
 		// Delete%[1]ssBy%[2]s deletes the item matching the given fields, returning 
 		// the deleted items.
 		func Delete%[1]ssBy%[2]s(tx DB, %[3]s) (item %[1]ss, err error) {
-			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[5]s RETURNING *", %[6]s)
+			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[5]s RETURNING %[7]s", %[6]s)
 			if err != nil {
 				return nil, err
 			}
 			return Scan%[1]ss(rows)
 		}
-		`, goTypeName, funcTitle, varDecls, sqlTableName, comparison, varNames)
+		`, goTypeName, funcTitle, varDecls, sqlTableName, comparison, varNames,
+			code.sqlColumnNames)
 	}
 
 	return gen.Declaration{
@@ -548,5 +552,64 @@ func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declara
 		func (s %s) Value() (driver.Value, error) { 
 			%s
 		}`, goTypeName, scanCode, goTypeName, valueCode),
+	}
+}
+
+// columnsCode exposes various SQL or Go code
+// generated from columns
+type columnsCode struct {
+	// required for create/update statements
+
+	goScanFields                          string
+	goValueFields, goValueFieldsNoPrimary string
+
+	// required for insert statements
+
+	sqlQuotedColumnNames                      string
+	sqlColumnNames, sqlColumnNamesNoPrimary   string
+	sqlPlaceholders, sqlPlaceholdersNoPrimary string
+}
+
+func newColumnsCode(ta sql.Table) columnsCode {
+	var (
+		scanFields        = make([]string, len(ta.Columns))
+		valueFields       = make([]string, len(ta.Columns))
+		quotedColumnNames = make([]string, len(ta.Columns))
+		columnNames       = make([]string, len(ta.Columns))
+		placeholders      = make([]string, len(ta.Columns))
+
+		valueFieldsNoPrimary  []string
+		columnNamesNoPrimary  []string
+		placeholdersNoPrimary []string
+	)
+	primaryIndex := ta.Primary()
+	for i, col := range ta.Columns {
+		fieldName := col.Field.Field.Name()
+		columnName := sqlColumnName(col.Field)
+		scanFields[i] = fmt.Sprintf("&item.%s,", fieldName)
+		valueFields[i] = fmt.Sprintf("item.%s", fieldName)
+
+		quotedColumnNames[i] = fmt.Sprintf("%q,", columnName)
+		columnNames[i] = columnName
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+
+		if i != primaryIndex {
+			valueFieldsNoPrimary = append(valueFieldsNoPrimary, fmt.Sprintf("item.%s", fieldName))
+			columnNamesNoPrimary = append(columnNamesNoPrimary, columnName)
+			// placeholders like $1 $2 ...
+			placeholdersNoPrimary = append(placeholdersNoPrimary, fmt.Sprintf("$%d", len(placeholdersNoPrimary)+1))
+		}
+	}
+
+	return columnsCode{
+		goScanFields:         strings.Join(scanFields, "\n"),
+		goValueFields:        strings.Join(valueFields, ", "),
+		sqlQuotedColumnNames: strings.Join(quotedColumnNames, "\n"),
+		sqlColumnNames:       strings.Join(columnNames, ", "),
+		sqlPlaceholders:      strings.Join(placeholders, ", "),
+
+		goValueFieldsNoPrimary:   strings.Join(valueFieldsNoPrimary, ", "),
+		sqlColumnNamesNoPrimary:  strings.Join(columnNamesNoPrimary, ", "),
+		sqlPlaceholdersNoPrimary: strings.Join(placeholdersNoPrimary, ", "),
 	}
 }

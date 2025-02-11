@@ -23,8 +23,11 @@ type Table1 struct {
 	Strings   Strings
 	Cp        Composite
 	External  testsource.Comp
-	BoolArray [3]bool
+	BoolArray ba
+	guard     LocalEnum `gomacro-sql-guard:"#[LocalEnum.A]"`
 }
+
+type ba [3]bool
 
 // gomacro:SQL ADD CHECK (V = #[LocalEnum.A] OR V = #[LocalEnum.B])
 type Repas struct {
