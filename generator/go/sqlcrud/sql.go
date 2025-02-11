@@ -107,7 +107,7 @@ func (ctx context) generateArrayConverter(key sql.ForeignKey) bool {
 func (ctx context) canImplementValuer(column sql.Column) (string, bool) {
 	named, ok := column.Field.Type.Type().(*types.Named)
 	if !ok {
-		panic(fmt.Sprintf("field %s, written as JSON in SQL, is not named: sql.Valuer interface can't be implemented", column.Field.Field.Name()))
+		panic(fmt.Sprintf("field %s (with type %T), is not named: sql.Valuer interface can't be implemented", column.Field.Field.Name(), column.SQLType))
 	}
 	goTypeName := named.Obj().Name()
 	targetPath := ctx.target.Path()
