@@ -40,8 +40,9 @@ const (
 var fmts generator.Formatters
 
 type action struct {
-	Mode   mode
-	Output string
+	Mode            mode
+	Output          string
+	RestrictHTTPApi string // only for [typescriptApiGen]
 }
 
 func newAction(value string) (action, error) {
@@ -119,18 +120,18 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly 
 
 	hasDart := false
 	var outs []outputFile
-	for _, m := range actions {
+	for _, act := range actions {
 		var (
 			code   string
 			format generator.Format // format if true
-			output = m.Output
+			output = act.Output
 		)
 
-		if dartOnly && m.Mode != dartGen {
+		if dartOnly && act.Mode != dartGen {
 			continue
 		}
 
-		switch m.Mode {
+		switch act.Mode {
 		case goUnionsGen:
 			code = generator.WriteDeclarations(gounions.Generate(ana))
 			format = generator.Go
@@ -148,7 +149,7 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly 
 			format = generator.TypeScript
 		case typescriptApiGen:
 			fmt.Println("Parsing http routes...")
-			api := httpapi.ParseEcho(ana.Root, fullPath)
+			api := httpapi.ParseEcho(ana.Root, fullPath, act.RestrictHTTPApi)
 			fmt.Println("Done. Generating", len(api), "routes")
 			code = typescript.GenerateAxios(api)
 			format = generator.TypeScript
@@ -157,7 +158,7 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly 
 			// code = generator.WriteDeclarations(dart.Generate(ana))
 			// format = generator.Dart
 		default:
-			panic(m.Mode)
+			panic(act.Mode)
 		}
 
 		if code != "" {
@@ -285,6 +286,8 @@ func runFromConfig(configFile string, dartOnly bool) error {
 func main() {
 	isConfig := flag.Bool("config", false, "Use a config file")
 	isDartOnly := flag.Bool("dart-only", false, "Only run Dart actions")
+	restrictHTTPApi := flag.String("http-api", "", "Only generate API for endpoints with this prefix")
+
 	flag.Parse()
 
 	fileArgs := flag.Args()
@@ -310,6 +313,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			action.RestrictHTTPApi = *restrictHTTPApi
 			conf[inputFile] = append(conf[inputFile], action)
 		}
 	}

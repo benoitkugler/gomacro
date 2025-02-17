@@ -205,14 +205,24 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 }
 
 // parse applies the given parser to extract the endpoints, and resolves the types found.
-func parse(pkg *packages.Package, absFilePath string, parser func(pkg *packages.Package, fi *ast.File) []Endpoint) []Endpoint {
+func parse(pkg *packages.Package, absFilePath string, parser extractor) []Endpoint {
 	fi := selectFileByPath(pkg, absFilePath)
-	apis := parser(pkg, fi)
+	apis := parser.extract(pkg, fi)
 	resolveTypes(pkg, apis)
 	return apis
 }
 
+type extractor interface {
+	extract(pkg *packages.Package, fi *ast.File) []Endpoint
+}
+
+type echoExtractor struct {
+	restrictPrefix string
+}
+
 // ParseEcho scans a file using the Echo framework.
-func ParseEcho(pkg *packages.Package, absFilePath string) []Endpoint {
-	return parse(pkg, absFilePath, echoExtractor)
+// If [restrictPrefix] is not empty, only the endpoints having this prefix
+// are returned.
+func ParseEcho(pkg *packages.Package, absFilePath string, restrictPrefix string) []Endpoint {
+	return parse(pkg, absFilePath, echoExtractor{restrictPrefix})
 }

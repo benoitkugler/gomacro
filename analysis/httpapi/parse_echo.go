@@ -5,6 +5,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"log"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -22,7 +24,7 @@ func isHttpMethod(name string) bool {
 
 // echoExtractor scans a file using the Echo framework, looking for method calls .GET .POST .PUT .DELETE
 // inside all top level functions in `f`, and parameters bindings.
-func echoExtractor(pkg *packages.Package, fi *ast.File) []Endpoint {
+func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint {
 	var out []Endpoint
 
 	ast.Inspect(fi, func(n ast.Node) bool {
@@ -47,6 +49,11 @@ func echoExtractor(pkg *packages.Package, fi *ast.File) []Endpoint {
 		path, err := resolveConstString(callExpr.Args[0], pkg)
 		if err != nil {
 			panic("invalid endpoint URL :" + err.Error())
+		}
+
+		if ex.restrictPrefix != "" && !strings.HasPrefix(path, ex.restrictPrefix) {
+			log.Println("ignoring route at", path)
+			return true
 		}
 
 		body, name, sourcePkg := parseEndpointFunc(callExpr.Args[1], pkg)
