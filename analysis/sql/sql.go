@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/types"
 	"reflect"
+	"regexp"
 	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
@@ -173,7 +174,7 @@ type Table struct {
 
 	// CustomQueries are the user provided queries
 	// defined with `// gomacro:QUERY <name> <query>` comments
-	CustomQueries [][2]string
+	CustomQueries []CustomQuery
 
 	uniquesCols [][]string // not filtered
 
@@ -208,10 +209,15 @@ func (ta *Table) TableName() TableName {
 func (ta *Table) processComments(comments []an.SpecialComment) {
 	ta.uniqueColumns = make(map[string]bool)
 
+	// goName -> type
+	byName := map[string]types.Type{}
+	for _, field := range ta.Columns {
+		byName[field.Field.Field.Name()] = field.Field.Field.Type()
+	}
+
 	for _, comment := range comments {
 		if comment.Kind == an.CommentQuery {
-			name, content, _ := strings.Cut(comment.Content, " ")
-			ta.CustomQueries = append(ta.CustomQueries, [2]string{name, content})
+			ta.CustomQueries = append(ta.CustomQueries, newCustomQuery(byName, comment.Content))
 			continue
 		} else if comment.Kind != an.CommentSQL {
 			continue
@@ -312,6 +318,50 @@ func (ta Table) SelectKeys() [][]Column {
 
 		out = append(out, cols)
 	}
+
+	return out
+}
+
+type CustomQueryInput struct {
+	VarName string
+	Type    types.Type
+}
+
+type CustomQuery struct {
+	GoFunctionName string
+	Query          string // where placeholders have been replaced to $1, $2, etc...
+
+	Inputs []CustomQueryInput
+}
+
+var reCustomQueryFields = regexp.MustCompile(`(\w+)\s*=\s*\$(\w+)\$`)
+
+func newCustomQuery(columsByName map[string]types.Type, comment string) (out CustomQuery) {
+	out.GoFunctionName, out.Query, _ = strings.Cut(comment, " ")
+	// extract fields
+	fieldToIndex := map[string]int{}
+	fields := reCustomQueryFields.FindAllStringSubmatch(comment, -1)
+
+	for _, match := range fields {
+		goField, varName := match[1], match[2]
+		if _, has := fieldToIndex[varName]; has {
+			continue // value already seen
+		}
+		fieldToIndex[varName] = len(fieldToIndex) + 1
+		ty, ok := columsByName[goField]
+		if !ok {
+			panic("unknown field " + goField)
+		}
+
+		out.Inputs = append(out.Inputs, CustomQueryInput{varName, ty})
+	}
+
+	// now replace the $<...>$ placeholders
+	var oldNew []string
+	for i, input := range out.Inputs {
+		oldNew = append(oldNew, "$"+input.VarName+"$", fmt.Sprintf("$%d", i+1))
+	}
+	out.Query = strings.NewReplacer(oldNew...).Replace(out.Query)
 
 	return out
 }

@@ -6,7 +6,6 @@ package sqlcrud
 import (
 	"fmt"
 	"go/types"
-	"regexp"
 	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
@@ -625,34 +624,18 @@ func newColumnsCode(ta sql.Table) columnsCode {
 	}
 }
 
-var reFields = regexp.MustCompile(`(\w+)\s*=\s*\$(\d+)`)
-
 func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
-	// goName -> type
-	byName := map[string]types.Type{}
-	for _, field := range ta.Columns {
-		byName[field.Field.Field.Name()] = field.Field.Field.Type()
-	}
-
 	var code string
 
 	for _, query := range ta.CustomQueries {
-		funcName, content := query[0], query[1]
-		content = ctx.replacer.Replace(content)
-		fields := reFields.FindAllStringSubmatch(content, -1)
+		content := ctx.replacer.Replace(query.Query)
 		var (
 			signature  string
 			argsSelect string
 		)
-		for _, match := range fields {
-			goField, number := match[1], match[2]
-			ty, ok := byName[goField]
-			if !ok {
-				panic("unknown field " + goField)
-			}
-			varName := gen.ToLowerFirst(goField) + number
-			signature += fmt.Sprintf("%s %s,", varName, ctx.typeName(ty))
-			argsSelect += fmt.Sprintf("%s, ", varName)
+		for _, match := range query.Inputs {
+			signature += fmt.Sprintf("%s %s,", match.VarName, ctx.typeName(match.Type))
+			argsSelect += fmt.Sprintf("%s, ", match.VarName)
 		}
 
 		queryFunc := fmt.Sprintf(`
@@ -660,7 +643,7 @@ func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
 			_, err := db.Exec("%s", %s)
 			return err
 		}
-		`, funcName, signature, content, argsSelect)
+		`, query.GoFunctionName, signature, content, argsSelect)
 		code += queryFunc
 	}
 

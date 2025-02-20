@@ -36,6 +36,9 @@ func TestSQL(t *testing.T) {
 	_, ok = table1.Columns[10].Field.IsSQLGuard()
 	Assert(t, ok)
 
+	Assert(t, len(table1.CustomQueries) == 2)
+	Assert(t, len(table1.CustomQueries[1].Inputs) == 2)
+
 	repas := NewTable(an.Types[Lookup(an.Root, "Repas")].(*analysis.Struct))
 	Assert(t, len(repas.ForeignKeys()) == 0)
 	Assert(t, repas.Primary() == 1)
@@ -61,4 +64,10 @@ func TestSQL(t *testing.T) {
 
 	composite := an.Types[Lookup(an.Root, "Composite")].(*analysis.Struct)
 	Assert(t, isComposite(composite))
+}
+
+func TestCustomQueries(t *testing.T) {
+	matches := reCustomQueryFields.FindAllStringSubmatch("UPDATE Participant SET IdPersonne = $v1$ WHERE IdPersonne = $v2$", -1)
+	Assert(t, len(matches) == 2)
+	Assert(t, matches[0][1] == "IdPersonne")
 }

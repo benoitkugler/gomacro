@@ -1619,8 +1619,13 @@ func (s Composite) Value() (driver.Value, error) {
 	return driver.Value(bs), nil
 }
 
-func CustomQuery(db DB, ex11 RepasID, f2 FixedArray) error {
-	_, err := db.Exec("UPDATE table1s SET Ex1 = $1 WHERE F = $2;", ex11, f2)
+func CustomQuery1(db DB, newValue RepasID, selectV FixedArray) error {
+	_, err := db.Exec("UPDATE table1s SET Ex1 = $1 WHERE F = $2;", newValue, selectV)
+	return err
+}
+
+func CustomQuery2(db DB, newValue FixedArray, selectV RepasID) error {
+	_, err := db.Exec("UPDATE table1s SET F = $1 WHERE Ex1 = $2 OR Ex2 = $2;", newValue, selectV)
 	return err
 }
 
