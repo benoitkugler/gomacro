@@ -25,7 +25,7 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 
 	tables := sql.SelectTables(ana)
 
-	nameReplacer := tableNameReplacer(tables)
+	nameReplacer := gen.NewTableNameReplacer(tables)
 
 	var constraints []string
 	for _, ta := range tables {
@@ -73,29 +73,6 @@ func generateQuardConstraint(ana *an.Analysis, ta sql.Table, column sql.Column, 
 	}
 }
 
-type replacer map[string]string
-
-func tableNameReplacer(tables []sql.Table) replacer {
-	out := make(replacer)
-	for _, ta := range tables {
-		name := ta.TableName()
-		out[string(name)] = gen.SQLTableName(name)
-	}
-	return out
-}
-
-var reWords = regexp.MustCompile(`([\w]+)`)
-
-// Replace replace words occurences
-func (rp replacer) Replace(input string) string {
-	return reWords.ReplaceAllStringFunc(input, func(word string) string {
-		if subs, has := rp[word]; has {
-			return subs
-		}
-		return word
-	})
-}
-
 func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) string {
 	onDelete := ""
 	if action := fk.OnDelete(); action != "" {
@@ -121,7 +98,7 @@ func replaceEnums(ana *an.Analysis, ta sql.Table, content string) string {
 	})
 }
 
-func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep replacer, content string) string {
+func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep gen.TableNameReplacer, content string) string {
 	content = reReferences.ReplaceAllStringFunc(content, func(s string) string {
 		ref, name, _ := strings.Cut(s, " ")
 		return ref + " " + gen.SQLTableName(sql.TableName(name))

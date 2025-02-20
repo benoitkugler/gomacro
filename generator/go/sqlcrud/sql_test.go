@@ -7,6 +7,7 @@ import (
 	"github.com/benoitkugler/gomacro/analysis"
 	"github.com/benoitkugler/gomacro/analysis/sql"
 	"github.com/benoitkugler/gomacro/generator"
+	"github.com/benoitkugler/gomacro/testutils"
 	. "github.com/benoitkugler/gomacro/testutils"
 )
 
@@ -35,7 +36,7 @@ func TestPrintID(t *testing.T) {
 	table1ID := table1.Columns[table1.Primary()].Field.Type.Type()
 	repasID := repas.Columns[repas.Primary()].Field.Type.Type()
 
-	ctx := context{ana.Root.Types}
+	ctx := context{ana.Root.Types, nil}
 	Assert(t, ctx.typeName(table1ID) == "int64")
 	Assert(t, ctx.typeName(repasID) == "RepasID")
 }
@@ -53,4 +54,10 @@ func TestGenerate(t *testing.T) {
 	if err := fmts.FormatFile(generator.Go, fileOut); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestCustomQueries(t *testing.T) {
+	matches := reFields.FindAllStringSubmatch("UPDATE Participant SET IdPersonne = $1 WHERE IdPersonne = $2", -1)
+	testutils.Assert(t, len(matches) == 2)
+	testutils.Assert(t, matches[0][1] == "IdPersonne")
 }

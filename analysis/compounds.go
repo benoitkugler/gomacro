@@ -31,6 +31,9 @@ const (
 
 	// CommentSQL is used to add SQL statements to the generated tables creation code
 	CommentSQL
+
+	// CommentQuery is used to generated custom SQL queries
+	CommentQuery
 )
 
 // SpecialComment is a comment found on a struct
@@ -190,6 +193,8 @@ func isSpecialComment(comment string) (kind CommentKind, content string) {
 	switch match[1] {
 	case "SQL":
 		return CommentSQL, match[2]
+	case "QUERY":
+		return CommentQuery, match[2]
 	default:
 		panic("unknown special comment " + match[1])
 	}

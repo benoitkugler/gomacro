@@ -13,6 +13,7 @@ type IDInvalid string
 
 type Strings []string
 
+// gomacro:QUERY CustomQuery UPDATE Table1 SET Ex1 = $1 WHERE F = $2;
 type Table1 struct {
 	Id        int64
 	Ex1       RepasID

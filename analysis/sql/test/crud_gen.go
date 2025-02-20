@@ -1619,6 +1619,11 @@ func (s Composite) Value() (driver.Value, error) {
 	return driver.Value(bs), nil
 }
 
+func CustomQuery(db DB, ex11 RepasID, f2 FixedArray) error {
+	_, err := db.Exec("UPDATE table1s SET Ex1 = $1 WHERE F = $2;", ex11, f2)
+	return err
+}
+
 func IdExerciceArrayToPQ(ids []IdExercice) pq.Int64Array {
 	out := make(pq.Int64Array, len(ids))
 	for i, v := range ids {

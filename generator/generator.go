@@ -80,6 +80,29 @@ func SQLTableName(name sql.TableName) string {
 	return ToSnakeCase(string(name)) + "s"
 }
 
+type TableNameReplacer map[string]string
+
+func NewTableNameReplacer(tables []sql.Table) TableNameReplacer {
+	out := make(TableNameReplacer)
+	for _, ta := range tables {
+		name := ta.TableName()
+		out[string(name)] = SQLTableName(name)
+	}
+	return out
+}
+
+var reWords = regexp.MustCompile(`([\w]+)`)
+
+// Replace replace words occurences
+func (rp TableNameReplacer) Replace(input string) string {
+	return reWords.ReplaceAllStringFunc(input, func(word string) string {
+		if subs, has := rp[word]; has {
+			return subs
+		}
+		return word
+	})
+}
+
 // Cache is a cache used to handled recursive types.
 type Cache map[*types.Named]bool
 

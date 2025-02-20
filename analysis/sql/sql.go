@@ -171,6 +171,10 @@ type Table struct {
 	// defined with `// gomacro:SQL <constraint>` comments
 	CustomConstraints []string
 
+	// CustomQueries are the user provided queries
+	// defined with `// gomacro:QUERY <name> <query>` comments
+	CustomQueries [][2]string
+
 	uniquesCols [][]string // not filtered
 
 	selectKeys [][]string
@@ -205,7 +209,11 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 	ta.uniqueColumns = make(map[string]bool)
 
 	for _, comment := range comments {
-		if comment.Kind != an.CommentSQL {
+		if comment.Kind == an.CommentQuery {
+			name, content, _ := strings.Cut(comment.Content, " ")
+			ta.CustomQueries = append(ta.CustomQueries, [2]string{name, content})
+			continue
+		} else if comment.Kind != an.CommentSQL {
 			continue
 		}
 

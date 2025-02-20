@@ -6,6 +6,7 @@ package sqlcrud
 import (
 	"fmt"
 	"go/types"
+	"regexp"
 	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
@@ -71,8 +72,9 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 	}
 
 	tables := sql.SelectTables(ana)
+	replacer := gen.NewTableNameReplacer(tables)
 
-	ctx := context{target: ana.Root.Types}
+	ctx := context{ana.Root.Types, replacer}
 	for _, ta := range tables {
 		decls = append(decls, ctx.generateTable(ta)...)
 	}
@@ -81,7 +83,8 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 }
 
 type context struct {
-	target *types.Package
+	target   *types.Package
+	replacer gen.TableNameReplacer
 }
 
 func (ctx context) typeName(ty types.Type) string {
@@ -219,6 +222,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 
 	decls = append(decls, ctx.generateSelectByUniques(ta, code))
 	decls = append(decls, ctx.generateSelectByKeys(ta, code))
+	decls = append(decls, ctx.generateCustomQueries(ta))
 
 	// generate the value interface method
 	for _, col := range ta.Columns {
@@ -618,5 +622,50 @@ func newColumnsCode(ta sql.Table) columnsCode {
 		goValueFieldsNoPrimary:   strings.Join(valueFieldsNoPrimary, ", "),
 		sqlColumnNamesNoPrimary:  strings.Join(columnNamesNoPrimary, ", "),
 		sqlPlaceholdersNoPrimary: strings.Join(placeholdersNoPrimary, ", "),
+	}
+}
+
+var reFields = regexp.MustCompile(`(\w+)\s*=\s*\$(\d+)`)
+
+func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
+	// goName -> type
+	byName := map[string]types.Type{}
+	for _, field := range ta.Columns {
+		byName[field.Field.Field.Name()] = field.Field.Field.Type()
+	}
+
+	var code string
+
+	for _, query := range ta.CustomQueries {
+		funcName, content := query[0], query[1]
+		content = ctx.replacer.Replace(content)
+		fields := reFields.FindAllStringSubmatch(content, -1)
+		var (
+			signature  string
+			argsSelect string
+		)
+		for _, match := range fields {
+			goField, number := match[1], match[2]
+			ty, ok := byName[goField]
+			if !ok {
+				panic("unknown field " + goField)
+			}
+			varName := gen.ToLowerFirst(goField) + number
+			signature += fmt.Sprintf("%s %s,", varName, ctx.typeName(ty))
+			argsSelect += fmt.Sprintf("%s, ", varName)
+		}
+
+		queryFunc := fmt.Sprintf(`
+		func %s (db DB, %s) error {
+			_, err := db.Exec("%s", %s)
+			return err
+		}
+		`, funcName, signature, content, argsSelect)
+		code += queryFunc
+	}
+
+	return gen.Declaration{
+		ID:      ta.Name.String() + "_custom_queries",
+		Content: code,
 	}
 }
