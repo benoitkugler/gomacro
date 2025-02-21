@@ -121,7 +121,7 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 }	
 `, goTypeName, idTypeName, sqlTableName,
 		cols.goScanFields, cols.sqlColumnNamesNoPrimary, cols.sqlPlaceholdersNoPrimary, cols.goValueFieldsNoPrimary,
-		len(ta.Columns), ta.Columns[primaryIndex].Field.Field.Name(),
+		cols.columnsCount, ta.Columns[primaryIndex].Field.Field.Name(),
 		cols.sqlColumnNames,
 	)
 

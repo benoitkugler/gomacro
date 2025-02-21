@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"go/types"
 	"regexp"
 	"sort"
@@ -117,4 +118,20 @@ func (c Cache) Check(typ analysis.Type) bool {
 		c[named] = true
 	}
 	return false
+}
+
+// Imports returns the [types.Package.Path] for every
+// types in the cache (removing the duplicates)
+func (c Cache) Imports() []string {
+	unique := map[string]bool{}
+	for named := range c {
+		if pkg := named.Obj().Pkg(); pkg != nil {
+			unique[pkg.Path()] = true
+		}
+	}
+	var imports []string
+	for k := range unique {
+		imports = append(imports, fmt.Sprintf("%q", k))
+	}
+	return imports
 }

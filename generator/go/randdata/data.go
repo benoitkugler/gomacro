@@ -25,16 +25,7 @@ func generateWithTarget(ana *an.Analysis, targetPackage *types.Package) []gen.De
 		out = append(out, ctx.generate(ana.Types[typ])...)
 	}
 
-	tmp := map[string]bool{}
-	for named := range ctx.cache {
-		if pkg := named.Obj().Pkg(); pkg != nil {
-			tmp[pkg.Path()] = true
-		}
-	}
-	var imports []string
-	for k := range tmp {
-		imports = append(imports, fmt.Sprintf("%q", k))
-	}
+	imports := ctx.cache.Imports()
 
 	out = append(out, gen.Declaration{
 		ID: "__header",
