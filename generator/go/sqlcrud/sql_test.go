@@ -35,13 +35,13 @@ func TestPrintID(t *testing.T) {
 	table1ID := table1.Columns[table1.Primary()].Field.Type.Type()
 	repasID := repas.Columns[repas.Primary()].Field.Type.Type()
 
-	ctx := context{ana.Root.Types, nil, make(generator.Cache)}
+	ctx := context{ana.Root.Types, nil, make(generator.Cache), true}
 	Assert(t, ctx.typeName(table1ID) == "int64")
 	Assert(t, ctx.typeName(repasID) == "RepasID")
 }
 
 func TestGenerate(t *testing.T) {
-	decls := Generate(ana)
+	decls := Generate(ana, true)
 	out := generator.WriteDeclarations(decls)
 
 	err := os.WriteFile(fileOut, []byte(out), os.ModePerm)

@@ -102,7 +102,7 @@ type outputFile struct {
 }
 
 // special case for dart actions, which are returned for latter processsing
-func runActions(source string, pkg *packages.Package, actions Actions, dartOnly bool) (*analysis.Analysis, []outputFile, error) {
+func runActions(source string, pkg *packages.Package, actions Actions, dartOnly, generateSets bool) (*analysis.Analysis, []outputFile, error) {
 	if dartOnly && !actions.hasDart() {
 		return nil, nil, nil
 	}
@@ -136,7 +136,7 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly 
 			code = generator.WriteDeclarations(gounions.Generate(ana))
 			format = generator.Go
 		case goSqlcrudGen:
-			code = generator.WriteDeclarations(sqlcrud.Generate(ana))
+			code = generator.WriteDeclarations(sqlcrud.Generate(ana, generateSets))
 			format = generator.Go
 		case goRanddataGen:
 			code = generator.WriteDeclarations(randdata.Generate(ana))
@@ -227,7 +227,7 @@ func newConfigFromJSON(configFile string) (Config, error) {
 	return conf, nil
 }
 
-func (conf Config) run(dartOnly bool) error {
+func (conf Config) run(dartOnly, generateSets bool) error {
 	dartOutputDir := ""
 	if dart, ok := conf["_dart"]; ok {
 		dartOutputDir = dart[0].Output
@@ -255,7 +255,7 @@ func (conf Config) run(dartOnly bool) error {
 	for i, file := range files {
 		actions := conf[file]
 		pkg := pkgs[i]
-		dartAna, outs, err := runActions(file, pkg, actions, dartOnly)
+		dartAna, outs, err := runActions(file, pkg, actions, dartOnly, generateSets)
 		if err != nil {
 			return err
 		}
@@ -268,7 +268,7 @@ func (conf Config) run(dartOnly bool) error {
 	return saveOutputs(commonDir, dartOutputDir, dartAnas, allOutputs)
 }
 
-func runFromConfig(configFile string, dartOnly bool) error {
+func runFromConfig(configFile string, dartOnly, generateSets bool) error {
 	f, err := os.Open(configFile)
 	if err != nil {
 		return err
@@ -280,14 +280,14 @@ func runFromConfig(configFile string, dartOnly bool) error {
 		return err
 	}
 
-	return conf.run(dartOnly)
+	return conf.run(dartOnly, generateSets)
 }
 
 func main() {
 	isConfig := flag.Bool("config", false, "Use a config file")
 	isDartOnly := flag.Bool("dart-only", false, "Only run Dart actions")
 	restrictHTTPApi := flag.String("http-api", "", "Only generate API for endpoints with this prefix")
-
+	generateSetsID := flag.Bool("generate-sets", false, "Generate a convenient Set type")
 	flag.Parse()
 
 	fileArgs := flag.Args()
@@ -318,7 +318,7 @@ func main() {
 		}
 	}
 
-	if err := conf.run(*isDartOnly); err != nil {
+	if err := conf.run(*isDartOnly, *generateSetsID); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Done.")

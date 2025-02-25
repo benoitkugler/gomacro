@@ -42,10 +42,10 @@ var jsonValuer = gen.Declaration{
 // overriden in tests
 var pqImportPath = `"github.com/lib/pq"`
 
-func Generate(ana *an.Analysis) []gen.Declaration {
+func Generate(ana *an.Analysis, generateSets bool) []gen.Declaration {
 	tables := sql.SelectTables(ana)
 	replacer := gen.NewTableNameReplacer(tables)
-	ctx := context{ana.Root.Types, replacer, make(gen.Cache)}
+	ctx := context{ana.Root.Types, replacer, make(gen.Cache), generateSets}
 
 	var decls []gen.Declaration
 	for _, ta := range tables {
@@ -92,6 +92,8 @@ type context struct {
 	target   *types.Package
 	replacer gen.TableNameReplacer
 	cache    gen.Cache
+
+	generateSets bool
 }
 
 func (ctx context) typeName(ty types.Type) string {
@@ -170,29 +172,31 @@ func (ctx context) idArrayConverters(idTypeName string) gen.Declaration {
 	`, idTypeName)
 
 	// also add Set utility
-	out.Content += fmt.Sprintf(`
-	type %[1]sSet map[%[1]s]bool 
-
-	func New%[1]sSetFrom(ids []%[1]s) %[1]sSet { 
-		out := make(%[1]sSet, len(ids))
-		for _, key := range ids {
-			out[key] = true
+	if ctx.generateSets {
+		out.Content += fmt.Sprintf(`
+		type %[1]sSet map[%[1]s]bool 
+	
+		func New%[1]sSetFrom(ids []%[1]s) %[1]sSet { 
+			out := make(%[1]sSet, len(ids))
+			for _, key := range ids {
+				out[key] = true
+			}
+			return out
 		}
-		return out
-	}
-
-	func (s %[1]sSet) Add(id %[1]s) { s[id] = true }
-
-	func (s %[1]sSet) Has(id %[1]s) bool { return s[id] }
-
-	func (s %[1]sSet) Keys() []%[1]s {
-		out := make([]%[1]s, 0, len(s))
-		for k := range s {
-			out = append(out, k)
+	
+		func (s %[1]sSet) Add(id %[1]s) { s[id] = true }
+	
+		func (s %[1]sSet) Has(id %[1]s) bool { return s[id] }
+	
+		func (s %[1]sSet) Keys() []%[1]s {
+			out := make([]%[1]s, 0, len(s))
+			for k := range s {
+				out = append(out, k)
+			}
+			return out
 		}
-		return out
+		`, idTypeName)
 	}
-	`, idTypeName)
 
 	return out
 }
