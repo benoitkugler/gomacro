@@ -244,28 +244,28 @@ func codeForStruct(t *an.Struct, cache gen.Cache) (decls []gen.Declaration) {
 
 func codeForUnion(u *an.Union, cache gen.Cache) (out []gen.Declaration) {
 	var (
-		members  []string
-		kindEnum []string
+		membersDecl []string
+		kindEnum    []string
 	)
 	name := typeName(u)
 	enumKindName := name + "Kind"
 	for _, m := range u.Members {
 		memberName := typeName(m)
-		members = append(members, memberName)
-		kindEnum = append(kindEnum, fmt.Sprintf("%s = %q", memberName, an.LocalName(m)))
+		kindEnum = append(kindEnum, fmt.Sprintf("%s: %q", memberName, an.LocalName(m)))
+		membersDecl = append(membersDecl, fmt.Sprintf(`| { Kind : %q, Data: %s}`, an.LocalName(m), memberName))
 
 		out = append(out, generate(m, cache)...) // recurse
 	}
 	code := fmt.Sprintf(`
-	export enum %s {
-		%s
-	}
-	
-	// %s
-	export interface %s {
-		Kind: %s
-		Data: %s
-	}`, enumKindName, strings.Join(kindEnum, ",\n"), gen.Origin(u), name, enumKindName, strings.Join(members, " | "))
+	export const %[1]s = {
+		%[2]s
+	} as const;
+	export type %[1]s = (typeof %[1]s)[keyof typeof %[1]s];
+
+	// %[3]s
+	export type %[4]s = 
+	%[5]s
+	`, enumKindName, strings.Join(kindEnum, ",\n"), gen.Origin(u), name, strings.Join(membersDecl, "\n"))
 
 	out = append(out, gen.Declaration{ID: declID(u), Content: code})
 

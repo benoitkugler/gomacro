@@ -84,26 +84,25 @@ export const EnumUIntLabels: { [key in EnumUInt]: string } = {
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfList
 export type ItfList = ItfType[] | null;
 
-export enum ItfTypeKind {
-  ConcretType1 = "ConcretType1",
-  ConcretType2 = "ConcretType2",
-}
+export const ItfTypeKind = {
+  ConcretType1: "ConcretType1",
+  ConcretType2: "ConcretType2",
+} as const;
+export type ItfTypeKind = (typeof ItfTypeKind)[keyof typeof ItfTypeKind];
 
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfType
-export interface ItfType {
-  Kind: ItfTypeKind;
-  Data: ConcretType1 | ConcretType2;
-}
+export type ItfType =
+  | { Kind: "ConcretType1"; Data: ConcretType1 }
+  | { Kind: "ConcretType2"; Data: ConcretType2 };
 
-export enum ItfType2Kind {
-  ConcretType1 = "ConcretType1",
-}
+export const ItfType2Kind = {
+  ConcretType1: "ConcretType1",
+} as const;
+export type ItfType2Kind = (typeof ItfType2Kind)[keyof typeof ItfType2Kind];
 
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfType2
-export interface ItfType2 {
-  Kind: ItfType2Kind;
-  Data: ConcretType1;
-}
+export type ItfType2 = { Kind: "ConcretType1"; Data: ConcretType1 };
+
 // github.com/benoitkugler/gomacro/testutils/testsource.MyDate
 export type MyDate = Date_;
 // github.com/benoitkugler/gomacro/testutils/testsource.RecursiveType
