@@ -63,20 +63,26 @@ func funcArgsName(a httpapi.Endpoint) string {
 }
 
 func typeIn(a httpapi.Endpoint) string {
-	if withFormData(a) { // form data mode
-		params := "params: " + paramsType(a.Contract.InputForm.AsTypedValues())
-		if fi := a.Contract.InputForm.File; fi != "" {
-			params += ", file: File"
-		}
-		return params
-	} else if hasBodyInput(a) { // JSON mode
+	if hasBodyInput(a) { // JSON mode
 		return "params: " + typeName(a.Contract.InputBody)
 	}
-	// params as query params
-	if len(a.Contract.InputQueryParams) == 0 {
-		return ""
+
+	var chunks []string
+	if withFormData(a) { // form data mode
+		if vals := a.Contract.InputForm.AsTypedValues(); len(vals) != 0 {
+			chunks = append(chunks, "formParams: "+paramsType(vals))
+		}
+		if fi := a.Contract.InputForm.File; fi != "" {
+			chunks = append(chunks, "file: File")
+		}
 	}
-	return "params: " + paramsType(a.Contract.InputQueryParams)
+
+	// params as query params
+	if len(a.Contract.InputQueryParams) != 0 {
+		chunks = append(chunks, "params: "+paramsType(a.Contract.InputQueryParams))
+	}
+
+	return strings.Join(chunks, ", ")
 }
 
 func hasNoReturn(a httpapi.Endpoint) bool { return a.Contract.Return == nil }
@@ -129,7 +135,7 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 			form += fmt.Sprintf("formData.append(%q, file, file.name)\n", fi)
 		}
 		for _, param := range a.Contract.InputForm.ValueNames {
-			form += fmt.Sprintf("formData.append(%q, params[%q])\n", param, param)
+			form += fmt.Sprintf("formData.append(%q, formParams[%q])\n", param, param)
 		}
 		return fmt.Sprintf("%s %s await Axios.%s(fullUrl, formData, %s)", form, returnAssignment, methodLower, callParams)
 	} else if hasBodyInput(a) {
@@ -142,31 +148,14 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 }
 
 func generateMethod(a httpapi.Endpoint) string {
-	outData, dataDecl := "out", fmt.Sprintf("data: %s", typeOut(a))
-	if hasNoReturn(a) {
-		outData = ""
-		dataDecl = ""
-	} else if a.Contract.IsReturnBlob {
-		outData = "out.blob"
-	}
-
-	// we do not include a hook anymore
-	//			this.onSuccess%[1]s(%[7]s);
-	// protected onSuccess%[1]s(%[8]s): void {}
-
 	const template = `
-	protected async raw%[1]s(%[2]s) {
-		const fullUrl = %[3]s;
-		%[4]s;
-		%[6]s
-	}
-	
-	/** %[1]s wraps raw%[1]s and handles the error */
+	/** %[1]s performs the request and handles the error */
 	async %[1]s(%[2]s) {
+		const fullUrl = %[3]s;
 		this.startRequest();
 		try {
-			const out = await this.raw%[1]s(%[5]s);
-			return out
+			%[4]s;
+			%[5]s
 		} catch (error) {
 			this.handleError(error);
 		}
@@ -188,8 +177,7 @@ func generateMethod(a httpapi.Endpoint) string {
 	}
 	return fmt.Sprintf(template,
 		fnName, in, fullUrl(a),
-		generateAxiosCall(a), funcArgsName(a),
-		returnValue, outData, dataDecl)
+		generateAxiosCall(a), returnValue)
 }
 
 func renderTypes(s []httpapi.Endpoint) string {
