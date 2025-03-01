@@ -164,7 +164,11 @@ func fetchStructComments(rootPackage *packages.Package, name *types.Named) (out 
 	pa := selector.findPackage(rootPackage, name.Obj())
 
 	// make sure pa and name work with the same file set
-	name = pa.Types.Scope().Lookup(name.Obj().Name()).Type().(*types.Named)
+	scope := pa.Types.Scope().Lookup(name.Obj().Name())
+	if scope == nil {
+		return nil
+	}
+	name = scope.Type().(*types.Named)
 
 	pos := name.Obj().Pos()
 	node := nodeAt(pa, pos-1) // move up by one char to get the line right before the struct
