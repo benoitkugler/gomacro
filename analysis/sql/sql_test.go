@@ -14,15 +14,15 @@ func TestSQL(t *testing.T) {
 
 	an := analysis.NewAnalysisFromFile(pkg, fn)
 
-	Assert(t, isTableID(an.Types[Lookup(an.Root, "RepasID")]) == "Repas")
-	Assert(t, isTableID(an.Types[Lookup(an.Root, "IDInvalid")]) == "")
+	Assert(t, isTableID(an.Types[Lookup(an.Pkg, "RepasID")]) == "Repas")
+	Assert(t, isTableID(an.Types[Lookup(an.Pkg, "IDInvalid")]) == "")
 
-	table1 := NewTable(an.Types[Lookup(an.Root, "Table1")].(*analysis.Struct))
+	table1 := NewTable(an.Types[Lookup(an.Pkg, "Table1")].(*analysis.Struct))
 	Assert(t, len(table1.ForeignKeys()) == 4)
 	Assert(t, table1.Primary() == 0)
-	Assert(t, table1.ForeignKeys()[0].TargetIDType() == Lookup(an.Root, "RepasID"))
+	Assert(t, table1.ForeignKeys()[0].TargetIDType() == Lookup(an.Pkg, "RepasID"))
 	Assert(t, table1.ForeignKeys()[2].TargetIDType().String() == "int64")
-	Assert(t, table1.ForeignKeys()[3].TargetIDType() == Lookup(an.Root, "RepasID"))
+	Assert(t, table1.ForeignKeys()[3].TargetIDType() == Lookup(an.Pkg, "RepasID"))
 
 	_, ok := table1.Columns[6].SQLType.(Array)
 	Assert(t, ok)
@@ -39,21 +39,21 @@ func TestSQL(t *testing.T) {
 	Assert(t, len(table1.CustomQueries) == 2)
 	Assert(t, len(table1.CustomQueries[1].Inputs) == 2)
 
-	repas := NewTable(an.Types[Lookup(an.Root, "Repas")].(*analysis.Struct))
+	repas := NewTable(an.Types[Lookup(an.Pkg, "Repas")].(*analysis.Struct))
 	Assert(t, len(repas.ForeignKeys()) == 0)
 	Assert(t, repas.Primary() == 1)
 
-	link := NewTable(an.Types[Lookup(an.Root, "Link")].(*analysis.Struct))
+	link := NewTable(an.Types[Lookup(an.Pkg, "Link")].(*analysis.Struct))
 	Assert(t, link.Primary() == -1)
 
-	question := NewTable(an.Types[Lookup(an.Root, "Question")].(*analysis.Struct))
+	question := NewTable(an.Types[Lookup(an.Pkg, "Question")].(*analysis.Struct))
 	Assert(t, len(question.ForeignKeys()) == 1)
 	Assert(t, question.ForeignKeys()[0].IsNullable())
 
-	exercicesQuestion := NewTable(an.Types[Lookup(an.Root, "ExerciceQuestion")].(*analysis.Struct))
+	exercicesQuestion := NewTable(an.Types[Lookup(an.Pkg, "ExerciceQuestion")].(*analysis.Struct))
 	Assert(t, len(exercicesQuestion.AdditionalUniqueCols()) == 1)
 
-	withOptTime := NewTable(an.Types[Lookup(an.Root, "WithOptionalTime")].(*analysis.Struct))
+	withOptTime := NewTable(an.Types[Lookup(an.Pkg, "WithOptionalTime")].(*analysis.Struct))
 	Assert(t, len(withOptTime.Columns) == 3)
 	bt, ok := withOptTime.Columns[1].SQLType.(Builtin)
 	Assert(t, ok)
@@ -62,7 +62,7 @@ func TestSQL(t *testing.T) {
 	Assert(t, ok)
 	Assert(t, bt.IsNullable())
 
-	composite := an.Types[Lookup(an.Root, "Composite")].(*analysis.Struct)
+	composite := an.Types[Lookup(an.Pkg, "Composite")].(*analysis.Struct)
 	Assert(t, isComposite(composite))
 }
 

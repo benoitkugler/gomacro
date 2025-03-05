@@ -12,7 +12,7 @@ import (
 // Generate generates the code for random data generation of
 // types defined in the analysis `Source`.
 func Generate(ana *an.Analysis) []gen.Declaration {
-	return generateWithTarget(ana, ana.Root.Types)
+	return generateWithTarget(ana, ana.Pkg.Types)
 }
 
 func generateWithTarget(ana *an.Analysis, targetPackage *types.Package) []gen.Declaration {

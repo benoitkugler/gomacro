@@ -66,7 +66,7 @@ func Generate(ana *an.Analysis) []gen.Declaration {
 }
 
 func generateQuardConstraint(ana *an.Analysis, ta sql.Table, column sql.Column, value string) []string {
-	value = replaceEnums(ana, ta, value)
+	value = gen.ReplaceEnums(ana, value)
 	return []string{
 		fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", gen.SQLTableName(ta.TableName()), column.Field.Field.Name(), value),
 		fmt.Sprintf("ALTER TABLE %s ADD CHECK(%s = %s);", gen.SQLTableName(ta.TableName()), column.Field.Field.Name(), value),
@@ -82,21 +82,7 @@ func generateForeignConstraint(sourceTable sql.TableName, fk sql.ForeignKey) str
 		gen.SQLTableName(sourceTable), fk.F.Field.Name(), gen.SQLTableName(fk.Target), onDelete)
 }
 
-var (
-	reEnums      = regexp.MustCompile(`#\[(\w+)\.(\w+)\]`)
-	reReferences = regexp.MustCompile(`REFERENCES (\w+)`)
-)
-
-// replace enum values
-func replaceEnums(ana *an.Analysis, ta sql.Table, content string) string {
-	return reEnums.ReplaceAllStringFunc(content, func(s string) string {
-		s = s[2 : len(s)-1] // trim starting #[ and leading ]
-		typeName, varName, _ := strings.Cut(s, ".")
-		enum := ana.GetByName(ta.Name, typeName).(*an.Enum)
-		enumValue := enum.Get(varName)
-		return fmt.Sprintf("%s /* %s.%s */", enumValue.Const.Val().ExactString(), typeName, varName)
-	})
-}
+var reReferences = regexp.MustCompile(`REFERENCES (\w+)`)
 
 func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep gen.TableNameReplacer, content string) string {
 	content = reReferences.ReplaceAllStringFunc(content, func(s string) string {
@@ -105,7 +91,7 @@ func generateCustomConstraint(ana *an.Analysis, ta sql.Table, rep gen.TableNameR
 	})
 
 	content = rep.Replace(content)
-	content = replaceEnums(ana, ta, content)
+	content = gen.ReplaceEnums(ana, content)
 
 	if strings.HasPrefix(content, "ADD") {
 		return fmt.Sprintf("ALTER TABLE %s %s;", gen.SQLTableName(ta.TableName()), content)

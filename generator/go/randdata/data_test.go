@@ -18,7 +18,7 @@ func TestGenerate(t *testing.T) {
 	}
 	an := analysis.NewAnalysisFromFile(pkg, source)
 
-	testPath := strings.ReplaceAll(an.Root.PkgPath, "testutils/testsource", "generator/go/randdata")
+	testPath := strings.ReplaceAll(an.Pkg.PkgPath, "testutils/testsource", "generator/go/randdata")
 	decls := generateWithTarget(an, types.NewPackage(testPath, "test"))
 	out := generator.WriteDeclarations(decls)
 

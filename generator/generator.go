@@ -135,3 +135,16 @@ func (c Cache) Imports() []string {
 	}
 	return imports
 }
+
+var reEnums = regexp.MustCompile(`#\[(\w+)\.(\w+)\]`)
+
+// ReplaceEnums replace enum placeholders #[Type.Val] by their values
+func ReplaceEnums(ana *analysis.Analysis, content string) string {
+	return reEnums.ReplaceAllStringFunc(content, func(s string) string {
+		s = s[2 : len(s)-1] // trim starting #[ and leading ]
+		typeName, varName, _ := strings.Cut(s, ".")
+		enum := ana.GetByName(typeName).(*analysis.Enum)
+		enumValue := enum.Get(varName)
+		return fmt.Sprintf("%s /* %s.%s */", enumValue.Const.Val().ExactString(), typeName, varName)
+	})
+}

@@ -112,8 +112,7 @@ func TestAnalysisStruct(t *testing.T) {
 func TestGetByName(t *testing.T) {
 	an := NewAnalysisFromFile(testPkg, testSource)
 
-	st := Lookup(testPkg, "StructWithExternalRef")
-	fmt.Println(an.GetByName(st, "Basic2").Type().String())
+	fmt.Println(an.GetByName("Basic2").Type().String())
 }
 
 func TestLinker(t *testing.T) {

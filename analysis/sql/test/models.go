@@ -13,7 +13,7 @@ type IDInvalid string
 
 type Strings []string
 
-// gomacro:QUERY CustomQuery1 UPDATE Table1 SET Ex1 = $newValue$ WHERE F = $selectV$;
+// gomacro:QUERY CustomQuery1 UPDATE Table1 SET Ex1 = $newValue$ WHERE F = $selectV$ ;
 // gomacro:QUERY CustomQuery2 UPDATE Table1 SET F = $newValue$ WHERE Ex1 = $selectV$ OR Ex2 = $selectV$;
 type Table1 struct {
 	Id        int64
@@ -32,6 +32,7 @@ type Table1 struct {
 type ba [3]bool
 
 // gomacro:SQL ADD CHECK (V = #[LocalEnum.A] OR V = #[LocalEnum.B])
+// gomacro:QUERY CustomQueryRepas UPDATE Repas SET Order = $newValue$ WHERE V = #[LocalEnum.A] ;
 type Repas struct {
 	Order string
 	Id    RepasID

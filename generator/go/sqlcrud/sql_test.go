@@ -25,17 +25,17 @@ func init() {
 	}
 	ana = analysis.NewAnalysisFromFile(pkg, fn)
 
-	pqImportPath = "github.com/benoitkugler/gomacro/analysis/sql/test/pq"
+	pqImportPath = `"github.com/benoitkugler/gomacro/analysis/sql/test/pq"`
 }
 
 func TestPrintID(t *testing.T) {
-	table1 := sql.NewTable(ana.Types[Lookup(ana.Root, "Table1")].(*analysis.Struct))
-	repas := sql.NewTable(ana.Types[Lookup(ana.Root, "Repas")].(*analysis.Struct))
+	table1 := sql.NewTable(ana.Types[Lookup(ana.Pkg, "Table1")].(*analysis.Struct))
+	repas := sql.NewTable(ana.Types[Lookup(ana.Pkg, "Repas")].(*analysis.Struct))
 
 	table1ID := table1.Columns[table1.Primary()].Field.Type.Type()
 	repasID := repas.Columns[repas.Primary()].Field.Type.Type()
 
-	ctx := context{ana.Root.Types, nil, make(generator.Cache), true}
+	ctx := context{ana, nil, make(generator.Cache), true}
 	Assert(t, ctx.typeName(table1ID) == "int64")
 	Assert(t, ctx.typeName(repasID) == "RepasID")
 }

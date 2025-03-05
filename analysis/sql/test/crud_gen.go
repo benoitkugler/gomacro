@@ -1260,7 +1260,7 @@ func (item Table1) Update(tx DB) (out Table1, err error) {
 		ex1, ex2, l, other, f, strings, cp, external, boolarray
 		) = (
 		$1, $2, $3, $4, $5, $6, $7, $8, $9
-		) WHERE id = $11 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray;
+		) WHERE id = $10 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray;
 		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.Id)
 	return ScanTable1(row)
 }
@@ -1619,8 +1619,13 @@ func (s Composite) Value() (driver.Value, error) {
 	return driver.Value(bs), nil
 }
 
+func CustomQueryRepas(db DB, newValue string) error {
+	_, err := db.Exec("UPDATE repass SET Order = $1 WHERE V = 0 /* LocalEnum.A */ ;", newValue)
+	return err
+}
+
 func CustomQuery1(db DB, newValue RepasID, selectV FixedArray) error {
-	_, err := db.Exec("UPDATE table1s SET Ex1 = $1 WHERE F = $2;", newValue, selectV)
+	_, err := db.Exec("UPDATE table1s SET Ex1 = $1 WHERE F = $2 ;", newValue, selectV)
 	return err
 }
 

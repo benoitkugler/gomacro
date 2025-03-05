@@ -45,7 +45,7 @@ var pqImportPath = `"github.com/lib/pq"`
 func Generate(ana *an.Analysis, generateSets bool) []gen.Declaration {
 	tables := sql.SelectTables(ana)
 	replacer := gen.NewTableNameReplacer(tables)
-	ctx := context{ana.Root.Types, replacer, make(gen.Cache), generateSets}
+	ctx := context{ana, replacer, make(gen.Cache), generateSets}
 
 	var decls []gen.Declaration
 	for _, ta := range tables {
@@ -81,7 +81,7 @@ func Generate(ana *an.Analysis, generateSets bool) []gen.Declaration {
 		QueryRow(query string, args ...interface{}) *sql.Row 
 		Prepare(query string) (*sql.Stmt, error)
 	}
-	`, ana.Root.Types.Name(), strings.Join(imports, "\n"))
+	`, ana.Pkg.Types.Name(), strings.Join(imports, "\n"))
 
 	decls = append(decls, gen.Declaration{ID: "aa__header", Content: header, Priority: true})
 
@@ -89,7 +89,7 @@ func Generate(ana *an.Analysis, generateSets bool) []gen.Declaration {
 }
 
 type context struct {
-	target   *types.Package
+	ana      *an.Analysis
 	replacer gen.TableNameReplacer
 	cache    gen.Cache
 
@@ -97,7 +97,7 @@ type context struct {
 }
 
 func (ctx context) typeName(ty types.Type) string {
-	return types.TypeString(ty, generator.NameRelativeTo(ctx.target))
+	return types.TypeString(ty, generator.NameRelativeTo(ctx.ana.Pkg.Types))
 }
 
 // returns true if `ty` is named and defined in the target package,
@@ -108,7 +108,7 @@ func (ctx context) generateArrayConverter(key sql.ForeignKey) bool {
 		return true
 	}
 	if named, isNamed := ty.(*types.Named); isNamed {
-		return named.Obj().Pkg() == ctx.target
+		return named.Obj().Pkg() == ctx.ana.Pkg.Types
 	}
 	return false
 }
@@ -122,7 +122,7 @@ func (ctx context) canImplementValuer(column sql.Column) (string, bool) {
 		panic(fmt.Sprintf("field %s (with type %T), is not named: sql.Valuer interface can't be implemented", column.Field.Field.Name(), column.SQLType))
 	}
 	goTypeName := named.Obj().Name()
-	targetPath := ctx.target.Path()
+	targetPath := ctx.ana.Pkg.PkgPath
 	columnPath := ""
 	if pkg := named.Obj().Pkg(); pkg != nil {
 		columnPath = pkg.Path()
@@ -650,6 +650,7 @@ func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
 
 	for _, query := range ta.CustomQueries {
 		content := ctx.replacer.Replace(query.Query)
+		content = gen.ReplaceEnums(ctx.ana, content)
 		var (
 			signature  string
 			argsSelect string

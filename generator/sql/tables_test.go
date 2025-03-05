@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -30,12 +29,4 @@ func TestCreate(t *testing.T) {
 	if err := fmts.FormatFile(generator.Psql, generated); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func TestEnums(t *testing.T) {
-	content := "ADD CHECK(Kind = #[Kind.value] OR )"
-	content = reEnums.ReplaceAllStringFunc(content, func(s string) string {
-		return "3"
-	})
-	fmt.Println(content)
 }

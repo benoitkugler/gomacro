@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"go/types"
 	"testing"
 
@@ -18,4 +19,12 @@ func TestReplacer(t *testing.T) {
 	testutils.Assert(t, rp.Replace("Question") == "questions")
 	testutils.Assert(t, rp.Replace("ExerciceQuestion") == "exercice_questions")
 	testutils.Assert(t, rp.Replace("IdExercice") == "IdExercice")
+}
+
+func TestEnums(t *testing.T) {
+	content := "ADD CHECK(Kind = #[Kind.value] OR )"
+	content = reEnums.ReplaceAllStringFunc(content, func(s string) string {
+		return "3"
+	})
+	fmt.Println(content)
 }

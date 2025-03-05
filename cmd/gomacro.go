@@ -149,7 +149,7 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly,
 			format = generator.TypeScript
 		case typescriptApiGen:
 			fmt.Println("Parsing http routes...")
-			api := httpapi.ParseEcho(ana.Root, fullPath, act.RestrictHTTPApi)
+			api := httpapi.ParseEcho(ana.Pkg, fullPath, act.RestrictHTTPApi)
 			fmt.Println("Done. Generating", len(api), "routes")
 			code = typescript.GenerateAxios(api)
 			format = generator.TypeScript
@@ -266,21 +266,6 @@ func (conf Config) run(dartOnly, generateSets bool) error {
 	}
 
 	return saveOutputs(commonDir, dartOutputDir, dartAnas, allOutputs)
-}
-
-func runFromConfig(configFile string, dartOnly, generateSets bool) error {
-	f, err := os.Open(configFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	var conf Config
-	if err = json.NewDecoder(f).Decode(&conf); err != nil {
-		return err
-	}
-
-	return conf.run(dartOnly, generateSets)
 }
 
 func main() {

@@ -262,17 +262,18 @@ type Analysis struct {
 	// their dependencies.
 	Types map[types.Type]Type
 
-	// Root is the root package used to query type information.
-	Root *packages.Package
+	// Pkg is the root package used to query type information.
+	Pkg *packages.Package
 
 	// Source is the list of top-level types
 	// defined in the analysis input file.
 	Source []types.Type
 }
 
-// NewAnalysisFromFile uses the given Package
-// to build the analysis for the types defined in `sourceFile`.
-func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
+// NewAnalysisFromFile uses the given Package [pa]
+// to build the analysis for the types defined in `sourceFile`,
+// one file included in [pa]
+func NewAnalysisFromFile(pkg *packages.Package, sourceFile string) *Analysis {
 	sourceFileAbs, err := filepath.Abs(sourceFile)
 	if err != nil {
 		panic(err)
@@ -280,10 +281,10 @@ func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
 
 	// walk the top level type declarations
 	var objs []*types.TypeName
-	scope := pa.Types.Scope()
+	scope := pkg.Types.Scope()
 	for _, name := range scope.Names() {
 		object := scope.Lookup(name)
-		if pa.Fset.Position(object.Pos()).Filename != sourceFileAbs {
+		if pkg.Fset.Position(object.Pos()).Filename != sourceFileAbs {
 			// retrict to file declaration
 			continue
 		}
@@ -306,14 +307,14 @@ func NewAnalysisFromFile(pa *packages.Package, sourceFile string) *Analysis {
 		nameds[i] = obj.Type()
 	}
 
-	return NewAnalysisFromTypes(pa, nameds)
+	return NewAnalysisFromTypes(pkg, nameds)
 }
 
 // NewAnalysisFromTypes build the analysis for the given `types`.
 // `root` is the root package, required to query type information.
-func NewAnalysisFromTypes(root *packages.Package, source []types.Type) *Analysis {
-	out := &Analysis{Source: source, Root: root}
-	out.populateTypes(root)
+func NewAnalysisFromTypes(pkg *packages.Package, source []types.Type) *Analysis {
+	out := &Analysis{Source: source, Pkg: pkg}
+	out.populateTypes(pkg)
 	return out
 }
 
@@ -463,10 +464,9 @@ func (an *Analysis) handleType(typ types.Type, ctx context) Type {
 	return type_
 }
 
-// GetByName returns the type [name], which must be in the same scope
-// as [source]
-func (an *Analysis) GetByName(source *types.Named, name string) Type {
-	scope := source.Obj().Pkg().Scope()
+// GetByName returns the type [name], which must be in the package scope
+func (an *Analysis) GetByName(name string) Type {
+	scope := an.Pkg.Types.Scope()
 	ty := scope.Lookup(name).Type()
 	return an.Types[ty]
 }
