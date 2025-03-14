@@ -151,9 +151,18 @@ func codeForTime(t *an.Time) gen.Declaration {
 }
 
 func codeForNamed(named *an.Named, cache gen.Cache) []gen.Declaration {
+	name, target := typeName(named), typeName(named.Underlying)
+
+	// special case for named int, such as IDs
+	if basic, ok := named.Underlying.(*an.Basic); ok && basic.Kind() == an.BKInt {
+		return []gen.Declaration{{
+			ID:      declID(named),
+			Content: fmt.Sprintf("export type %s = number & { __opaque__: '%s' };", name, name),
+		}}
+	}
+
 	deps := generate(named.Underlying, cache) // recurse
 
-	name, target := typeName(named), typeName(named.Underlying)
 	// do not add decl if the names are the same
 	if name == target {
 		return deps

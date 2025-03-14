@@ -15,8 +15,7 @@ export type Int = number & { __opaque__: "Int" };
 // ISO date-time string
 export type Time = string & { __opaque__: "Time" };
 
-// github.com/benoitkugler/gomacro/testutils/testsource.Basic1
-export type Basic1 = Int;
+export type Basic1 = number & { __opaque__: "Basic1" };
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic2
 export type Basic2 = boolean;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic3
