@@ -7,22 +7,32 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/benoitkugler/gomacro/analysis"
+	an "github.com/benoitkugler/gomacro/analysis"
 	"github.com/benoitkugler/gomacro/analysis/httpapi"
 	"github.com/benoitkugler/gomacro/generator"
 )
 
 // return arg: String(params[arg])
 func asObjectKey(param httpapi.TypedParam) string {
-	switch param.Type.Kind() {
-	case analysis.BKFloat, analysis.BKInt:
+	var underlying *an.Basic
+	switch t := param.Type.(type) {
+	case *an.Basic:
+		underlying = t
+	case *an.Named:
+		underlying = t.Underlying.(*an.Basic)
+	default:
+		panic("unsupported type")
+	}
+
+	switch underlying.Kind() {
+	case an.BKFloat, an.BKInt:
 		return fmt.Sprintf("%q: String(params[%q])", param.Name, param.Name) // stringify
-	case analysis.BKBool:
+	case an.BKBool:
 		return fmt.Sprintf("%q: params[%q] ? 'ok' : ''", param.Name, param.Name) // stringify
-	case analysis.BKString:
+	case an.BKString:
 		return fmt.Sprintf("%q: params[%q]", param.Name, param.Name) // no converter
 	default:
-		panic(analysis.ExhaustiveAnonymousTypeSwitch)
+		panic(an.ExhaustiveAnonymousTypeSwitch)
 	}
 }
 
@@ -46,20 +56,6 @@ func paramsType(params []httpapi.TypedParam) string {
 		tmp[i] = fmt.Sprintf("%q: %s", param.Name, typeName(param.Type)) // quote for names like "id-1"
 	}
 	return "{" + strings.Join(tmp, ", ") + "}"
-}
-
-func funcArgsName(a httpapi.Endpoint) string {
-	if withFormData(a) { // form data mode
-		if fi := a.Contract.InputForm.File; fi != "" {
-			return "params, file"
-		}
-	} else if !hasBodyInput(a) {
-		// params as query params
-		if len(a.Contract.InputQueryParams) == 0 {
-			return ""
-		}
-	}
-	return "params"
 }
 
 func typeIn(a httpapi.Endpoint) string {
@@ -181,7 +177,7 @@ func generateMethod(a httpapi.Endpoint) string {
 }
 
 func renderTypes(s []httpapi.Endpoint) string {
-	var allTypes []analysis.Type
+	var allTypes []an.Type
 	for _, api := range s { // write top-level decl
 		if ty := api.Contract.InputBody; ty != nil {
 			allTypes = append(allTypes, ty)

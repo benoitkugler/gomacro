@@ -14,13 +14,13 @@ type Endpoint struct {
 }
 
 type TypedParam struct {
-	type_ *types.Basic // used during parsing
-	Type  *analysis.Basic
+	type_ types.Type // used during parsing
+	Type  analysis.Type
 	Name  string
 }
 
 func (tp *TypedParam) resolveType(an *analysis.Analysis) {
-	tp.Type = an.Types[tp.type_].(*analysis.Basic)
+	tp.Type = an.Types[tp.type_]
 }
 
 // Contract describes the expected and returned

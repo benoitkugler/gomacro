@@ -379,6 +379,10 @@ func (an *Analysis) createType(typ types.Type, ctx context) Type {
 		panic("nil types.Type")
 	}
 
+	if alias, isAlias := typ.(*types.Alias); isAlias {
+		typ = types.Unalias(alias)
+	}
+
 	// special case for time.Time, which require the name information
 	if ti, isTime := NewTime(typ); isTime {
 		return ti

@@ -143,22 +143,22 @@ func parseAssignments(rhs []ast.Expr, pkg *packages.Package, out *Contract) {
 		if typeIn := tryParseBindCall(rh, pkg.TypesInfo); typeIn != nil {
 			out.inputT = typeIn
 		}
-		if queryParam := parseCallWithString(rh, "QueryParam", pkg); queryParam != "" {
-			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.String]})
+		if queryParam, ty := parseCallWithString(rh, "QueryParam", pkg); queryParam != "" {
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: ty})
 		}
-		if queryParam := parseCallWithString(rh, "QueryParamBool", pkg); queryParam != "" { // special converter
-			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Bool]})
+		if queryParam, ty := parseCallWithString(rh, "QueryParamBool", pkg); queryParam != "" { // special converter
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: ty})
 		}
-		if queryParam := parseCallWithString(rh, "QueryParamInt", pkg); queryParam != "" { // special converter
-			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Int]})
+		if queryParam, ty := parseCallWithString(rh, "QueryParamInt", pkg); queryParam != "" { // special converter
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: ty})
 		}
-		if queryParam := parseCallWithString(rh, "QueryParamInt64", pkg); queryParam != "" { // special converter
-			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: types.Typ[types.Int]})
+		if queryParam, ty := parseCallWithString(rh, "QueryParamInt64", pkg); queryParam != "" { // special converter
+			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: ty})
 		}
-		if formValue := parseCallWithString(rh, "FormValue", pkg); formValue != "" {
+		if formValue, _ := parseCallWithString(rh, "FormValue", pkg); formValue != "" {
 			out.InputForm.ValueNames = append(out.InputForm.ValueNames, formValue)
 		}
-		if formFile := parseCallWithString(rh, "FormFile", pkg); formFile != "" {
+		if formFile, _ := parseCallWithString(rh, "FormFile", pkg); formFile != "" {
 			out.InputForm.File = formFile
 		}
 	}
@@ -189,7 +189,7 @@ func tryParseBindCall(expr ast.Expr, pkg *types.Info) types.Type {
 	return nil
 }
 
-func parseCallWithString(expr ast.Expr, methodName string, pkg *packages.Package) string {
+func parseCallWithString(expr ast.Expr, methodName string, pkg *packages.Package) (string, types.Type) {
 	if call, ok := expr.(*ast.CallExpr); ok {
 		function := call.Fun
 		// generic support
@@ -204,11 +204,11 @@ func parseCallWithString(expr ast.Expr, methodName string, pkg *packages.Package
 		case *ast.Ident:
 			name = caller.Name
 		default:
-			return ""
+			return "", nil
 		}
 
 		if name != methodName {
-			return ""
+			return "", nil
 		}
 
 		var arg ast.Expr
@@ -222,7 +222,13 @@ func parseCallWithString(expr ast.Expr, methodName string, pkg *packages.Package
 		if err != nil {
 			panic(fmt.Sprintf("invalid %s argument: %s", methodName, err))
 		}
-		return argS
+
+		outType := pkg.TypesInfo.TypeOf(expr)
+		if tuple, ok := outType.(*types.Tuple); ok {
+			outType = tuple.At(0).Type()
+		}
+
+		return argS, outType
 	}
-	return ""
+	return "", nil
 }

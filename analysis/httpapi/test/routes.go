@@ -9,11 +9,13 @@ import (
 
 const route = "/const_url_from_package/"
 
+type IdDossier int64
+
 type controller struct{}
 
-func QueryParamInt[T ~int64](echo.Context, string) (int64, error) { return 0, nil }
-func (controller) QueryParamInt64(echo.Context, string) int64     { return 0 }
-func (controller) QueryParamBool(echo.Context, string) bool       { return false }
+func QueryParamInt[T ~int64](echo.Context, string) (T, error) { return 0, nil }
+func (controller) QueryParamInt64(echo.Context, string) int64 { return 0 }
+func (controller) QueryParamBool(echo.Context, string) bool   { return false }
 
 func (controller) handle1(c echo.Context) error {
 	var (
@@ -48,7 +50,10 @@ func (ct controller) handler7(c echo.Context) error {
 
 func (controller) handler8(c echo.Context) error {
 	id1, id2 := c.QueryParam("query_param1"), c.QueryParam("query_param2")
-	fmt.Println(id1, id2)
+	v1 := c.FormValue("value_1")
+	v2, _ := c.FormFile("file_2")
+
+	fmt.Println(id1, id2, v1, v2)
 	var code uint
 	return c.JSON(200, code)
 }
@@ -61,7 +66,7 @@ func (controller) handler9(c echo.Context) error {
 
 // with Generic
 func (controller) handler10(c echo.Context) error {
-	v, err := QueryParamInt[int64](c, "param-name")
+	v, err := QueryParamInt[IdDossier](c, "param-name")
 	if err != nil {
 		return err
 	}
