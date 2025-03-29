@@ -62,7 +62,7 @@ func typeName(ty an.Type) string {
 		}
 		return "Time"
 	case *an.Map:
-		return fmt.Sprintf("({ [key in %s]: %s } | null)", typeName(ty.Key), typeName(ty.Elem))
+		return fmt.Sprintf("(Record<%s,%s> | null)", typeName(ty.Key), typeName(ty.Elem))
 	case *an.Array:
 		if ty.Len >= 1 {
 			// use an alias
@@ -210,7 +210,7 @@ func codeForEnum(enum *an.Enum) gen.Declaration {
 			} as const;
 			export type %[2]s = (typeof %[2]s)[keyof typeof %[2]s];
 
-			export const %[2]sLabels: { [key in %[2]s]: string } = {
+			export const %[2]sLabels: Record<%[2]s, string> = {
 				%[4]s
 			};
 			`, gen.Origin(enum), name, strings.Join(valueDefs, "\n"),
