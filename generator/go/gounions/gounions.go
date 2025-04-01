@@ -137,7 +137,7 @@ func jsonForUnion(u *an.Union) string {
 
 	codeTo := fmt.Sprintf(`func (item %s) MarshalJSON() ([]byte, error) {
 		type wrapper struct {
-			Data interface{}
+			Data any
 			Kind string
 		}
 		var wr wrapper

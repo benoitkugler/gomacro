@@ -18,7 +18,7 @@ import (
 var jsonValuer = gen.Declaration{
 	ID: "__json_valuer",
 	Content: `
-	func loadJSON(out interface{}, src interface{}) error {
+	func loadJSON(out any, src any) error {
 		if src == nil {
 			return nil //zero value out
 		}
@@ -29,7 +29,7 @@ var jsonValuer = gen.Declaration{
 		return json.Unmarshal(bs, out)
 	}
 	
-	func dumpJSON(s interface{}) (driver.Value, error) {
+	func dumpJSON(s any) (driver.Value, error) {
 		b, err := json.Marshal(s)
 		if err != nil {
 			return nil, err
@@ -70,15 +70,15 @@ func Generate(ana *an.Analysis, generateSets bool) []gen.Declaration {
 	)
 
 	type scanner interface {
-		Scan(...interface{}) error
+		Scan(...any) error
 	}
 	
 	// DB groups transaction like objects, and 
 	// is implemented by *sql.DB and *sql.Tx
 	type DB interface {
-		Exec(query string, args ...interface{}) (sql.Result, error)
-		Query(query string, args ...interface{}) (*sql.Rows, error)
-		QueryRow(query string, args ...interface{}) *sql.Row 
+		Exec(query string, args ...any) (sql.Result, error)
+		Query(query string, args ...any) (*sql.Rows, error)
+		QueryRow(query string, args ...any) *sql.Row 
 		Prepare(query string) (*sql.Stmt, error)
 	}
 	`, ana.Pkg.Types.Name(), strings.Join(imports, "\n"))
@@ -249,7 +249,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 					decls = append(decls, gen.Declaration{
 						ID: "date_value" + goTypeName,
 						Content: fmt.Sprintf(`
-						func (s *%s) Scan(src interface{}) error {
+						func (s *%s) Scan(src any) error {
 							var tmp pq.NullTime
 							err := tmp.Scan(src)
 							if err != nil {
@@ -268,7 +268,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 					decls = append(decls, gen.Declaration{
 						ID: "datetime_value" + goTypeName,
 						Content: fmt.Sprintf(`
-						func (s *%s) Scan(src interface{}) error {
+						func (s *%s) Scan(src any) error {
 							var tmp pq.NullTime
 							err := tmp.Scan(src)
 							if err != nil {
@@ -301,7 +301,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 				decls = append(decls, gen.Declaration{
 					ID: "json_value" + goTypeName,
 					Content: fmt.Sprintf(`
-						func (s *%s) Scan(src interface{}) error { return loadJSON(s, src) }
+						func (s *%s) Scan(src any) error { return loadJSON(s, src) }
 						func (s %s) Value() (driver.Value, error) { return dumpJSON(s) }
 						`, goTypeName, goTypeName),
 				}, jsonValuer)
@@ -421,7 +421,7 @@ func (ctx context) optionnalIdConverters(goTypeName string, field *types.Var) ge
 	return gen.Declaration{
 		ID: "nullable_valuer" + goTypeName,
 		Content: fmt.Sprintf(`
-			func (s *%[1]s) Scan(src interface{}) error {
+			func (s *%[1]s) Scan(src any) error {
 				var tmp sql.NullInt64
 				err := tmp.Scan(src)
 				if err != nil {
@@ -463,7 +463,7 @@ func (ctx context) compositeConverters(goTypeName string, composite sql.Composit
 	return gen.Declaration{
 		ID: "composite_value" + goTypeName,
 		Content: fmt.Sprintf(`
-			func (s *%s) Scan(src interface{}) error { 
+			func (s *%s) Scan(src any) error { 
 				bs, ok := src.([]byte)
 				if !ok {
 					return fmt.Errorf("unsupported type %%T", src)
@@ -566,7 +566,7 @@ func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declara
 	return gen.Declaration{
 		ID: "array_value" + goTypeName,
 		Content: fmt.Sprintf(`
-		func (s *%s) Scan(src interface{}) error  { 
+		func (s *%s) Scan(src any) error  { 
 			%s
 		}
 		func (s %s) Value() (driver.Value, error) { 
