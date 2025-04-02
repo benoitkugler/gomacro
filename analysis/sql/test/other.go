@@ -12,3 +12,16 @@ type Composite struct {
 	B uint8
 	C testsource.EnumUInt
 }
+
+// optional with generic
+
+type optGeneric[T ~int64] struct {
+	Valid bool
+	ID    T
+}
+
+type IdQuestion int64
+
+type defined optGeneric[IdQuestion]
+
+type OptAlias = defined

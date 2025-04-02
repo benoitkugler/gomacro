@@ -18,11 +18,12 @@ func TestSQL(t *testing.T) {
 	Assert(t, isTableID(an.Types[Lookup(an.Pkg, "IDInvalid")]) == "")
 
 	table1 := NewTable(an.Types[Lookup(an.Pkg, "Table1")].(*analysis.Struct))
-	Assert(t, len(table1.ForeignKeys()) == 4)
+	Assert(t, len(table1.ForeignKeys()) == 5)
 	Assert(t, table1.Primary() == 0)
 	Assert(t, table1.ForeignKeys()[0].TargetIDType() == Lookup(an.Pkg, "RepasID"))
 	Assert(t, table1.ForeignKeys()[2].TargetIDType().String() == "int64")
 	Assert(t, table1.ForeignKeys()[3].TargetIDType() == Lookup(an.Pkg, "RepasID"))
+	Assert(t, table1.ForeignKeys()[4].TargetIDType() == Lookup(an.Pkg, "IdQuestion"))
 
 	_, ok := table1.Columns[6].SQLType.(Array)
 	Assert(t, ok)

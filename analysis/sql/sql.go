@@ -136,6 +136,7 @@ func (fk ForeignKey) IsNullable() bool {
 // the wrapped type, not the wrapper struct.
 func (fk ForeignKey) TargetIDType() types.Type {
 	ty := fk.F.Field.Type()
+	ty = types.Unalias(ty)
 	if named, isNamed := ty.(*types.Named); isNamed {
 		if wrapped := IsNullXXX(named); wrapped != nil {
 			return wrapped.Type()

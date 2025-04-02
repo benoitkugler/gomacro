@@ -27,6 +27,7 @@ type Table1 struct {
 	External  testsource.Comp
 	BoolArray ba
 	guard     LocalEnum `gomacro-sql-guard:"#[LocalEnum.A]"`
+	OptKey    OptAlias  `gomacro-sql-foreign:"Question"`
 }
 
 type ba [3]bool
