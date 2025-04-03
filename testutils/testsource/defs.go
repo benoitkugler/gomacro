@@ -56,6 +56,8 @@ type ComplexStruct struct {
 	F           [5][5]bool
 	Imported    subpackage.StructWithComment
 	EnumMap     map[EnumInt]bool
+	OptID1      Generic[IdCamp]
+	OptID2      Generic[IdFile]
 }
 
 type ItfList []ItfType

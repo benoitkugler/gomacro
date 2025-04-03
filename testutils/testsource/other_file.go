@@ -71,3 +71,12 @@ type WithEmbeded struct {
 type Comp struct {
 	A, B uint8
 }
+
+type Generic[T ~int64] struct {
+	Id T
+}
+
+type (
+	IdCamp int64
+	IdFile int64
+)

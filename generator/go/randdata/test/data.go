@@ -93,6 +93,10 @@ func randint() int {
 	return int(rand.Intn(1000000))
 }
 
+func randint64() int64 {
+	return int64(rand.Intn(1000000))
+}
+
 var letterRunes2 = []rune("azertyuiopqsdfghjklmwxcvbn123456789é@!?&èïab ")
 
 func randstring() string {
@@ -160,6 +164,8 @@ func randtes_ComplexStruct() testsource.ComplexStruct {
 	s.F = randAr5_Ar5_bool()
 	s.Imported = randsub_StructWithComment()
 	s.EnumMap = randMaptes_EnumIntbool()
+	s.OptID1 = randtes_Generic_tes_IdCamp()
+	s.OptID2 = randtes_Generic_tes_IdFile()
 
 	return s
 }
@@ -189,6 +195,28 @@ func randtes_EnumUInt() testsource.EnumUInt {
 	choix := [...]testsource.EnumUInt{testsource.A, testsource.B, testsource.C, testsource.D}
 	i := rand.Intn(len(choix))
 	return choix[i]
+}
+
+func randtes_Generic_tes_IdCamp() testsource.Generic[testsource.IdCamp] {
+	var s testsource.Generic[testsource.IdCamp]
+	s.Id = randtes_IdCamp()
+
+	return s
+}
+
+func randtes_Generic_tes_IdFile() testsource.Generic[testsource.IdFile] {
+	var s testsource.Generic[testsource.IdFile]
+	s.Id = randtes_IdFile()
+
+	return s
+}
+
+func randtes_IdCamp() testsource.IdCamp {
+	return testsource.IdCamp(randint64())
+}
+
+func randtes_IdFile() testsource.IdFile {
+	return testsource.IdFile(randint64())
 }
 
 func randtes_ItfList() testsource.ItfList {

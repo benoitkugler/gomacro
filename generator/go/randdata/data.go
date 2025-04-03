@@ -33,6 +33,8 @@ func generateWithTarget(ana *an.Analysis, targetPackage *types.Package) []gen.De
 		package %s
 
 		import (
+			"math/rand"
+			"time"
 			%s
 		)
 			
@@ -55,15 +57,40 @@ func (ctx context) typeName(typ an.Type) string {
 	return types.TypeString(typ.Type(), gen.NameRelativeTo(ctx.targetPackage))
 }
 
+func functionIDBasicOrNamed(ctx context, ty types.Type) string {
+	switch ty := ty.(type) {
+	case *types.Basic:
+		if ty.Name() == "byte" {
+			return "uint8" // prefer not to use the alias
+		} else if ty.Name() == "rune" {
+			return "int32"
+		}
+		return ty.Name()
+	case *types.Named:
+		// build a string usable in function names
+		obj := ty.Obj()
+		packageName := obj.Pkg().Name()
+		localName := obj.Name()
+		var name string
+		if obj.Pkg() == ctx.targetPackage {
+			name = localName
+		} else {
+			name = packageName[:3] + "_" + localName
+		}
+		typeParams := ty.TypeArgs()
+		for i := range typeParams.Len() {
+			name += "_" + functionIDBasicOrNamed(ctx, typeParams.At(i))
+		}
+		return name
+	default:
+		panic("not supported")
+	}
+}
+
 func (ctx context) functionID(ty an.Type) string {
 	switch ty := ty.(type) {
 	case *an.Basic:
-		if ty.B.Name() == "byte" {
-			return "uint8" // prefer not to use the alias
-		} else if ty.B.Name() == "rune" {
-			return "int32"
-		}
-		return ty.B.Name()
+		return functionIDBasicOrNamed(ctx, ty.B)
 	case *an.Time:
 		if ty.IsDate {
 			return "tDate"
@@ -79,14 +106,7 @@ func (ctx context) functionID(ty an.Type) string {
 	case *an.Map:
 		return fmt.Sprintf("Map%s%s", ctx.functionID(ty.Key), ctx.functionID(ty.Elem))
 	case *an.Named, *an.Enum, *an.Struct, *an.Union:
-		// build a string usable in function names
-		obj := ty.Type().(*types.Named).Obj()
-		packageName := obj.Pkg().Name()
-		localName := obj.Name()
-		if obj.Pkg() == ctx.targetPackage {
-			return localName
-		}
-		return packageName[:3] + "_" + localName
+		return functionIDBasicOrNamed(ctx, ty.Type().(*types.Named))
 	default:
 		panic(an.ExhaustiveTypeSwitch)
 	}
