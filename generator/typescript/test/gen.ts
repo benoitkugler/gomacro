@@ -24,7 +24,7 @@ export type Basic3 = number;
 export type Basic4 = string;
 // github.com/benoitkugler/gomacro/testutils/testsource.ComplexStruct
 export interface ComplexStruct {
-  with_tag: { [key in Int]: Int } | null;
+  with_tag: Record<Int, Int> | null;
   Time: Time;
   B: string;
   Value: ItfType;
@@ -35,7 +35,9 @@ export interface ComplexStruct {
   Date: MyDate;
   F: Ar5_Ar5_boolean;
   Imported: StructWithComment;
-  EnumMap: { [key in EnumInt]: boolean } | null;
+  EnumMap: Record<EnumInt, boolean> | null;
+  OptID1: Generic_IdCamp;
+  OptID2: Generic_IdFile;
 }
 // github.com/benoitkugler/gomacro/testutils/testsource.ConcretType1
 export interface ConcretType1 {
@@ -55,7 +57,7 @@ export const EnumInt = {
 } as const;
 export type EnumInt = (typeof EnumInt)[keyof typeof EnumInt];
 
-export const EnumIntLabels: { [key in EnumInt]: string } = {
+export const EnumIntLabels: Record<EnumInt, string> = {
   [EnumInt.Ai]: "sdsd",
   [EnumInt.Bi]: "sdsdB",
   [EnumInt.Ci]: "sdsdC",
@@ -72,7 +74,7 @@ export const EnumUInt = {
 } as const;
 export type EnumUInt = (typeof EnumUInt)[keyof typeof EnumUInt];
 
-export const EnumUIntLabels: { [key in EnumUInt]: string } = {
+export const EnumUIntLabels: Record<EnumUInt, string> = {
   [EnumUInt.A]: "sdsd",
   [EnumUInt.B]: "sdsdB",
   [EnumUInt.C]: "sdsdC",
@@ -80,6 +82,16 @@ export const EnumUIntLabels: { [key in EnumUInt]: string } = {
   [EnumUInt.e]: "not added",
 };
 
+// github.com/benoitkugler/gomacro/testutils/testsource.Generic[github.com/benoitkugler/gomacro/testutils/testsource.IdCamp]
+export interface Generic_IdCamp {
+  Id: IdCamp;
+}
+// github.com/benoitkugler/gomacro/testutils/testsource.Generic[github.com/benoitkugler/gomacro/testutils/testsource.IdFile]
+export interface Generic_IdFile {
+  Id: IdFile;
+}
+export type IdCamp = number & { __opaque__: "IdCamp" };
+export type IdFile = number & { __opaque__: "IdFile" };
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfList
 export type ItfList = ItfType[] | null;
 
@@ -128,7 +140,7 @@ export const Enum = {
 } as const;
 export type Enum = (typeof Enum)[keyof typeof Enum];
 
-export const EnumLabels: { [key in Enum]: string } = {
+export const EnumLabels: Record<Enum, string> = {
   [Enum.A]: "",
   [Enum.B]: "",
   [Enum.C]: "",

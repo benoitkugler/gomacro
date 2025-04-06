@@ -2,6 +2,7 @@ package typescript
 
 import (
 	"fmt"
+	"go/types"
 	"strings"
 
 	an "github.com/benoitkugler/gomacro/analysis"
@@ -79,8 +80,15 @@ func typeName(ty an.Type) string {
 		}
 		// nullable since empty slice may be JSONized as null
 		return fmt.Sprintf("( %s[] | null)", typeName(ty.Elem))
-	case *an.Named, *an.Enum, *an.Struct, *an.Union:
+	case *an.Named, *an.Enum, *an.Union:
 		return an.LocalName(ty)
+	case *an.Struct:
+		name := an.LocalName(ty)
+		typeParams := ty.Name.TypeArgs()
+		for i := range typeParams.Len() {
+			name += "_" + typeParams.At(i).(*types.Named).Obj().Name()
+		}
+		return name
 	default:
 		panic(an.ExhaustiveTypeSwitch)
 	}
