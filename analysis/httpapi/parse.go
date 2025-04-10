@@ -201,6 +201,9 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 		for j := range ct.InputQueryParams {
 			ct.InputQueryParams[j].resolveType(an)
 		}
+		if ct.InputForm.JSON.Name != "" {
+			ct.InputForm.JSON.resolveType(an)
+		}
 	}
 }
 

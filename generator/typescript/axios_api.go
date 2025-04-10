@@ -71,6 +71,9 @@ func typeIn(a httpapi.Endpoint) string {
 		if fi := a.Contract.InputForm.File; fi != "" {
 			chunks = append(chunks, "file: File")
 		}
+		if json := a.Contract.InputForm.JSON; json.Name != "" {
+			chunks = append(chunks, "formValue: "+typeName(json.Type))
+		}
 	}
 
 	// params as query params
@@ -132,6 +135,9 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 		}
 		for _, param := range a.Contract.InputForm.ValueNames {
 			form += fmt.Sprintf("formData.append(%q, formParams[%q])\n", param, param)
+		}
+		if param := a.Contract.InputForm.JSON; param.Name != "" {
+			form += fmt.Sprintf("formData.append(%q, JSON.stringify(formValue))\n", param.Name)
 		}
 		return fmt.Sprintf("%s %s await Axios.%s(fullUrl, formData, %s)", form, returnAssignment, methodLower, callParams)
 	} else if hasBodyInput(a) {

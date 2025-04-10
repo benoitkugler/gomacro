@@ -161,6 +161,9 @@ func parseAssignments(rhs []ast.Expr, pkg *packages.Package, out *Contract) {
 		if formFile, _ := parseCallWithString(rh, "FormFile", pkg); formFile != "" {
 			out.InputForm.File = formFile
 		}
+		if formField, ty := parseFormValueJSON(rh, pkg); formField != "" {
+			out.InputForm.JSON = TypedParam{Name: formField, type_: ty}
+		}
 	}
 }
 
@@ -187,6 +190,46 @@ func tryParseBindCall(expr ast.Expr, pkg *types.Info) types.Type {
 		}
 	}
 	return nil
+}
+
+func parseFormValueJSON(expr ast.Expr, pkg *packages.Package) (string, types.Type) {
+	if call, ok := expr.(*ast.CallExpr); ok {
+		function := call.Fun
+
+		var name string
+		switch caller := function.(type) {
+		case *ast.SelectorExpr:
+			name = caller.Sel.Name
+		case *ast.Ident:
+			name = caller.Name
+		default:
+			return "", nil
+		}
+
+		if name != "FormValueJSON" {
+			return "", nil
+		}
+
+		// "c.<methodName>(<string>)"
+		if len(call.Args) != 3 {
+			panic("invalid argument length for FormValueJSON")
+		}
+		arg := call.Args[1]
+		dst := call.Args[2]
+
+		argS, err := resolveConstString(arg, pkg)
+		if err != nil {
+			panic(fmt.Sprintf("invalid first argument for FormValueJSON: %s", err))
+		}
+
+		outType := pkg.TypesInfo.TypeOf(dst)
+		ptr, ok := outType.(*types.Pointer)
+		if !ok {
+			panic("expected pointer in FormValueJSON")
+		}
+		return argS, ptr.Elem()
+	}
+	return "", nil
 }
 
 func parseCallWithString(expr ast.Expr, methodName string, pkg *packages.Package) (string, types.Type) {

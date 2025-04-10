@@ -46,10 +46,11 @@ type Contract struct {
 type Form struct {
 	File       string // empty means no file
 	ValueNames []string
+	JSON       TypedParam
 }
 
 func (f Form) IsZero() bool {
-	return f.File == "" && len(f.ValueNames) == 0
+	return f.File == "" && len(f.ValueNames) == 0 && f.JSON.Name == ""
 }
 
 // AsTypedValues returns the name of the form parameters with type String
