@@ -657,7 +657,13 @@ func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
 		)
 		for _, match := range query.Inputs {
 			signature += fmt.Sprintf("%s %s,", match.VarName, ctx.typeName(match.Type))
-			argsSelect += fmt.Sprintf("%s, ", match.VarName)
+			if slice, isSlice := match.Type.(*types.Slice); isSlice {
+				// need array converters
+				funcName := fmt.Sprintf("%sArrayToPQ", ctx.typeName(slice.Elem()))
+				argsSelect += fmt.Sprintf("%s(%s), ", funcName, match.VarName)
+			} else {
+				argsSelect += fmt.Sprintf("%s, ", match.VarName)
+			}
 		}
 
 		queryFunc := fmt.Sprintf(`

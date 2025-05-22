@@ -330,18 +330,22 @@ type CustomQueryInput struct {
 
 type CustomQuery struct {
 	GoFunctionName string
-	Query          string // where placeholders have been replaced to $1, $2, etc...
+	Query          string // where placeholders have been replaced by $1, $2, etc...
 
 	Inputs []CustomQueryInput
 }
 
-var reCustomQueryFields = regexp.MustCompile(`(\w+)\s*=\s*\$(\w+)\$`)
+var (
+	reCustomQueryFields      = regexp.MustCompile(`(\w+)\s*=\s*\$(\w+)\$`)
+	reCustomQueryArrayFields = regexp.MustCompile(`(\w+)\s*=\s*ANY\(\$(\w+)\$\)`)
+)
 
 func newCustomQuery(columsByName map[string]types.Type, comment string) (out CustomQuery) {
 	out.GoFunctionName, out.Query, _ = strings.Cut(comment, " ")
 	// extract fields
 	fieldToIndex := map[string]int{}
 	fields := reCustomQueryFields.FindAllStringSubmatch(comment, -1)
+	arrayFields := reCustomQueryArrayFields.FindAllStringSubmatch(comment, -1)
 
 	for _, match := range fields {
 		goField, varName := match[1], match[2]
@@ -355,6 +359,19 @@ func newCustomQuery(columsByName map[string]types.Type, comment string) (out Cus
 		}
 
 		out.Inputs = append(out.Inputs, CustomQueryInput{varName, ty})
+	}
+	for _, match := range arrayFields {
+		goField, varName := match[1], match[2]
+		if _, has := fieldToIndex[varName]; has {
+			continue // value already seen
+		}
+		fieldToIndex[varName] = len(fieldToIndex) + 1
+		elemTy, ok := columsByName[goField]
+		if !ok {
+			panic("unknown field " + goField)
+		}
+
+		out.Inputs = append(out.Inputs, CustomQueryInput{varName, types.NewSlice(elemTy)})
 	}
 
 	// now replace the $<...>$ placeholders

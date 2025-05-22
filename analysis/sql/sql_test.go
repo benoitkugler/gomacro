@@ -71,4 +71,9 @@ func TestCustomQueries(t *testing.T) {
 	matches := reCustomQueryFields.FindAllStringSubmatch("UPDATE Participant SET IdPersonne = $v1$ WHERE IdPersonne = $v2$", -1)
 	Assert(t, len(matches) == 2)
 	Assert(t, matches[0][1] == "IdPersonne")
+
+	matches = reCustomQueryArrayFields.FindAllStringSubmatch("DELETE FROM LettreImage WHERE NOT (Id = ANY($others$));", -1)
+	Assert(t, len(matches) == 1)
+	Assert(t, matches[0][1] == "Id")
+	Assert(t, matches[0][2] == "others")
 }

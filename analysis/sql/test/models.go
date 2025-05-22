@@ -34,6 +34,7 @@ type ba [3]bool
 
 // gomacro:SQL ADD CHECK (V = #[LocalEnum.A] OR V = #[LocalEnum.B])
 // gomacro:QUERY CustomQueryRepas UPDATE Repas SET Order = $newValue$ WHERE V = #[LocalEnum.A] ;
+// gomacro:QUERY CustomQueryArray UPDATE Repas SET Order = $newValue$ WHERE Id = ANY($ids$) ;
 type Repas struct {
 	Order string
 	Id    RepasID
