@@ -221,7 +221,7 @@ func GenerateAxios(api []httpapi.Endpoint) string {
 		as base class for an app controller.
 	*/
 	export abstract class AbstractAPI {
-		constructor(protected baseURL: string, protected authToken: string) {}
+		constructor(protected baseURL: string, public authToken: string) {}
 
 		abstract protected handleError(error: any): void
 

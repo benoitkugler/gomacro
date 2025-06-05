@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/benoitkugler/gomacro/analysis"
 	"github.com/benoitkugler/gomacro/analysis/httpapi"
 )
 
@@ -37,12 +38,18 @@ func generateQuery(params []httpapi.TypedParam) (vars, query string) {
 		return "", "``"
 	}
 
+	var queryChunks []string
 	for _, param := range params {
 		varName := strings.ReplaceAll(param.Name, "-", "_")
 		vars += fmt.Sprintf("%s: %s,", varName, typeName(param.Type)) // quote for names like "id-1"
-		query += fmt.Sprintf("%s=${%s}", param.Name, varName)
+
+		insertVariable := varName
+		if isBasic, ok := param.Type.(*analysis.Basic); ok && isBasic.Kind() == analysis.BKBool {
+			insertVariable = varName + " ? 'YES' : ''"
+		}
+		queryChunks = append(queryChunks, fmt.Sprintf("%s=${%s}", param.Name, insertVariable))
 	}
-	query = "`?" + query + "`"
+	query = "`?" + strings.Join(queryChunks, "&") + "`"
 	return
 }
 
