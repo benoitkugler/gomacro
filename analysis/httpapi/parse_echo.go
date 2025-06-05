@@ -22,6 +22,25 @@ func isHttpMethod(name string) bool {
 	}
 }
 
+// look for a JWTMiddlewareForQuery middleware
+func hasJWTMiddleware(callExpr *ast.CallExpr) bool {
+	for _, node := range callExpr.Args[2:] {
+		callExpr, ok := node.(*ast.CallExpr)
+		if !ok {
+			continue
+		}
+		// restrict to <ct>.JWTMiddlewareForQuery
+		selector, ok := callExpr.Fun.(*ast.SelectorExpr)
+		if !ok {
+			continue
+		}
+		if selector.Sel.Name == "JWTMiddlewareForQuery" {
+			return true
+		}
+	}
+	return false
+}
+
 // echoExtractor scans a file using the Echo framework, looking for method calls .GET .POST .PUT .DELETE
 // inside all top level functions in `f`, and parameters bindings.
 func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint {
@@ -46,7 +65,8 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			return true
 		}
 
-		path, err := resolveConstString(callExpr.Args[0], pkg)
+		urlNode, handlerNode := callExpr.Args[0], callExpr.Args[1]
+		path, err := resolveConstString(urlNode, pkg)
 		if err != nil {
 			panic("invalid endpoint URL :" + err.Error())
 		}
@@ -56,8 +76,17 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			return true
 		}
 
-		body, name, sourcePkg := parseEndpointFunc(callExpr.Args[1], pkg)
+		body, name, sourcePkg := parseEndpointFunc(handlerNode, pkg)
 		contract := newContractFromEchoBody(sourcePkg, body, name)
+
+		if hasJWTMiddleware(callExpr) {
+			// add a token=<string> query parameters
+			contract.InputQueryParams = append(contract.InputQueryParams, TypedParam{
+				type_: types.Typ[types.String],
+				Name:  "token",
+			})
+		}
+
 		out = append(out, Endpoint{Url: path, Method: methodName, Contract: contract})
 
 		return false
@@ -116,14 +145,8 @@ func parseReturnStmt(stmt *ast.ReturnStmt, pkg *types.Info, out *Contract) {
 				}
 			} else if method.Sel.Name == "Blob" {
 				if len(call.Args) >= 3 { // c.Blob(200, name, bytes)
-					output := call.Args[2]
-					switch output := output.(type) {
-					case *ast.Ident:
-						out.returnT = resolveVarType(output, pkg)
-						out.IsReturnBlob = true
-					default:
-						panic("unsupported return value in Blob")
-					}
+					out.returnT = types.NewSlice(types.Typ[types.Byte])
+					out.IsReturnBlob = true
 				}
 			}
 		}

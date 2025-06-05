@@ -43,6 +43,7 @@ type action struct {
 	Mode            mode
 	Output          string
 	RestrictHTTPApi string // only for [typescriptApiGen]
+	UrlOnly         bool   // only for [typescriptApiGen]
 }
 
 func newAction(value string) (action, error) {
@@ -151,7 +152,11 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly,
 			fmt.Println("Parsing http routes...")
 			api := httpapi.ParseEcho(ana.Pkg, fullPath, act.RestrictHTTPApi)
 			fmt.Println("Done. Generating", len(api), "routes")
-			code = typescript.GenerateAxios(api)
+			if act.UrlOnly {
+				code = typescript.GenerateURLs(api)
+			} else {
+				code = typescript.GenerateAxios(api)
+			}
 			format = generator.TypeScript
 		case dartGen:
 			hasDart = true
@@ -273,6 +278,7 @@ func main() {
 	isDartOnly := flag.Bool("dart-only", false, "Only run Dart actions")
 	restrictHTTPApi := flag.String("http-api", "", "Only generate API for endpoints with this prefix")
 	generateSetsID := flag.Bool("generate-sets", false, "Generate a convenient Set type")
+	httpURLOnly := flag.Bool("url-only", false, "Generates URL instead of Axios calls")
 	flag.Parse()
 
 	fileArgs := flag.Args()
@@ -299,6 +305,7 @@ func main() {
 				log.Fatal(err)
 			}
 			action.RestrictHTTPApi = *restrictHTTPApi
+			action.UrlOnly = *httpURLOnly
 			conf[inputFile] = append(conf[inputFile], action)
 		}
 	}

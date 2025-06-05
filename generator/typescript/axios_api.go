@@ -98,7 +98,7 @@ func typeOut(a httpapi.Endpoint) string {
 }
 
 func fullUrl(a httpapi.Endpoint) string {
-	return fmt.Sprintf("this.baseUrl + %q", a.Url) // basic url
+	return fmt.Sprintf("this.baseURL + %q", a.Url) // basic url
 }
 
 func convertTypedQueryParams(c httpapi.Contract) string {
@@ -191,6 +191,9 @@ func renderTypes(s []httpapi.Endpoint) string {
 		if ty := api.Contract.Return; ty != nil {
 			allTypes = append(allTypes, ty)
 		}
+		for _, qp := range api.Contract.InputQueryParams {
+			allTypes = append(allTypes, qp.Type)
+		}
 	}
 	return generator.WriteDeclarations(generateTypes(allTypes))
 }
@@ -218,7 +221,7 @@ func GenerateAxios(api []httpapi.Endpoint) string {
 		as base class for an app controller.
 	*/
 	export abstract class AbstractAPI {
-		constructor(protected baseUrl: string, protected authToken: string) {}
+		constructor(protected baseURL: string, protected authToken: string) {}
 
 		abstract protected handleError(error: any): void
 

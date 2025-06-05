@@ -14,7 +14,7 @@ type Context interface {
 
 type Echo struct{}
 
-func (Echo) GET(string, func(Context) error)    {}
-func (Echo) POST(string, func(Context) error)   {}
-func (Echo) PUT(string, func(Context) error)    {}
-func (Echo) DELETE(string, func(Context) error) {}
+func (Echo) GET(string, func(Context) error, ...any) {}
+func (Echo) POST(string, func(Context) error)        {}
+func (Echo) PUT(string, func(Context) error)         {}
+func (Echo) DELETE(string, func(Context) error)      {}

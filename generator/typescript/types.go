@@ -89,6 +89,8 @@ func typeName(ty an.Type) string {
 			name += "_" + typeParams.At(i).(*types.Named).Obj().Name()
 		}
 		return name
+	case nil:
+		return "never"
 	default:
 		panic(an.ExhaustiveTypeSwitch)
 	}

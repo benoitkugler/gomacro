@@ -23,11 +23,15 @@ func TestParse(t *testing.T) {
 	ti := time.Now()
 	apis := ParseEcho(pack, abs, "")
 	fmt.Println("Resolved in ", time.Since(ti))
-	if len(apis) != 15 {
+	if len(apis) != 16 {
 		t.Fatal()
 	}
 
 	if len(apis[14].Contract.InputQueryParams) == 0 {
 		t.Fatal("generic not supported")
+	}
+
+	if len(apis[15].Contract.InputQueryParams) != 1 {
+		t.Fatal()
 	}
 }

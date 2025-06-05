@@ -16,6 +16,7 @@ type controller struct{}
 func QueryParamInt[T ~int64](echo.Context, string) (T, error) { return 0, nil }
 func (controller) QueryParamInt64(echo.Context, string) int64 { return 0 }
 func (controller) QueryParamBool(echo.Context, string) bool   { return false }
+func (controller) JWTMiddlewareForQuery() bool                { return false }
 func FormValueJSON(echo.Context, string, any) error           { return nil }
 
 func (controller) handle1(c echo.Context) error {
@@ -84,7 +85,7 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.GET(routeFunc, ct.handle1)
 	e.POST(inner.Url, ct2.HandleExt)
 	e.POST(inner.Url+"endpoint", ct.handler2)
-	e.POST(inner.Url+"endpoint/"+"entoher/"+routeFunc, ct.handler2)
+	e.POST(inner.Url+"endpoint/"+"entoher/"+routeFunc, func(ctx echo.Context) error { return nil })
 	e.POST("host"+inner.Url, ct.handler3)
 	e.POST("host"+"endpoint", ct.handler4)
 	e.POST("/string_litteral", ct.handler5)
@@ -100,4 +101,5 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 
 	e.POST("/download", ct.handler9)
 	e.DELETE("/with_generic", ct.handler10)
+	e.GET("/with middleware", func(ctx echo.Context) error { return nil }, ct.JWTMiddlewareForQuery())
 }
