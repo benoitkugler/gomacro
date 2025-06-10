@@ -354,6 +354,10 @@ func (an *Analysis) handleStructFields(typ *types.Struct, ctx context) []StructF
 		field := typ.Field(i)
 		tag := reflect.StructTag(typ.Tag(i))
 
+		if name := tag.Get("gomacro"); name == "ignore" {
+			continue
+		}
+
 		// recurse
 		fieldType := an.handleType(field.Type(), ctx)
 
