@@ -214,5 +214,8 @@ func compositeDecl(cp sql.Composite) string {
 	for i, field := range st.Fields {
 		fields[i] = fmt.Sprintf("%s %s", field.JSONName(), cp.SQLType(i).Name())
 	}
-	return fmt.Sprintf("CREATE TYPE %s AS (%s);", cp.Name(), strings.Join(fields, ", "))
+	return fmt.Sprintf(`
+	DROP TYPE IF EXISTS %[1]s;
+	
+	CREATE TYPE %[1]s AS (%[2]s);`, cp.Name(), strings.Join(fields, ", "))
 }
