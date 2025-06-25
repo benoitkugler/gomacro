@@ -27,6 +27,13 @@ func TestParse(t *testing.T) {
 		t.Fatal()
 	}
 
+	if apis[0].Comment != JSONStream {
+		t.Fatal(apis[0].Comment)
+	}
+	if apis[1].Comment != Ignore {
+		t.Fatal(apis[0].Comment)
+	}
+
 	if len(apis[14].Contract.InputQueryParams) == 0 {
 		t.Fatal("generic not supported")
 	}

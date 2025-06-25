@@ -11,6 +11,7 @@ type Endpoint struct {
 	Url      string
 	Method   string
 	Contract Contract
+	Comment  SpecialComment
 }
 
 type TypedParam struct {
@@ -60,4 +61,25 @@ func (f Form) AsTypedValues() []TypedParam {
 		out[i] = TypedParam{Name: v, Type: analysis.String}
 	}
 	return out
+}
+
+type SpecialComment uint8
+
+const (
+	_ SpecialComment = iota
+	Ignore
+	JSONStream
+)
+
+func newSpecialComment(comment string) SpecialComment {
+	switch comment {
+	case "":
+		return 0
+	case "ignore":
+		return Ignore
+	case "JSONStream":
+		return JSONStream
+	default:
+		panic("invalid special comment " + comment)
+	}
 }

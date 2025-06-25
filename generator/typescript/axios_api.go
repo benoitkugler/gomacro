@@ -149,7 +149,40 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 	}
 }
 
+func generateMethodJSONStream(a httpapi.Endpoint) string {
+	body := ""
+	if hasBodyInput(a) {
+		body = "body: JSON.stringify(params),"
+	}
+	const template = `
+	/** %[1]s return a streaming Response (JSON line format) */
+	async %[1]s(%[2]s) {
+		const fullUrl = %[3]s;
+		this.startRequest();
+		try {
+			const response = await fetch(fullUrl, {
+				method: %[4]q,
+				headers: {
+					...this.getHeaders(),
+					Accept: "application/json",
+					"Content-Type": "application/json",
+				},
+			%[5]s
+			});
+			return response;
+		} catch (error) {
+			this.handleError(error);
+		}
+	}
+`
+	return fmt.Sprintf(template,
+		a.Contract.Name, typeIn(a), fullUrl(a), a.Method, body)
+}
+
 func generateMethod(a httpapi.Endpoint) string {
+	if a.Comment == httpapi.JSONStream { // defer to special fetch syntax
+		return generateMethodJSONStream(a)
+	}
 	const template = `
 	/** %[1]s performs the request and handles the error */
 	async %[1]s(%[2]s) {

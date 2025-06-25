@@ -44,6 +44,15 @@ func hasJWTMiddleware(callExpr *ast.CallExpr) bool {
 // echoExtractor scans a file using the Echo framework, looking for method calls .GET .POST .PUT .DELETE
 // inside all top level functions in `f`, and parameters bindings.
 func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint {
+	comments := map[int]string{} // line to comment
+	for _, cm := range fi.Comments {
+		if len(cm.List) != 1 {
+			continue
+		}
+		line := pkg.Fset.Position(cm.Pos()).Line
+		comments[line] = strings.TrimSpace(cm.List[0].Text[2:])
+	}
+
 	var out []Endpoint
 
 	ast.Inspect(fi, func(n ast.Node) bool {
@@ -54,6 +63,8 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 		if !ok {
 			return true
 		}
+		line := pkg.Fset.Position(callExpr.Pos()).Line
+
 		// restrict to <echo>.{GET} methods
 		selector, ok := callExpr.Fun.(*ast.SelectorExpr)
 		if !ok {
@@ -87,7 +98,7 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			})
 		}
 
-		out = append(out, Endpoint{Url: path, Method: methodName, Contract: contract})
+		out = append(out, Endpoint{Url: path, Method: methodName, Contract: contract, Comment: newSpecialComment(comments[line])})
 
 		return false
 	})

@@ -80,9 +80,9 @@ func (controller) handler10(c echo.Context) error {
 }
 
 func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
-	e.GET(route, handler)
+	e.GET(route, handler) // JSONStream
 	const routeFunc = "const_local_url"
-	e.GET(routeFunc, ct.handle1)
+	e.GET(routeFunc, ct.handle1) // ignore
 	e.POST(inner.Url, ct2.HandleExt)
 	e.POST(inner.Url+"endpoint", ct.handler2)
 	e.POST(inner.Url+"endpoint/"+"entoher/"+routeFunc, func(ctx echo.Context) error { return nil })
