@@ -23,13 +23,10 @@ func TestParse(t *testing.T) {
 	ti := time.Now()
 	apis := ParseEcho(pack, abs, "")
 	fmt.Println("Resolved in ", time.Since(ti))
-	if len(apis) != 16 {
+	if len(apis) != 17 {
 		t.Fatal()
 	}
 
-	if apis[0].Comment != JSONStream {
-		t.Fatal(apis[0].Comment)
-	}
 	if apis[1].Comment != Ignore {
 		t.Fatal(apis[0].Comment)
 	}
@@ -39,6 +36,10 @@ func TestParse(t *testing.T) {
 	}
 
 	if len(apis[15].Contract.InputQueryParams) != 1 {
+		t.Fatal()
+	}
+
+	if !apis[16].Contract.IsReturnStream {
 		t.Fatal()
 	}
 }

@@ -41,7 +41,9 @@ type Contract struct {
 	InputForm        Form
 	InputQueryParams []TypedParam
 
-	IsReturnBlob bool // Return is a []byte, interpreted as a file
+	IsReturnBlob bool // [Return] is a []byte, interpreted as a file
+
+	IsReturnStream bool // JSON stream of type [Return]
 }
 
 type Form struct {
@@ -68,7 +70,6 @@ type SpecialComment uint8
 const (
 	_ SpecialComment = iota
 	Ignore
-	JSONStream
 )
 
 func newSpecialComment(comment string) SpecialComment {
@@ -77,8 +78,6 @@ func newSpecialComment(comment string) SpecialComment {
 		return 0
 	case "ignore":
 		return Ignore
-	case "JSONStream":
-		return JSONStream
 	default:
 		panic("invalid special comment " + comment)
 	}

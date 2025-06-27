@@ -159,9 +159,27 @@ func parseReturnStmt(stmt *ast.ReturnStmt, pkg *types.Info, out *Contract) {
 					out.returnT = types.NewSlice(types.Typ[types.Byte])
 					out.IsReturnBlob = true
 				}
+			} else if method.Sel.Name == "StreamJSON" && len(call.Args) == 2 {
+				// utils.StreamJSON(c.Response(), it)
+				iterType := resolveVarType(call.Args[1].(*ast.Ident), pkg)
+				out.returnT = extractIter2Value(iterType)
+				out.IsReturnStream = true
 			}
 		}
 	}
+}
+
+// expect iter.Seq2[T, _] and return T
+func extractIter2Value(ty types.Type) types.Type {
+	fnType := ty.Underlying().(*types.Signature)
+	if fnType.Params().Len() != 1 {
+		panic("expected iter.Seq2")
+	}
+	tParams := ty.(*types.Named).TypeArgs()
+	if tParams.Len() != 2 {
+		panic("expected iter.Seq2")
+	}
+	return tParams.At(0)
 }
 
 func resolveVarType(arg *ast.Ident, pkg *types.Info) types.Type {

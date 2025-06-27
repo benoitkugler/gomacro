@@ -1,9 +1,14 @@
 // Package echo is a substitute for the http framework echo package.
 package echo
 
-import "mime/multipart"
+import (
+	"iter"
+	"mime/multipart"
+	"net/http"
+)
 
 type Context interface {
+	Response() *http.Response
 	Bind(interface{}) error
 	JSON(int, interface{}) error
 	QueryParam(string) string
@@ -18,3 +23,5 @@ func (Echo) GET(string, func(Context) error, ...any) {}
 func (Echo) POST(string, func(Context) error)        {}
 func (Echo) PUT(string, func(Context) error)         {}
 func (Echo) DELETE(string, func(Context) error)      {}
+
+func StreamJSON[K any](*http.Response, iter.Seq2[K, error]) error { return nil }

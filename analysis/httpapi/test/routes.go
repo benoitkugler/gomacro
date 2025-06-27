@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"iter"
 
 	"github.com/benoitkugler/gomacro/analysis/httpapi/test/echo"
 	"github.com/benoitkugler/gomacro/analysis/httpapi/test/inner"
@@ -79,8 +80,14 @@ func (controller) handler10(c echo.Context) error {
 	return c.Blob(200, "", output)
 }
 
+// with stream
+func (ct controller) handler11(c echo.Context) error {
+	var it iter.Seq2[int, error]
+	return echo.StreamJSON(c.Response(), it)
+}
+
 func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
-	e.GET(route, handler) // JSONStream
+	e.GET(route, handler)
 	const routeFunc = "const_local_url"
 	e.GET(routeFunc, ct.handle1) // ignore
 	e.POST(inner.Url, ct2.HandleExt)
@@ -102,4 +109,6 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.POST("/download", ct.handler9)
 	e.DELETE("/with_generic", ct.handler10)
 	e.GET("/with middleware", func(ctx echo.Context) error { return nil }, ct.JWTMiddlewareForQuery())
+
+	e.GET("/with_json_stream", ct.handler11)
 }

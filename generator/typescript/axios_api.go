@@ -161,26 +161,26 @@ func generateMethodJSONStream(a httpapi.Endpoint) string {
 		this.startRequest();
 		try {
 			const response = await fetch(fullUrl, {
-				method: %[4]q,
+				method: %[5]q,
 				headers: {
 					...this.getHeaders(),
 					Accept: "application/json",
 					"Content-Type": "application/json",
 				},
-			%[5]s
+			%[6]s
 			});
-			return response;
+			return response as JSONStreamResponse<%[4]s>;
 		} catch (error) {
 			this.handleError(error);
 		}
 	}
 `
 	return fmt.Sprintf(template,
-		a.Contract.Name, typeIn(a), fullUrl(a), a.Method, body)
+		a.Contract.Name, typeIn(a), fullUrl(a), typeOut(a), a.Method, body)
 }
 
 func generateMethod(a httpapi.Endpoint) string {
-	if a.Comment == httpapi.JSONStream { // defer to special fetch syntax
+	if a.Contract.IsReturnStream { // defer to special fetch syntax
 		return generateMethodJSONStream(a)
 	}
 	const template = `
@@ -216,7 +216,10 @@ func generateMethod(a httpapi.Endpoint) string {
 }
 
 func renderTypes(s []httpapi.Endpoint) string {
-	var allTypes []an.Type
+	var (
+		allTypes  []an.Type
+		hasStream bool
+	)
 	for _, api := range s { // write top-level decl
 		if ty := api.Contract.InputBody; ty != nil {
 			allTypes = append(allTypes, ty)
@@ -227,8 +230,19 @@ func renderTypes(s []httpapi.Endpoint) string {
 		for _, qp := range api.Contract.InputQueryParams {
 			allTypes = append(allTypes, qp.Type)
 		}
+		if api.Contract.IsReturnStream {
+			hasStream = true
+		}
 	}
-	return generator.WriteDeclarations(generateTypes(allTypes))
+	decls := generateTypes(allTypes)
+	if hasStream {
+		decls = append(decls, generator.Declaration{
+			ID:       "__JSONStreamResponse_import",
+			Content:  `import type { JSONStreamResponse } from "@/utils";`,
+			Priority: true,
+		})
+	}
+	return generator.WriteDeclarations(decls)
 }
 
 // GenerateAxios generate a TS class using Axios for calling the

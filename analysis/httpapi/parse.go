@@ -175,7 +175,7 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 	// collect the required types
 	var required []types.Type
 	for _, endpoint := range endpoints {
-		// TODO: should we enfore something about input and output ?
+		// TODO: should we enforce something about input and output ?
 		if ty := endpoint.Contract.inputT; ty != nil {
 			required = append(required, ty)
 		}
