@@ -154,10 +154,15 @@ func generateMethodJSONStream(a httpapi.Endpoint) string {
 	if hasBodyInput(a) {
 		body = "body: JSON.stringify(params),"
 	}
+	queryCode := ""
+	if len(a.Contract.InputQueryParams) != 0 {
+		queryCode = fmt.Sprintf(`+ "?" + new URLSearchParams(%s).toString()`, convertTypedQueryParams(a.Contract))
+	}
+
 	const template = `
 	/** %[1]s return a streaming Response (JSON line format) */
 	async %[1]s(%[2]s) {
-		const fullUrl = %[3]s;
+		const fullUrl = %[3]s%[7]s;
 		this.startRequest();
 		try {
 			const response = await fetch(fullUrl, {
@@ -176,7 +181,7 @@ func generateMethodJSONStream(a httpapi.Endpoint) string {
 	}
 `
 	return fmt.Sprintf(template,
-		a.Contract.Name, typeIn(a), fullUrl(a), typeOut(a), a.Method, body)
+		a.Contract.Name, typeIn(a), fullUrl(a), typeOut(a), a.Method, body, queryCode)
 }
 
 func generateMethod(a httpapi.Endpoint) string {
