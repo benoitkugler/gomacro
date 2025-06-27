@@ -11,7 +11,6 @@ type Endpoint struct {
 	Url      string
 	Method   string
 	Contract Contract
-	Comment  SpecialComment
 }
 
 type TypedParam struct {
@@ -65,19 +64,19 @@ func (f Form) AsTypedValues() []TypedParam {
 	return out
 }
 
-type SpecialComment uint8
+type specialComment uint8
 
 const (
-	_ SpecialComment = iota
-	Ignore
+	_ specialComment = iota
+	ignore
 )
 
-func newSpecialComment(comment string) SpecialComment {
+func newSpecialComment(comment string) specialComment {
 	switch comment {
 	case "":
 		return 0
 	case "ignore":
-		return Ignore
+		return ignore
 	default:
 		panic("invalid special comment " + comment)
 	}

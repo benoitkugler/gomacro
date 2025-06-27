@@ -64,6 +64,12 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			return true
 		}
 		line := pkg.Fset.Position(callExpr.Pos()).Line
+		comment := newSpecialComment(comments[line])
+
+		if comment == ignore {
+			log.Println("ignoring route at line", line)
+			return true
+		}
 
 		// restrict to <echo>.{GET} methods
 		selector, ok := callExpr.Fun.(*ast.SelectorExpr)
@@ -82,11 +88,6 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			panic("invalid endpoint URL :" + err.Error())
 		}
 
-		if ex.restrictPrefix != "" && !strings.HasPrefix(path, ex.restrictPrefix) {
-			log.Println("ignoring route at", path)
-			return true
-		}
-
 		body, name, sourcePkg := parseEndpointFunc(handlerNode, pkg)
 		contract := newContractFromEchoBody(sourcePkg, body, name)
 
@@ -98,7 +99,7 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			})
 		}
 
-		out = append(out, Endpoint{Url: path, Method: methodName, Contract: contract, Comment: newSpecialComment(comments[line])})
+		out = append(out, Endpoint{Url: path, Method: methodName, Contract: contract})
 
 		return false
 	})

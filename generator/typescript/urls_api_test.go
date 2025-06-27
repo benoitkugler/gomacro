@@ -21,7 +21,7 @@ func Test(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apis := httpapi.ParseEcho(pack, abs, "")
+	apis := httpapi.ParseEcho(pack, abs)
 	code := GenerateURLs(apis)
 	err = os.WriteFile("test/urls_gen.ts", []byte(code), os.ModePerm)
 	if err != nil {

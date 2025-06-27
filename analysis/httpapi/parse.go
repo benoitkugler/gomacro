@@ -219,13 +219,9 @@ type extractor interface {
 	extract(pkg *packages.Package, fi *ast.File) []Endpoint
 }
 
-type echoExtractor struct {
-	restrictPrefix string
-}
+type echoExtractor struct{}
 
 // ParseEcho scans a file using the Echo framework.
-// If [restrictPrefix] is not empty, only the endpoints having this prefix
-// are returned.
-func ParseEcho(pkg *packages.Package, absFilePath string, restrictPrefix string) []Endpoint {
-	return parse(pkg, absFilePath, echoExtractor{restrictPrefix})
+func ParseEcho(pkg *packages.Package, absFilePath string) []Endpoint {
+	return parse(pkg, absFilePath, echoExtractor{})
 }

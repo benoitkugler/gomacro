@@ -21,14 +21,10 @@ func TestParse(t *testing.T) {
 	}
 
 	ti := time.Now()
-	apis := ParseEcho(pack, abs, "")
+	apis := ParseEcho(pack, abs)
 	fmt.Println("Resolved in ", time.Since(ti))
 	if len(apis) != 17 {
 		t.Fatal()
-	}
-
-	if apis[1].Comment != Ignore {
-		t.Fatal(apis[0].Comment)
 	}
 
 	if len(apis[14].Contract.InputQueryParams) == 0 {
