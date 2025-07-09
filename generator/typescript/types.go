@@ -167,7 +167,7 @@ func codeForNamed(named *an.Named, cache gen.Cache) []gen.Declaration {
 	if basic, ok := named.Underlying.(*an.Basic); ok && basic.Kind() == an.BKInt {
 		return []gen.Declaration{{
 			ID:      declID(named),
-			Content: fmt.Sprintf("export type %s = number & { __opaque__: '%s' };", name, name),
+			Content: fmt.Sprintf("export type %s = Int & { __opaque_int__: '%s' };", name, name),
 		}}
 	}
 
