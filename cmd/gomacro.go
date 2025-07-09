@@ -112,11 +112,11 @@ func runActions(source string, pkg *packages.Package, actions Actions, dartOnly,
 		return nil, nil, err
 	}
 
-	fmt.Printf("Running actions for %s...\n", source)
+	fmt.Printf("Analyzing types for %s...\n", source)
 
 	ana := analysis.NewAnalysisFromFile(pkg, source)
 
-	fmt.Println("Code analysis completed. Generating..")
+	fmt.Println("Code analysis completed. Running actions..")
 
 	hasDart := false
 	var outs []outputFile

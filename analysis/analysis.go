@@ -203,7 +203,9 @@ type PkgSelector struct {
 func NewPkgSelector(root *packages.Package) PkgSelector {
 	chunks := strings.Split(root.PkgPath, "/")
 	var prefix string
-	if len(chunks) == 1 {
+	if chunks[0] == "github.com" && len(chunks) >= 3 {
+		prefix = strings.Join(chunks[:3], "/")
+	} else if len(chunks) == 1 {
 		prefix = root.PkgPath
 	} else if len(chunks) >= 2 {
 		prefix = strings.Join(chunks[:2], "/")
@@ -319,6 +321,7 @@ func NewAnalysisFromTypes(pkg *packages.Package, source []types.Type) *Analysis 
 }
 
 func (an *Analysis) populateTypes(pa *packages.Package) {
+	log.Println("Fetching enums and unions....")
 	enums, unions := fetchEnumsAndUnions(pa)
 
 	ctx := context{enums: enums, unions: unions, rootPackage: pa}
