@@ -505,7 +505,7 @@ func NewLinker(rootDirectory string, sources []*Analysis) Linker {
 			if _, isTime := resolved.(*Time); isTime { // considered as predefined
 				continue
 			}
-			if named, isNamed := typ.(*types.Named); isNamed {
+			if named, isNamed := types.Unalias(typ).(*types.Named); isNamed {
 				pkgPath := named.Obj().Pkg().Path()
 				if !strings.HasPrefix(pkgPath, prefix) { // this is std lib
 					pkgPath = path.Join("stdlib", pkgPath)
@@ -534,7 +534,7 @@ func (lk Linker) GetOutput(ty types.Type) string {
 	if ty == timeTy || ty == dateTy {
 		return out + lk.Extension
 	}
-	if named, isNamed := ty.(*types.Named); isNamed {
+	if named, isNamed := types.Unalias(ty).(*types.Named); isNamed {
 		out = lk.typeToOut[named]
 	}
 	return out + lk.Extension

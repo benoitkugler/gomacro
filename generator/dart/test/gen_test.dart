@@ -5,22 +5,25 @@ import 'testsource_subpackage.dart';
 
 main(List<String> args) {
   final m = ComplexStruct(
-      {3: 4},
-      DateTime.now(),
-      "dsds",
-      ConcretType1([1, 2, -1], 4),
-      [ConcretType2(0.4), ConcretType2(0.8)],
-      789,
-      EnumInt.bi,
-      EnumUInt.c,
-      DateTime.now(),
-      [
-        [true],
-        [false, true],
-        []
-      ],
-      StructWithComment(5),
-      {});
+    {3: 4},
+    DateTime.now(),
+    "dsds",
+    ConcretType1([1, 2, -1], 4),
+    [ConcretType2(0.4), ConcretType2(0.8)],
+    789,
+    EnumInt.bi,
+    EnumUInt.c,
+    DateTime.now(),
+    [
+      [true],
+      [false, true],
+      [],
+    ],
+    StructWithComment(5),
+    {},
+    Generic(1),
+    Generic(2),
+  );
   final json = complexStructToJson(m);
   final s = jsonEncode(json);
   print(s);

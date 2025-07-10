@@ -29,31 +29,50 @@ class ComplexStruct {
   final List<List<bool>> f;
   final StructWithComment imported;
   final Map<EnumInt, bool> enumMap;
+  final Generic optID1;
+  final Generic optID2;
 
-  const ComplexStruct(this.with_tag, this.time, this.b, this.value, this.l,
-      this.a, this.e, this.e2, this.date, this.f, this.imported, this.enumMap);
+  const ComplexStruct(
+    this.with_tag,
+    this.time,
+    this.b,
+    this.value,
+    this.l,
+    this.a,
+    this.e,
+    this.e2,
+    this.date,
+    this.f,
+    this.imported,
+    this.enumMap,
+    this.optID1,
+    this.optID2,
+  );
 
   @override
   String toString() {
-    return "ComplexStruct($with_tag, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported, $enumMap)";
+    return "ComplexStruct($with_tag, $time, $b, $value, $l, $a, $e, $e2, $date, $f, $imported, $enumMap, $optID1, $optID2)";
   }
 }
 
 ComplexStruct complexStructFromJson(dynamic json_) {
   final json = (json_ as Map<String, dynamic>);
   return ComplexStruct(
-      dictIntToIntFromJson(json['with_tag']),
-      dateTimeFromJson(json['Time']),
-      stringFromJson(json['B']),
-      itfTypeFromJson(json['Value']),
-      itfListFromJson(json['L']),
-      intFromJson(json['A']),
-      enumIntFromJson(json['E']),
-      enumUIntFromJson(json['E2']),
-      dateTimeFromJson(json['Date']),
-      listListBoolFromJson(json['F']),
-      structWithCommentFromJson(json['Imported']),
-      dictEnumIntToBoolFromJson(json['EnumMap']));
+    dictIntToIntFromJson(json['with_tag']),
+    dateTimeFromJson(json['Time']),
+    stringFromJson(json['B']),
+    itfTypeFromJson(json['Value']),
+    itfListFromJson(json['L']),
+    intFromJson(json['A']),
+    enumIntFromJson(json['E']),
+    enumUIntFromJson(json['E2']),
+    dateTimeFromJson(json['Date']),
+    listListBoolFromJson(json['F']),
+    structWithCommentFromJson(json['Imported']),
+    dictEnumIntToBoolFromJson(json['EnumMap']),
+    genericFromJson(json['OptID1']),
+    genericFromJson(json['OptID2']),
+  );
 }
 
 Map<String, dynamic> complexStructToJson(ComplexStruct item) {
@@ -69,7 +88,9 @@ Map<String, dynamic> complexStructToJson(ComplexStruct item) {
     "Date": dateTimeToJson(item.date),
     "F": listListBoolToJson(item.f),
     "Imported": structWithCommentToJson(item.imported),
-    "EnumMap": dictEnumIntToBoolToJson(item.enumMap)
+    "EnumMap": dictEnumIntToBoolToJson(item.enumMap),
+    "OptID1": genericToJson(item.optID1),
+    "OptID2": genericToJson(item.optID2),
   };
 }
 
@@ -177,6 +198,33 @@ EnumUInt enumUIntFromJson(dynamic json) => _EnumUIntExt.fromValue(json as int);
 
 dynamic enumUIntToJson(EnumUInt item) => item.toValue();
 
+// github.com/benoitkugler/gomacro/testutils/testsource.Generic[github.com/benoitkugler/gomacro/testutils/testsource.IdFile]
+class Generic {
+  final IdFile id;
+
+  const Generic(this.id);
+
+  @override
+  String toString() {
+    return "Generic($id)";
+  }
+}
+
+Generic genericFromJson(dynamic json_) {
+  final json = (json_ as Map<String, dynamic>);
+  return Generic(intFromJson(json['Id']));
+}
+
+Map<String, dynamic> genericToJson(Generic item) {
+  return {"Id": intToJson(item.id)};
+}
+
+// github.com/benoitkugler/gomacro/testutils/testsource.IdCamp
+typedef IdCamp = int;
+
+// github.com/benoitkugler/gomacro/testutils/testsource.IdFile
+typedef IdFile = int;
+
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfList
 typedef ItfList = List<ItfType>;
 
@@ -278,15 +326,18 @@ class StructWithExternalRef {
 
 StructWithExternalRef structWithExternalRefFromJson(dynamic json_) {
   final json = (json_ as Map<String, dynamic>);
-  return StructWithExternalRef(namedSliceFromJson(json['Field1']),
-      namedSliceFromJson(json['Field2']), intFromJson(json['Field3']));
+  return StructWithExternalRef(
+    namedSliceFromJson(json['Field1']),
+    namedSliceFromJson(json['Field2']),
+    intFromJson(json['Field3']),
+  );
 }
 
 Map<String, dynamic> structWithExternalRefToJson(StructWithExternalRef item) {
   return {
     "Field1": namedSliceToJson(item.field1),
     "Field2": namedSliceToJson(item.field2),
-    "Field3": intToJson(item.field3)
+    "Field3": intToJson(item.field3),
   };
 }
 
@@ -307,14 +358,17 @@ class WithOpaque {
 WithOpaque withOpaqueFromJson(dynamic json_) {
   final json = (json_ as Map<String, dynamic>);
   return WithOpaque(
-      json['F1'], json['F2'], structWithExternalRefFromJson(json['F3']));
+    json['F1'],
+    json['F2'],
+    structWithExternalRefFromJson(json['F3']),
+  );
 }
 
 Map<String, dynamic> withOpaqueToJson(WithOpaque item) {
   return {
     "F1": item.f1,
     "F2": item.f2,
-    "F3": structWithExternalRefToJson(item.f3)
+    "F3": structWithExternalRefToJson(item.f3),
   };
 }
 
@@ -322,21 +376,24 @@ Map<EnumInt, bool> dictEnumIntToBoolFromJson(dynamic json) {
   if (json == null) {
     return {};
   }
-  return (json as Map<String, dynamic>)
-      .map((k, v) => MapEntry(k as EnumInt, boolFromJson(v)));
+  return (json as Map<String, dynamic>).map(
+    (k, v) => MapEntry(k as EnumInt, boolFromJson(v)),
+  );
 }
 
 Map<String, dynamic> dictEnumIntToBoolToJson(Map<EnumInt, bool> item) {
-  return item
-      .map((k, v) => MapEntry(enumIntToJson(k).toString(), boolToJson(v)));
+  return item.map(
+    (k, v) => MapEntry(enumIntToJson(k).toString(), boolToJson(v)),
+  );
 }
 
 Map<int, int> dictIntToIntFromJson(dynamic json) {
   if (json == null) {
     return {};
   }
-  return (json as Map<String, dynamic>)
-      .map((k, v) => MapEntry(int.parse(k), intFromJson(v)));
+  return (json as Map<String, dynamic>).map(
+    (k, v) => MapEntry(int.parse(k), intFromJson(v)),
+  );
 }
 
 Map<String, dynamic> dictIntToIntToJson(Map<int, int> item) {
