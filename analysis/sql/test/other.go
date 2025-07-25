@@ -25,3 +25,5 @@ type IdQuestion int64
 type defined optGeneric[IdQuestion]
 
 type OptAlias = defined
+
+type Advance [10]testsource.EnumUInt

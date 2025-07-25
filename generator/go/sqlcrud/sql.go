@@ -491,7 +491,7 @@ func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declara
 		elemUnderlyingType *types.Basic
 		elemKind           an.BasicKind
 
-		elemType types.Type // noy nil if conversion is required
+		elemType types.Type // not nil if conversion is required
 	)
 
 	if basic, isBasic := arr.A.Elem.(*an.Basic); isBasic {
@@ -520,10 +520,20 @@ func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declara
 	case an.BKString:
 		pqType = "pq.StringArray"
 	}
-	isGoArray := arr.A.Len >= 0
+	isFixedLength := arr.A.Len >= 0
+
+	elemTypeName := ctx.typeName(elemType)
 
 	var scanCode, valueCode string
-	if isGoArray { // convert from slice to array
+	if isFixedLength { // convert from slice to array
+		copyCode := "copy(s[:], tmp)"
+		if elemType != nil { // we have to build a temporary array
+			copyCode = fmt.Sprintf(` 
+					for i, v := range tmp {
+						(*s)[i] = %s(v)
+					}`, elemTypeName)
+		}
+
 		scanCode = fmt.Sprintf(`var tmp %s
 					err := tmp.Scan(src)
 					if err != nil {
@@ -532,10 +542,21 @@ func (ctx context) arrayConverters(goTypeName string, arr sql.Array) gen.Declara
 					if len(tmp) != %d {
 						return fmt.Errorf("unexpected length %%d", len(tmp))
 					}
-					copy(s[:], tmp)
+					%s
 					return nil
-					`, pqType, arr.A.Len)
-		valueCode = fmt.Sprintf("return %s(s[:]).Value()", pqType)
+					`, pqType, arr.A.Len, copyCode)
+
+		if elemType != nil { // we have to build a temporary array
+			pqElemType := strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(pqType, "pq."), "Array"))
+			valueCode = fmt.Sprintf(`tmp := make(%s, len(s))
+				for i, v := range s {
+						tmp[i] = %s(v)
+					}
+				return tmp.Value()`,
+				pqType, pqElemType)
+		} else {
+			valueCode = fmt.Sprintf("return %s(s[:]).Value()", pqType)
+		}
 	} else {
 		if elemType != nil { // we have to build a temporary array
 			pqElemType := strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(pqType, "pq."), "Array"))

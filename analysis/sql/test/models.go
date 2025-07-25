@@ -28,6 +28,7 @@ type Table1 struct {
 	BoolArray ba
 	guard     LocalEnum `gomacro-sql-guard:"#[LocalEnum.A]"`
 	OptKey    OptAlias  `gomacro-sql-foreign:"Question"`
+	Advance   Advance
 }
 
 type ba [3]bool
