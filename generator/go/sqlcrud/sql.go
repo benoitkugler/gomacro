@@ -449,15 +449,26 @@ func (ctx context) compositeConverters(goTypeName string, composite sql.Composit
 	scanFields := make([]string, len(st.Fields))
 	for i, field := range st.Fields {
 		name := field.Field.Name()
-		placholders[i] = "%d"
 		selectors[i] = "s." + name
-		scanFields[i] = fmt.Sprintf(`
-			val%s, err := strconv.Atoi(fields[%d])
-			if err != nil {
-				return err
-			}
-			s.%s = %s(val%s)
-		`, name, i, name, ctx.typeName(field.Field.Type()), name)
+
+		info := field.Type.Type().Underlying().(*types.Basic).Info()
+		if info&types.IsBoolean != 0 {
+			placholders[i] = "%t"
+			scanFields[i] = fmt.Sprintf(`
+				s.%s = %s(fields[%d] == "t")
+			`, name, ctx.typeName(field.Field.Type()), i)
+		} else if info&types.IsInteger != 0 {
+			placholders[i] = "%d"
+			scanFields[i] = fmt.Sprintf(`
+				val%s, err := strconv.Atoi(fields[%d])
+				if err != nil {
+					return err
+				}
+				s.%s = %s(val%s)
+			`, name, i, name, ctx.typeName(field.Field.Type()), name)
+		} else {
+			panic("unsupported field type in composite")
+		}
 	}
 
 	return gen.Declaration{
@@ -476,7 +487,7 @@ func (ctx context) compositeConverters(goTypeName string, composite sql.Composit
 				return nil 
 			}
 			func (s %s) Value() (driver.Value, error) { 
-				bs := fmt.Appendf(nil, "(%s)", %s)
+				bs := fmt.Sprintf("(%s)", %s)
 				return driver.Value(bs), nil
 			}
 			`, goTypeName, len(st.Fields), strings.Join(scanFields, "\n"),

@@ -99,7 +99,7 @@ func (ty Composite) SQLType(fieldIndex int) Type {
 	return newType(ty.t.Fields[fieldIndex].Type)
 }
 
-// isComposite returns true if the struct has only integer fields (including enums)
+// isComposite returns true if the struct has only boolean or integer fields (including enums)
 func isComposite(st *an.Struct) bool {
 	for _, field := range st.Fields {
 		switch fieldType := field.Type.(type) {
@@ -110,7 +110,7 @@ func isComposite(st *an.Struct) bool {
 				return false
 			}
 		case *an.Basic:
-			if fieldType.Kind() == an.BKInt {
+			if kind := fieldType.Kind(); kind == an.BKInt || kind == an.BKBool {
 				// OK
 			} else {
 				return false

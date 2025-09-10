@@ -11,6 +11,7 @@ type Composite struct {
 	A int
 	B uint8
 	C testsource.EnumUInt
+	D bool
 }
 
 // optional with generic

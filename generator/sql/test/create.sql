@@ -1,8 +1,11 @@
 -- Code genererated by gomacro/generator/sql. DO NOT EDIT.
+DROP TYPE IF EXISTS Composite;
+
 CREATE TYPE Composite AS (
     A integer,
     B smallint,
-    C integer
+    C integer,
+    D boolean
 );
 
 CREATE TABLE exercices (
@@ -69,13 +72,17 @@ CREATE TABLE table1s (
     Cp Composite NOT NULL,
     External Comp NOT NULL,
     BoolArray boolean[] CHECK (array_length(BoolArray, 1) = 3) NOT NULL,
-    guard smallint CHECK (guard IN (0, 1, 2)) NOT NULL
+    guard smallint CHECK (guard IN (0, 1, 2)) NOT NULL,
+    OptKey integer,
+    Advance integer[] CHECK (array_length(Advance, 1) = 10) NOT NULL
 );
 
 CREATE TABLE with_optional_times (
     Id serial PRIMARY KEY,
-    Deadine timestamp(0) with time zone NOT NULL,
-    DeadineOpt timestamp(0) with time zone
+    Deadine timestamp(0
+) with time zone NOT NULL,
+    DeadineOpt timestamp(0
+) with time zone
 );
 
 -- constraints
@@ -90,6 +97,9 @@ ALTER TABLE table1s
 
 ALTER TABLE table1s
     ADD FOREIGN KEY (Other) REFERENCES repass;
+
+ALTER TABLE table1s
+    ADD FOREIGN KEY (OptKey) REFERENCES questions;
 
 ALTER TABLE table1s
     ALTER COLUMN guard SET DEFAULT 0
@@ -323,7 +333,7 @@ BEGIN
     END IF;
     is_valid := (
         SELECT
-            bool_and(key IN ('A'))
+            bool_and(KEY IN ('A'))
         FROM
             jsonb_each(data))
         AND gomacro_validate_json_number (data -> 'A');
@@ -344,7 +354,7 @@ BEGIN
     END IF;
     is_valid := (
         SELECT
-            bool_and(key IN ('with_tag', 'Time', 'B', 'Value', 'L', 'A', 'E', 'E2', 'Date', 'F', 'Imported', 'EnumMap'))
+            bool_and(KEY IN ('with_tag', 'Time', 'B', 'Value', 'L', 'A', 'E', 'E2', 'Date', 'F', 'Imported', 'EnumMap', 'OptID1', 'OptID2'))
         FROM
             jsonb_each(data))
         AND gomacro_validate_json_map_number (data -> 'with_tag')
@@ -358,7 +368,9 @@ BEGIN
         AND gomacro_validate_json_string (data -> 'Date')
         AND gomacro_validate_json_array_5_array_5_boolean (data -> 'F')
         AND gomacro_validate_json_subp_StructWithComment (data -> 'Imported')
-        AND gomacro_validate_json_map_boolean (data -> 'EnumMap');
+        AND gomacro_validate_json_map_boolean (data -> 'EnumMap')
+        AND gomacro_validate_json_test_Generic (data -> 'OptID1')
+        AND gomacro_validate_json_test_Generic (data -> 'OptID2');
     RETURN is_valid;
 END;
 $$
@@ -376,7 +388,7 @@ BEGIN
     END IF;
     is_valid := (
         SELECT
-            bool_and(key IN ('List2', 'V'))
+            bool_and(KEY IN ('List2', 'V'))
         FROM
             jsonb_each(data))
         AND gomacro_validate_json_array_number (data -> 'List2')
@@ -398,7 +410,7 @@ BEGIN
     END IF;
     is_valid := (
         SELECT
-            bool_and(key IN ('D'))
+            bool_and(KEY IN ('D'))
         FROM
             jsonb_each(data))
         AND gomacro_validate_json_number (data -> 'D');
@@ -434,6 +446,27 @@ BEGIN
     IF NOT is_valid THEN
         RAISE WARNING '% is not a test_EnumUInt', data;
     END IF;
+    RETURN is_valid;
+END;
+$$
+LANGUAGE 'plpgsql'
+IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION gomacro_validate_json_test_Generic (data jsonb)
+    RETURNS boolean
+    AS $$
+DECLARE
+    is_valid boolean;
+BEGIN
+    IF jsonb_typeof(data) != 'object' THEN
+        RETURN FALSE;
+    END IF;
+    is_valid := (
+        SELECT
+            bool_and(KEY IN ('Id'))
+        FROM
+            jsonb_each(data))
+        AND gomacro_validate_json_number (data -> 'Id');
     RETURN is_valid;
 END;
 $$

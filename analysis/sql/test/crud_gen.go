@@ -1632,7 +1632,7 @@ func (s *Composite) Scan(src any) error {
 		return fmt.Errorf("unsupported type %T", src)
 	}
 	fields := strings.Split(string(bs[1:len(bs)-1]), ",")
-	if len(fields) != 3 {
+	if len(fields) != 4 {
 		return fmt.Errorf("unsupported number of fields %d", len(fields))
 	}
 
@@ -1654,10 +1654,12 @@ func (s *Composite) Scan(src any) error {
 	}
 	s.C = testsource.EnumUInt(valC)
 
+	s.D = bool(fields[3] == "t")
+
 	return nil
 }
 func (s Composite) Value() (driver.Value, error) {
-	bs := fmt.Appendf(nil, "(%d, %d, %d)", s.A, s.B, s.C)
+	bs := fmt.Appendf(nil, "(%d, %d, %d, %t)", s.A, s.B, s.C, s.D)
 	return driver.Value(bs), nil
 }
 
