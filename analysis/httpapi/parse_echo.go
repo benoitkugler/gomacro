@@ -81,6 +81,13 @@ func (ex echoExtractor) extract(pkg *packages.Package, fi *ast.File) []Endpoint 
 			// we are looking for .<METHOD>(url, handler)
 			return true
 		}
+		if comment == urlOnly {
+			if methodName == "GET" {
+				methodName = "URL"
+			} else {
+				panic("invalid endpoint Method for url-only mode: " + methodName)
+			}
+		}
 
 		urlNode, handlerNode := callExpr.Args[0], callExpr.Args[1]
 		path, err := resolveConstString(urlNode, pkg)

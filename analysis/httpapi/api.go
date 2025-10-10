@@ -9,7 +9,7 @@ import (
 // Endpoint describes one server endpoint
 type Endpoint struct {
 	Url      string
-	Method   string
+	Method   string // GET, POST, etc .. or URL
 	Contract Contract
 }
 
@@ -69,6 +69,7 @@ type specialComment uint8
 const (
 	_ specialComment = iota
 	ignore
+	urlOnly
 )
 
 func newSpecialComment(comment string) specialComment {
@@ -77,6 +78,8 @@ func newSpecialComment(comment string) specialComment {
 		return 0
 	case "ignore":
 		return ignore
+	case "url-only":
+		return urlOnly
 	default:
 		panic("invalid special comment " + comment)
 	}

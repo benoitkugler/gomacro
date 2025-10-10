@@ -112,5 +112,6 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 
 	e.GET("/with_json_stream", ct.handler11)
 
-	e.GET("/ignore", ct.handle1) // ignore
+	e.GET("/ignore", ct.handle1)   // ignore
+	e.GET("/url-only", ct.handle1) // url-only
 }
