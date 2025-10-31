@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 	ti := time.Now()
 	apis := ParseEcho(pack, abs)
 	fmt.Println("Resolved in ", time.Since(ti))
-	if len(apis) != 17 {
+	if len(apis) != 18 {
 		t.Fatal()
 	}
 
@@ -36,6 +36,9 @@ func TestParse(t *testing.T) {
 	}
 
 	if !apis[16].Contract.IsReturnStream {
+		t.Fatal()
+	}
+	if !apis[17].IsUrlOnly {
 		t.Fatal()
 	}
 }

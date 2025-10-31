@@ -8,9 +8,10 @@ import (
 
 // Endpoint describes one server endpoint
 type Endpoint struct {
-	Url      string
-	Method   string // GET, POST, etc .. or URL
-	Contract Contract
+	Url       string
+	Method    string // GET, POST, etc
+	IsUrlOnly bool
+	Contract  Contract
 }
 
 type TypedParam struct {

@@ -185,7 +185,7 @@ func generateMethodJSONStream(a httpapi.Endpoint) string {
 }
 
 func generateMethod(a httpapi.Endpoint) string {
-	if a.Method == "URL" {
+	if a.IsUrlOnly {
 		return generateURL(a)
 	}
 	if a.Contract.IsReturnStream { // defer to special fetch syntax

@@ -56,11 +56,11 @@ func generateQuery(params []httpapi.TypedParam) (vars, query string) {
 func generateURL(a httpapi.Endpoint) string {
 	params, query := generateQuery(a.Contract.InputQueryParams)
 	const template = `
-	/** Returns an URL */
+	/** Returns an URL with method %[5]s */
  	%[1]s(%[2]s) {
 		return %[3]s + %[4]s;
 	}
 	`
 	return fmt.Sprintf(template,
-		a.Contract.Name, params, fullUrl(a), query)
+		a.Contract.Name, params, fullUrl(a), query, a.Method)
 }
