@@ -245,6 +245,25 @@ func (item ExerciceQuestion) Delete(tx DB) error {
 	return err
 }
 
+// SelectExerciceQuestionsByIdQuestionAndBareme selects the items matching the given fields.
+func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
+	rows, err := tx.Query("SELECT idexercice, idquestion, bareme, index FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2", idQuestion, bareme)
+	if err != nil {
+		return nil, err
+	}
+	return ScanExerciceQuestions(rows)
+}
+
+// DeleteExerciceQuestionsByIdQuestionAndBareme deletes the item matching the given fields, returning
+// the deleted items.
+func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
+	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING idexercice, idquestion, bareme, index", idQuestion, bareme)
+	if err != nil {
+		return nil, err
+	}
+	return ScanExerciceQuestions(rows)
+}
+
 // ByIdExercice returns a map with 'IdExercice' as keys.
 func (items ExerciceQuestions) ByIdExercice() map[int64]ExerciceQuestions {
 	out := make(map[int64]ExerciceQuestions)
@@ -255,7 +274,7 @@ func (items ExerciceQuestions) ByIdExercice() map[int64]ExerciceQuestions {
 }
 
 // IdExercices returns the list of ids of IdExercice
-// contained in this link table.
+// contained in this table.
 // They are not garanteed to be distinct.
 func (items ExerciceQuestions) IdExercices() []int64 {
 	out := make([]int64, len(items))
@@ -291,7 +310,7 @@ func (items ExerciceQuestions) ByIdQuestion() map[int64]ExerciceQuestions {
 }
 
 // IdQuestions returns the list of ids of IdQuestion
-// contained in this link table.
+// contained in this table.
 // They are not garanteed to be distinct.
 func (items ExerciceQuestions) IdQuestions() []int64 {
 	out := make([]int64, len(items))
@@ -311,25 +330,6 @@ func SelectExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (Exercic
 
 func DeleteExerciceQuestionsByIdQuestions(tx DB, idQuestions_ ...int64) (ExerciceQuestions, error) {
 	rows, err := tx.Query("DELETE FROM exercice_questions WHERE idquestion = ANY($1) RETURNING idexercice, idquestion, bareme, index", int64ArrayToPQ(idQuestions_))
-	if err != nil {
-		return nil, err
-	}
-	return ScanExerciceQuestions(rows)
-}
-
-// SelectExerciceQuestionsByIdQuestionAndBareme selects the items matching the given fields.
-func SelectExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
-	rows, err := tx.Query("SELECT idexercice, idquestion, bareme, index FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2", idQuestion, bareme)
-	if err != nil {
-		return nil, err
-	}
-	return ScanExerciceQuestions(rows)
-}
-
-// DeleteExerciceQuestionsByIdQuestionAndBareme deletes the item matching the given fields, returning
-// the deleted items.
-func DeleteExerciceQuestionsByIdQuestionAndBareme(tx DB, idQuestion int64, bareme int16) (item ExerciceQuestions, err error) {
-	rows, err := tx.Query("DELETE FROM exercice_questions WHERE IdQuestion = $1 AND Bareme = $2 RETURNING idexercice, idquestion, bareme, index", idQuestion, bareme)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +455,7 @@ func (items Links) ByRepas() map[RepasID]Links {
 }
 
 // Repass returns the list of ids of Repas
-// contained in this link table.
+// contained in this table.
 // They are not garanteed to be distinct.
 func (items Links) Repass() []RepasID {
 	out := make([]RepasID, len(items))
@@ -703,7 +703,7 @@ func (items ProgressionQuestions) ByIdProgression() map[IdProgression]Progressio
 }
 
 // IdProgressions returns the list of ids of IdProgression
-// contained in this link table.
+// contained in this table.
 // They are not garanteed to be distinct.
 func (items ProgressionQuestions) IdProgressions() []IdProgression {
 	out := make([]IdProgression, len(items))
@@ -739,7 +739,7 @@ func (items ProgressionQuestions) ByIdExercice() map[IdExercice]ProgressionQuest
 }
 
 // IdExercices returns the list of ids of IdExercice
-// contained in this link table.
+// contained in this table.
 // They are not garanteed to be distinct.
 func (items ProgressionQuestions) IdExercices() []IdExercice {
 	out := make([]IdExercice, len(items))
@@ -896,22 +896,6 @@ func DeleteQuestionsByIDs(tx DB, ids ...int64) ([]int64, error) {
 	return Scanint64Array(rows)
 }
 
-func SelectQuestionsByNeedExercices(tx DB, needExercices_ ...int64) (Questions, error) {
-	rows, err := tx.Query("SELECT id, page, public, idteacher, description, needexercice FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needExercices_))
-	if err != nil {
-		return nil, err
-	}
-	return ScanQuestions(rows)
-}
-
-func DeleteQuestionsByNeedExercices(tx DB, needExercices_ ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM questions WHERE needexercice = ANY($1) RETURNING id", int64ArrayToPQ(needExercices_))
-	if err != nil {
-		return nil, err
-	}
-	return Scanint64Array(rows)
-}
-
 func scanOneQuestionTag(row scanner) (QuestionTag, error) {
 	var item QuestionTag
 	err := row.Scan(
@@ -1021,7 +1005,7 @@ func (items QuestionTags) ByIdQuestion() map[int64]QuestionTags {
 }
 
 // IdQuestions returns the list of ids of IdQuestion
-// contained in this link table.
+// contained in this table.
 // They are not garanteed to be distinct.
 func (items QuestionTags) IdQuestions() []int64 {
 	out := make([]int64, len(items))
@@ -1055,6 +1039,22 @@ func SelectQuestionTagByIdQuestionAndTag(tx DB, idQuestion int64, tag string) (i
 		return item, false, nil
 	}
 	return item, true, err
+}
+
+func SelectQuestionsByNeedExercices(tx DB, needExercices_ ...int64) (Questions, error) {
+	rows, err := tx.Query("SELECT id, page, public, idteacher, description, needexercice FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needExercices_))
+	if err != nil {
+		return nil, err
+	}
+	return ScanQuestions(rows)
+}
+
+func DeleteQuestionsByNeedExercices(tx DB, needExercices_ ...int64) (Questions, error) {
+	rows, err := tx.Query("DELETE FROM questions WHERE needexercice = ANY($1) RETURNING id, page, public, idteacher, description, needexercice", int64ArrayToPQ(needExercices_))
+	if err != nil {
+		return nil, err
+	}
+	return ScanQuestions(rows)
 }
 
 func scanOneRepas(row scanner) (Repas, error) {
@@ -1315,12 +1315,12 @@ func SelectTable1sByEx1s(tx DB, ex1s_ ...RepasID) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByEx1s(tx DB, ex1s_ ...RepasID) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE ex1 = ANY($1) RETURNING id", RepasIDArrayToPQ(ex1s_))
+func DeleteTable1sByEx1s(tx DB, ex1s_ ...RepasID) (Table1s, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE ex1 = ANY($1) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance", RepasIDArrayToPQ(ex1s_))
 	if err != nil {
 		return nil, err
 	}
-	return Scanint64Array(rows)
+	return ScanTable1s(rows)
 }
 
 // ByEx2 returns a map with 'Ex2' as keys.
@@ -1356,12 +1356,12 @@ func SelectTable1sByEx2s(tx DB, ex2s_ ...RepasID) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByEx2s(tx DB, ex2s_ ...RepasID) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE ex2 = ANY($1) RETURNING id", RepasIDArrayToPQ(ex2s_))
+func DeleteTable1sByEx2s(tx DB, ex2s_ ...RepasID) (Table1s, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE ex2 = ANY($1) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance", RepasIDArrayToPQ(ex2s_))
 	if err != nil {
 		return nil, err
 	}
-	return Scanint64Array(rows)
+	return ScanTable1s(rows)
 }
 
 func SelectTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
@@ -1372,12 +1372,12 @@ func SelectTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByLs(tx DB, ls_ ...int64) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE l = ANY($1) RETURNING id", int64ArrayToPQ(ls_))
+func DeleteTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE l = ANY($1) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance", int64ArrayToPQ(ls_))
 	if err != nil {
 		return nil, err
 	}
-	return Scanint64Array(rows)
+	return ScanTable1s(rows)
 }
 
 func SelectTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
@@ -1388,12 +1388,12 @@ func SelectTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByOthers(tx DB, others_ ...RepasID) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE other = ANY($1) RETURNING id", RepasIDArrayToPQ(others_))
+func DeleteTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE other = ANY($1) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance", RepasIDArrayToPQ(others_))
 	if err != nil {
 		return nil, err
 	}
-	return Scanint64Array(rows)
+	return ScanTable1s(rows)
 }
 
 func SelectTable1sByOptKeys(tx DB, optKeys_ ...IdQuestion) (Table1s, error) {
@@ -1404,12 +1404,12 @@ func SelectTable1sByOptKeys(tx DB, optKeys_ ...IdQuestion) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
-func DeleteTable1sByOptKeys(tx DB, optKeys_ ...IdQuestion) ([]int64, error) {
-	rows, err := tx.Query("DELETE FROM table1s WHERE optkey = ANY($1) RETURNING id", IdQuestionArrayToPQ(optKeys_))
+func DeleteTable1sByOptKeys(tx DB, optKeys_ ...IdQuestion) (Table1s, error) {
+	rows, err := tx.Query("DELETE FROM table1s WHERE optkey = ANY($1) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance", IdQuestionArrayToPQ(optKeys_))
 	if err != nil {
 		return nil, err
 	}
-	return Scanint64Array(rows)
+	return ScanTable1s(rows)
 }
 
 func scanOneWithOptionalTime(row scanner) (WithOptionalTime, error) {
@@ -1659,7 +1659,7 @@ func (s *Composite) Scan(src any) error {
 	return nil
 }
 func (s Composite) Value() (driver.Value, error) {
-	bs := fmt.Appendf(nil, "(%d, %d, %d, %t)", s.A, s.B, s.C, s.D)
+	bs := fmt.Sprintf("(%d, %d, %d, %t)", s.A, s.B, s.C, s.D)
 	return driver.Value(bs), nil
 }
 

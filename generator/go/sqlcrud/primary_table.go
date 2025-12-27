@@ -125,107 +125,11 @@ func Delete%[1]ssByIDs(tx DB, ids ...%[2]s) ([]%[2]s, error) {
 		cols.sqlColumnNames,
 	)
 
-	var out []gen.Declaration
-
-	// generate "join like" queries
-	for _, key := range ta.ForeignKeys() {
-		fieldName := key.F.Field.Name()
-		columnName := sqlColumnName(key.F)
-		varName := gen.ToLowerFirst(fieldName)
-
-		keyTypeName := ctx.typeName(key.TargetIDType())
-
-		// add int array converter if required
-		if ctx.generateArrayConverter(key) {
-			out = append(out, ctx.idArrayConverters(keyTypeName))
-		}
-
-		if key.IsUnique {
-			content += fmt.Sprintf(`
-			// Select%[1]sBy%[2]s return zero or one item, thanks to a UNIQUE SQL constraint.
-			func Select%[1]sBy%[2]s(tx DB, %[3]s %[5]s) (item %[1]s, found bool, err error) {
-				row := tx.QueryRow("SELECT %[7]s FROM %[4]s WHERE %[6]s = $1", %[3]s)
-				item, err = Scan%[1]s(row)
-				if err == sql.ErrNoRows {
-					return item, false, nil
-				}
-				return item, true, err
-			}	
-			`, goTypeName, fieldName, varName, sqlTableName, keyTypeName, columnName,
-				cols.sqlColumnNames,
-			)
-		}
-
-		if !key.IsNullable() {
-			if key.IsUnique {
-				content += fmt.Sprintf(`
-				// By%[1]s returns a map with '%[1]s' as keys.
-				func (items %[2]ss) By%[1]s() map[%[3]s]%[2]s {
-					out := make(map[%[3]s]%[2]s, len(items))
-					for _, target := range items {
-						out[target.%[1]s] = target
-					}
-					return out
-				}`, fieldName, goTypeName, keyTypeName)
-			} else {
-				content += fmt.Sprintf(`
-				// By%[1]s returns a map with '%[1]s' as keys.
-				func (items %[2]ss) By%[1]s() map[%[3]s]%[2]ss {
-					out := make(map[%[3]s]%[2]ss)
-					for _, target := range items {
-						dict := out[target.%[1]s]
-						if dict == nil {
-							dict = make(%[2]ss)
-						}
-						dict[target.Id] = target
-						out[target.%[1]s] = dict
-					}
-					return out
-				}	
-				`, fieldName, goTypeName, keyTypeName)
-			}
-
-			content += fmt.Sprintf(`
-			// %[1]ss returns the list of ids of %[1]s
-			// contained in this table.
-			// They are not garanteed to be distinct.
-			func (items %[2]ss) %[1]ss() []%[3]s {
-				out := make([]%[3]s, 0, len(items))
-				for _, target := range items {
-					out = append(out, target.%[1]s)
-				}
-				return out
-			}
-			`, fieldName, goTypeName, keyTypeName)
-		}
-
-		varNamePlural := varName + "s_" // to avoid potential shadowing
-		content += fmt.Sprintf(`
-		func Select%[1]ssBy%[2]ss(tx DB, %[3]s ...%[6]s) (%[1]ss, error) {
-			rows, err := tx.Query("SELECT %[8]s FROM %[4]s WHERE %[7]s = ANY($1)", %[6]sArrayToPQ(%[3]s))
-			if err != nil {
-				return nil, err
-			}
-			return Scan%[1]ss(rows)
-		}	
-
-		func Delete%[1]ssBy%[2]ss(tx DB, %[3]s ...%[6]s) ([]%[5]s, error) {
-			rows, err := tx.Query("DELETE FROM %[4]s WHERE %[7]s = ANY($1) RETURNING id", %[6]sArrayToPQ(%[3]s))
-			if err != nil {
-				return nil, err
-			}
-			return Scan%[5]sArray(rows)
-		}	
-		`, goTypeName, fieldName, varNamePlural, sqlTableName, idTypeName, keyTypeName, columnName,
-			cols.sqlColumnNames,
-		)
-	}
-
-	return append(out,
+	return []gen.Declaration{
 		ctx.idArrayConverters(idTypeName),
-		gen.Declaration{
+		{
 			ID:      string(goTypeName),
 			Content: content,
 		},
-	)
+	}
 }
