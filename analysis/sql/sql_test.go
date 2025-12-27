@@ -49,7 +49,8 @@ func TestSQL(t *testing.T) {
 
 	question := NewTable(an.Types[Lookup(an.Pkg, "Question")].(*analysis.Struct))
 	Assert(t, len(question.ForeignKeys()) == 1)
-	Assert(t, question.ForeignKeys()[0].IsNullable())
+	isNullable, name := question.ForeignKeys()[0].IsNullable()
+	Assert(t, isNullable && name == "Int64")
 
 	exercicesQuestion := NewTable(an.Types[Lookup(an.Pkg, "ExerciceQuestion")].(*analysis.Struct))
 	Assert(t, len(exercicesQuestion.AdditionalUniqueCols()) == 1)

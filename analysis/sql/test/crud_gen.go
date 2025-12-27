@@ -1041,6 +1041,19 @@ func SelectQuestionTagByIdQuestionAndTag(tx DB, idQuestion int64, tag string) (i
 	return item, true, err
 }
 
+// NeedExercices returns the list of non null NeedExercice
+// contained in this table.
+// They are not garanteed to be distinct.
+func (items Questions) NeedExercices() []int64 {
+	var out []int64
+	for _, target := range items {
+		if id := target.NeedExercice; id.Valid {
+			out = append(out, id.Int64)
+		}
+	}
+	return out
+}
+
 func SelectQuestionsByNeedExercices(tx DB, needExercices_ ...int64) (Questions, error) {
 	rows, err := tx.Query("SELECT id, page, public, idteacher, description, needexercice FROM questions WHERE needexercice = ANY($1)", int64ArrayToPQ(needExercices_))
 	if err != nil {
@@ -1364,6 +1377,19 @@ func DeleteTable1sByEx2s(tx DB, ex2s_ ...RepasID) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
+// Ls returns the list of non null L
+// contained in this table.
+// They are not garanteed to be distinct.
+func (items Table1s) Ls() []int64 {
+	var out []int64
+	for _, target := range items {
+		if id := target.L; id.Valid {
+			out = append(out, id.Int64)
+		}
+	}
+	return out
+}
+
 func SelectTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
 	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance FROM table1s WHERE l = ANY($1)", int64ArrayToPQ(ls_))
 	if err != nil {
@@ -1380,6 +1406,19 @@ func DeleteTable1sByLs(tx DB, ls_ ...int64) (Table1s, error) {
 	return ScanTable1s(rows)
 }
 
+// Others returns the list of non null Other
+// contained in this table.
+// They are not garanteed to be distinct.
+func (items Table1s) Others() []RepasID {
+	var out []RepasID
+	for _, target := range items {
+		if id := target.Other; id.Valid {
+			out = append(out, id.ID)
+		}
+	}
+	return out
+}
+
 func SelectTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
 	rows, err := tx.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance FROM table1s WHERE other = ANY($1)", RepasIDArrayToPQ(others_))
 	if err != nil {
@@ -1394,6 +1433,19 @@ func DeleteTable1sByOthers(tx DB, others_ ...RepasID) (Table1s, error) {
 		return nil, err
 	}
 	return ScanTable1s(rows)
+}
+
+// OptKeys returns the list of non null OptKey
+// contained in this table.
+// They are not garanteed to be distinct.
+func (items Table1s) OptKeys() []IdQuestion {
+	var out []IdQuestion
+	for _, target := range items {
+		if id := target.OptKey; id.Valid {
+			out = append(out, id.ID)
+		}
+	}
+	return out
 }
 
 func SelectTable1sByOptKeys(tx DB, optKeys_ ...IdQuestion) (Table1s, error) {

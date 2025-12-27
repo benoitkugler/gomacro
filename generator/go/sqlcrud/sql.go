@@ -340,7 +340,23 @@ func (ctx context) generateJoinMethods(ta sql.Table, cols columnsCode) (out []ge
 		}
 
 		// lookup methods
-		if !key.IsNullable() {
+		if isNullable, nullableField := key.IsNullable(); isNullable {
+			// filter null values
+			content += fmt.Sprintf(`
+			// %[1]ss returns the list of non null %[1]s
+			// contained in this table.
+			// They are not garanteed to be distinct.
+			func (items %[2]ss) %[1]ss() []%[3]s {
+				var out []%[3]s
+				for _, target := range items {
+					if id := target.%[1]s; id.Valid {
+						out = append(out, id.%[4]s)
+					}
+				}
+				return out
+			}
+			`, fieldName, goTypeName, keyTypeName, nullableField)
+		} else {
 			if key.IsUnique {
 				content += fmt.Sprintf(`
 					// By%[1]s returns a map with '%[1]s' as keys.

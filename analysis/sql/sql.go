@@ -51,7 +51,7 @@ func isNullInt64(ty an.Type) bool {
 //
 //		struct {
 //			Valid bool
-//	 	<Field> <Type>
+//	 		<Field> <Type>
 //		}
 //
 // If so, it returns the data field declaration.
@@ -127,8 +127,15 @@ func (ta *Table) newForeignKey(field an.StructField) (ForeignKey, bool) {
 }
 
 // IsNullable returns true if the key is optional.
-func (fk ForeignKey) IsNullable() bool {
-	return !IsInt64(fk.F.Field.Type())
+// If so, the name field containing the integer is also returned
+func (fk ForeignKey) IsNullable() (bool, string) {
+	ty := fk.F.Field.Type()
+	if IsInt64(ty) {
+		return false, ""
+	}
+	ty = types.Unalias(ty)
+	wrapped := IsNullXXX(ty.(*types.Named))
+	return true, wrapped.Name()
 }
 
 // TargetIDType returns the type used for the IDs of

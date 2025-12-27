@@ -20,7 +20,7 @@ func (ctx context) generateLinkTable(ta sql.Table, cols columnsCode) gen.Declara
 	for i, key := range ta.ForeignKeys() {
 		fieldName := key.F.Field.Name()
 		foreignKeyFields = append(foreignKeyFields, fieldName)
-		if key.IsNullable() { // add a guard against null values
+		if isNullable, _ := key.IsNullable(); isNullable { // add a guard against null values
 			foreignKeyComps = append(foreignKeyComps, fmt.Sprintf("((%[1]s IS NULL AND $%[2]d IS NULL) OR %[1]s = $%[2]d)", fieldName, i+1))
 		} else {
 			foreignKeyComps = append(foreignKeyComps, fmt.Sprintf("%s = $%d", fieldName, i+1))
