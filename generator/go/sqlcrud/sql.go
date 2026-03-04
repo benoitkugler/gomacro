@@ -830,9 +830,9 @@ func (ctx context) generateCustomQueries(ta sql.Table, columns columnsCode) gen.
 	goTypeName := ta.TableName()
 	for _, query := range ta.CustomQueries {
 		content := ctx.replacer.Replace(query.Query)
-		content = gen.ReplaceEnums(ctx.ana, content)
-		// expand *
+		// expand * before enums, which introduce *
 		content = strings.Replace(content, "*", columns.sqlColumnNames, 1)
+		content = gen.ReplaceEnums(ctx.ana, content)
 		var (
 			signature  string
 			argsSelect string
