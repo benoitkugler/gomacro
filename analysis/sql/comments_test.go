@@ -47,6 +47,7 @@ func Test_isSelectKey(t *testing.T) {
 		{ct: "_SELECT KEY(IdTeacher, IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
 		{ct: "_SELECT KEY (IdTeacher , IdTrivial)", want: []string{"IdTeacher", "IdTrivial"}},
 		{ct: "_SELECT (IdTeacher, IdTrivial)", want: nil},
+		{ct: "_SELECT KEY(Statut)", want: []string{"Statut"}},
 	}
 	for _, tt := range tests {
 		if got := isSelectKey(tt.ct); !reflect.DeepEqual(got, tt.want) {
