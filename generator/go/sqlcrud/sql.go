@@ -239,7 +239,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 	decls = append(decls, ctx.generateJoinMethods(ta, code)...)
 	decls = append(decls, ctx.generateSelectByUniques(ta, code))
 	decls = append(decls, ctx.generateSelectByKeys(ta, code))
-	decls = append(decls, ctx.generateCustomQueries(ta))
+	decls = append(decls, ctx.generateCustomQueries(ta, code))
 
 	// generate the value interface method
 	for _, col := range ta.Columns {
@@ -825,12 +825,14 @@ func newColumnsCode(ta sql.Table) columnsCode {
 	}
 }
 
-func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
+func (ctx context) generateCustomQueries(ta sql.Table, columns columnsCode) gen.Declaration {
 	var code string
-
+	goTypeName := ta.TableName()
 	for _, query := range ta.CustomQueries {
 		content := ctx.replacer.Replace(query.Query)
 		content = gen.ReplaceEnums(ctx.ana, content)
+		// expand *
+		content = strings.Replace(content, "*", columns.sqlColumnNames, 1)
 		var (
 			signature  string
 			argsSelect string
@@ -846,12 +848,25 @@ func (ctx context) generateCustomQueries(ta sql.Table) gen.Declaration {
 			}
 		}
 
-		queryFunc := fmt.Sprintf(`
-		func %s (db DB, %s) error {
-			_, err := db.Exec("%s", %s)
-			return err
+		var queryFunc string
+		if query.IsSelect() {
+			queryFunc = fmt.Sprintf(`
+			func %s (db DB, %s) (%ss, error) {
+				rows, err := db.Query("%s", %s)
+				if err != nil {
+					return nil, err
+				}
+				return Scan%ss(rows) 
+			}
+			`, query.GoFunctionName, signature, goTypeName, content, argsSelect, goTypeName)
+		} else {
+			queryFunc = fmt.Sprintf(`
+			func %s (db DB, %s) error {
+				_, err := db.Exec("%s", %s)
+				return err
+			}
+			`, query.GoFunctionName, signature, content, argsSelect)
 		}
-		`, query.GoFunctionName, signature, content, argsSelect)
 		code += queryFunc
 	}
 

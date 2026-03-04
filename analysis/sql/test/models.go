@@ -15,6 +15,7 @@ type Strings []string
 
 // gomacro:QUERY CustomQuery1 UPDATE Table1 SET Ex1 = $newValue$ WHERE F = $selectV$ ;
 // gomacro:QUERY CustomQuery2 UPDATE Table1 SET F = $newValue$ WHERE Ex1 = $selectV$ OR Ex2 = $selectV$;
+// gomacro:QUERY CustomQuery3 SELECT * FROM Table1 WHERE Ex1 = $selectV$ OR Ex2 = $selectV$;
 type Table1 struct {
 	Id        int64
 	Ex1       RepasID

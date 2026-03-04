@@ -1716,7 +1716,7 @@ func (s Composite) Value() (driver.Value, error) {
 }
 
 func CustomQueryRepas(db DB, newValue string) error {
-	_, err := db.Exec("UPDATE repass SET Order = $1 WHERE V = 0 /* LocalEnum.A */ ;", newValue)
+	_, err := db.Exec("UPDATE repass SET Order = $1 WHERE V = 0 /order, id, v LocalEnum.A */ ;", newValue)
 	return err
 }
 
@@ -1733,6 +1733,14 @@ func CustomQuery1(db DB, newValue RepasID, selectV FixedArray) error {
 func CustomQuery2(db DB, newValue FixedArray, selectV RepasID) error {
 	_, err := db.Exec("UPDATE table1s SET F = $1 WHERE Ex1 = $2 OR Ex2 = $2;", newValue, selectV)
 	return err
+}
+
+func CustomQuery3(db DB, selectV RepasID) (Table1s, error) {
+	rows, err := db.Query("SELECT id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance FROM table1s WHERE Ex1 = $1 OR Ex2 = $1;", selectV)
+	if err != nil {
+		return nil, err
+	}
+	return ScanTable1s(rows)
 }
 
 func IdExerciceArrayToPQ(ids []IdExercice) pq.Int64Array {

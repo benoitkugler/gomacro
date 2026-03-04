@@ -335,11 +335,16 @@ type CustomQueryInput struct {
 	Type    types.Type
 }
 
+// only support UPDATE/DELETE or SELECT many
 type CustomQuery struct {
 	GoFunctionName string
 	Query          string // where placeholders have been replaced by $1, $2, etc...
 
 	Inputs []CustomQueryInput
+}
+
+func (cq CustomQuery) IsSelect() bool {
+	return strings.HasPrefix(cq.Query, "SELECT")
 }
 
 var (
