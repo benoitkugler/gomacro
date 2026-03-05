@@ -181,6 +181,9 @@ func typeConstraint(field sql.Column) string {
 		}
 		return "NOT NULL"
 	case sql.Enum:
+		if _, ok := field.Field.IsSQLGuard(); ok { // the guard already add a CHECK value = ref
+			return "NOT NULL"
+		}
 		return fmt.Sprintf(" CHECK (%s IN %s) NOT NULL", field.Field.Field.Name(), enumTuple(ty.E))
 	case sql.Array:
 		if L := ty.A.Len; L >= 0 {

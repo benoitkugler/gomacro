@@ -72,7 +72,7 @@ CREATE TABLE table1s (
     Cp Composite NOT NULL,
     External Comp NOT NULL,
     BoolArray boolean[] CHECK (array_length(BoolArray, 1) = 3) NOT NULL,
-    guard smallint CHECK (guard IN (0, 1, 2)) NOT NULL,
+    guard smallint NOT NULL,
     OptKey integer,
     Advance integer[] CHECK (array_length(Advance, 1) = 10) NOT NULL
 );

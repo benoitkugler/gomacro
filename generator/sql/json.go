@@ -244,7 +244,7 @@ func codeForStruct(ty *an.Struct, cache gen.Cache) (out []gen.Declaration) {
 		keys = append(keys, fmt.Sprintf("'%s'", fieldName))
 		checks = append(checks, fmt.Sprintf("AND %s(data->'%s')", functionName(f.Type), fieldName))
 	}
-	keyList := "key IN (" + strings.Join(keys, ", ") + ")"
+	keyList := "KEY IN (" + strings.Join(keys, ", ") + ")"
 	if len(keys) == 0 {
 		keyList = "TRUE"
 	}
