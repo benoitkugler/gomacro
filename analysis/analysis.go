@@ -84,12 +84,12 @@ func LoadSources(sourceFiles []string) ([]*packages.Package, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
-		patterns[i] = "file=" + sourceFile
 
 		abs, err := filepath.Abs(sourceFile)
 		if err != nil {
 			return nil, "", err
 		}
+		patterns[i] = "file=" + abs
 		dirs[i] = filepath.Dir(abs)
 	}
 
@@ -107,11 +107,14 @@ func LoadSources(sourceFiles []string) ([]*packages.Package, string, error) {
 	// let packages handle the heavy lifting for us
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("packages.Load: %s", err)
+	}
+
+	if len(pkgs) == 0 {
+		return nil, "", fmt.Errorf("no packages returned for dir %s and patterns %v", dir, patterns)
 	}
 
 	nbErrors := packages.PrintErrors(pkgs)
-
 	if nbErrors > 0 {
 		return nil, "", fmt.Errorf("go packages have errors")
 	}

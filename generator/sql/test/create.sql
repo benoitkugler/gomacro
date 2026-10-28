@@ -8,6 +8,16 @@ CREATE TYPE Composite AS (
     D boolean
 );
 
+DROP TYPE IF EXISTS CompositeEmbed;
+
+CREATE TYPE CompositeEmbed AS (
+    A integer,
+    B smallint,
+    C integer,
+    D boolean,
+    Other boolean
+);
+
 CREATE TABLE exercices (
     Id serial PRIMARY KEY,
     Title text NOT NULL,
@@ -74,15 +84,14 @@ CREATE TABLE table1s (
     BoolArray boolean[] CHECK (array_length(BoolArray, 1) = 3) NOT NULL,
     guard smallint NOT NULL,
     OptKey integer,
-    Advance integer[] CHECK (array_length(Advance, 1) = 10) NOT NULL
+    Advance integer[] CHECK (array_length(Advance, 1) = 10) NOT NULL,
+    Cp2 CompositeEmbed NOT NULL
 );
 
 CREATE TABLE with_optional_times (
     Id serial PRIMARY KEY,
-    Deadine timestamp(0
-) with time zone NOT NULL,
-    DeadineOpt timestamp(0
-) with time zone
+    Deadine timestamp(0) with time zone NOT NULL,
+    DeadineOpt timestamp(0) with time zone
 );
 
 -- constraints

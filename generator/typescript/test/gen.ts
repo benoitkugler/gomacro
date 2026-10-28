@@ -15,7 +15,7 @@ export type Int = number & { __opaque__: "Int" };
 // ISO date-time string
 export type Time = string & { __opaque__: "Time" };
 
-export type Basic1 = number & { __opaque__: "Basic1" };
+export type Basic1 = Int & { __opaque_int__: "Basic1" };
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic2
 export type Basic2 = boolean;
 // github.com/benoitkugler/gomacro/testutils/testsource.Basic3
@@ -90,8 +90,8 @@ export interface Generic_IdCamp {
 export interface Generic_IdFile {
   Id: IdFile;
 }
-export type IdCamp = number & { __opaque__: "IdCamp" };
-export type IdFile = number & { __opaque__: "IdFile" };
+export type IdCamp = Int & { __opaque_int__: "IdCamp" };
+export type IdFile = Int & { __opaque_int__: "IdFile" };
 // github.com/benoitkugler/gomacro/testutils/testsource.ItfList
 export type ItfList = ItfType[] | null;
 

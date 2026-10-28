@@ -102,7 +102,7 @@ func (out *union1Wrapper) UnmarshalJSON(src []byte) error {
 
 func (item union1Wrapper) MarshalJSON() ([]byte, error) {
 	type wrapper struct {
-		Data interface{}
+		Data any
 		Kind string
 	}
 	var wr wrapper
@@ -155,7 +155,7 @@ func (out *vunion2Wrapper) UnmarshalJSON(src []byte) error {
 
 func (item vunion2Wrapper) MarshalJSON() ([]byte, error) {
 	type wrapper struct {
-		Data interface{}
+		Data any
 		Kind string
 	}
 	var wr wrapper

@@ -30,6 +30,7 @@ type Table1 struct {
 	guard     LocalEnum `gomacro-sql-guard:"#[LocalEnum.A]"`
 	OptKey    OptAlias  `gomacro-sql-foreign:"Question"`
 	Advance   Advance
+	Cp2       CompositeEmbed
 }
 
 type ba [3]bool

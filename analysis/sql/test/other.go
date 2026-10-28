@@ -14,6 +14,11 @@ type Composite struct {
 	D bool
 }
 
+type CompositeEmbed struct {
+	Composite
+	Other bool
+}
+
 // optional with generic
 
 type optGeneric[T ~int64] struct {
