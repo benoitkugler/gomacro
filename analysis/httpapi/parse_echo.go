@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/benoitkugler/gomacro/analysis"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -209,8 +210,11 @@ func parseAssignments(rhs []ast.Expr, pkg *packages.Package, out *Contract) {
 		if queryParam, ty := parseCallWithString(rh, "QueryParamInt64", pkg); queryParam != "" { // special converter
 			out.InputQueryParams = append(out.InputQueryParams, TypedParam{Name: queryParam, type_: ty})
 		}
-		if formValue, _ := parseCallWithString(rh, "FormValue", pkg); formValue != "" {
-			out.InputForm.ValueNames = append(out.InputForm.ValueNames, formValue)
+		if valueName, ty := parseCallWithString(rh, "FormValueInt", pkg); valueName != "" {
+			out.InputForm.ValueNames = append(out.InputForm.ValueNames, TypedParam{Name: valueName, type_: ty})
+		}
+		if valueName, _ := parseCallWithString(rh, "FormValue", pkg); valueName != "" {
+			out.InputForm.ValueNames = append(out.InputForm.ValueNames, TypedParam{Name: valueName, type_: types.Typ[types.String], Type: analysis.String})
 		}
 		if formFile, _ := parseCallWithString(rh, "FormFile", pkg); formFile != "" {
 			out.InputForm.File = formFile

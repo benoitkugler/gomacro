@@ -6,6 +6,7 @@ import (
 	"go/constant"
 	"go/token"
 	"go/types"
+	"slices"
 
 	"github.com/benoitkugler/gomacro/analysis"
 	"golang.org/x/tools/go/packages"
@@ -182,11 +183,14 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 		if ty := endpoint.Contract.returnT; ty != nil {
 			required = append(required, ty)
 		}
-		for _, param := range endpoint.Contract.InputQueryParams {
+		for _, param := range slices.Concat(endpoint.Contract.InputQueryParams, endpoint.Contract.InputForm.ValueNames) {
 			if param.type_ == nil {
 				panic(fmt.Sprint(param))
 			}
 			required = append(required, param.type_)
+		}
+		if json := endpoint.Contract.InputForm.JSON; json.Name != "" {
+			required = append(required, json.type_)
 		}
 	}
 
@@ -200,6 +204,9 @@ func resolveTypes(rootPkg *packages.Package, endpoints []Endpoint) {
 		ct.Return = an.Types[ct.returnT]
 		for j := range ct.InputQueryParams {
 			ct.InputQueryParams[j].resolveType(an)
+		}
+		for j := range ct.InputForm.ValueNames {
+			ct.InputForm.ValueNames[j].resolveType(an)
 		}
 		if ct.InputForm.JSON.Name != "" {
 			ct.InputForm.JSON.resolveType(an)

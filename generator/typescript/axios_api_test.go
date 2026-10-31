@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/benoitkugler/gomacro/analysis"
@@ -47,6 +48,31 @@ func TestGenerateMaps(t *testing.T) {
 		},
 	}
 	fmt.Println(generateMethod(api))
+}
+
+func TestGenerateAxios(t *testing.T) {
+	fn := "../../analysis/httpapi/test/routes.go"
+	pack, err := analysis.LoadSource(fn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	abs, err := filepath.Abs(fn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	apis := httpapi.ParseEcho(pack, abs)
+	code := GenerateAxios(apis)
+
+	outFile := "test/axios_api_gen.ts"
+	err = os.WriteFile(outFile, []byte(code), os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var fmts generator.Formatters
+	if err := fmts.FormatFile(generator.TypeScript, outFile); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestGenerateTypes(t *testing.T) {

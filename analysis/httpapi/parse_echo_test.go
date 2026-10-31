@@ -27,6 +27,19 @@ func TestParse(t *testing.T) {
 		t.Fatal()
 	}
 
+	if apis[9].Contract.InputForm.JSON.type_ == nil {
+		t.Fatal()
+	}
+	if apis[9].Contract.InputForm.JSON.Type == nil {
+		t.Fatal()
+	}
+	if len(apis[9].Contract.InputForm.ValueNames) != 1 {
+		t.Fatal()
+	}
+	if apis[9].Contract.InputForm.ValueNames[0].Type == nil {
+		t.Fatal()
+	}
+
 	if len(apis[14].Contract.InputQueryParams) == 0 {
 		t.Fatal("generic not supported")
 	}

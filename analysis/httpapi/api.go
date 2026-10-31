@@ -48,21 +48,12 @@ type Contract struct {
 
 type Form struct {
 	File       string // empty means no file
-	ValueNames []string
+	ValueNames []TypedParam
 	JSON       TypedParam
 }
 
 func (f Form) IsZero() bool {
 	return f.File == "" && len(f.ValueNames) == 0 && f.JSON.Name == ""
-}
-
-// AsTypedValues returns the name of the form parameters with type String
-func (f Form) AsTypedValues() []TypedParam {
-	out := make([]TypedParam, len(f.ValueNames))
-	for i, v := range f.ValueNames {
-		out[i] = TypedParam{Name: v, Type: analysis.String}
-	}
-	return out
 }
 
 type specialComment uint8

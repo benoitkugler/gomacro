@@ -19,6 +19,7 @@ func (controller) QueryParamInt64(echo.Context, string) int64 { return 0 }
 func (controller) QueryParamBool(echo.Context, string) bool   { return false }
 func (controller) JWTMiddlewareForQuery() bool                { return false }
 func FormValueJSON(echo.Context, string, any) error           { return nil }
+func FormValueInt[T ~int64](echo.Context, string) (T, error)  { return 0, nil }
 
 func (controller) handle1(c echo.Context) error {
 	var (
@@ -48,6 +49,7 @@ func (ct controller) handler7(c echo.Context) error {
 	p1 := ct.QueryParamBool(c, "my-bool")
 	p2 := ct.QueryParamInt64(c, "my-int")
 	_ = FormValueJSON(c, "json-field", &v)
+	_, _ = FormValueInt[int64](c, "int-form-field")
 	fmt.Println(p1, p2)
 	var code uint
 	return c.JSON(200, code)

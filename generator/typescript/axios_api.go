@@ -12,8 +12,7 @@ import (
 	"github.com/benoitkugler/gomacro/generator"
 )
 
-// return arg: String(params[arg])
-func asObjectKey(param httpapi.TypedParam) string {
+func stringify(param httpapi.TypedParam, containerName string) string {
 	var underlying *an.Basic
 	switch t := param.Type.(type) {
 	case *an.Basic:
@@ -21,19 +20,26 @@ func asObjectKey(param httpapi.TypedParam) string {
 	case *an.Named:
 		underlying = t.Underlying.(*an.Basic)
 	default:
+		fmt.Println(param.Type)
 		panic("unsupported type")
 	}
 
 	switch underlying.Kind() {
 	case an.BKFloat, an.BKInt:
-		return fmt.Sprintf("%q: String(params[%q])", param.Name, param.Name) // stringify
+		return fmt.Sprintf("String(%s[%q])", containerName, param.Name) // stringify
 	case an.BKBool:
-		return fmt.Sprintf("%q: params[%q] ? 'ok' : ''", param.Name, param.Name) // stringify
+		return fmt.Sprintf("%s[%q] ? 'ok' : ''", containerName, param.Name) // stringify
 	case an.BKString:
-		return fmt.Sprintf("%q: params[%q]", param.Name, param.Name) // no converter
+		return fmt.Sprintf("%s[%q]", containerName, param.Name) // no converter
 	default:
 		panic(an.ExhaustiveAnonymousTypeSwitch)
 	}
+}
+
+// return arg: String(params[arg])
+func asObjectKey(param httpapi.TypedParam) string {
+	value := stringify(param, "params")
+	return fmt.Sprintf("%q: %s", param.Name, value)
 }
 
 // returns true if the client API call has an argument
@@ -65,7 +71,7 @@ func typeIn(a httpapi.Endpoint) string {
 
 	var chunks []string
 	if withFormData(a) { // form data mode
-		if vals := a.Contract.InputForm.AsTypedValues(); len(vals) != 0 {
+		if vals := a.Contract.InputForm.ValueNames; len(vals) != 0 {
 			chunks = append(chunks, "formParams: "+paramsType(vals))
 		}
 		if fi := a.Contract.InputForm.File; fi != "" {
@@ -134,7 +140,7 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 			form += fmt.Sprintf("formData.append(%q, file, file.name)\n", fi)
 		}
 		for _, param := range a.Contract.InputForm.ValueNames {
-			form += fmt.Sprintf("formData.append(%q, formParams[%q])\n", param, param)
+			form += fmt.Sprintf("formData.append(%q, %s)\n", param.Name, stringify(param, "formParams"))
 		}
 		if param := a.Contract.InputForm.JSON; param.Name != "" {
 			form += fmt.Sprintf("formData.append(%q, JSON.stringify(formValue))\n", param.Name)
