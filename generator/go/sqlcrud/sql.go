@@ -251,7 +251,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						ID: "date_value" + goTypeName,
 						Content: fmt.Sprintf(`
 						func (s *%s) Scan(src any) error {
-							var tmp pq.NullTime
+							var tmp sql.NullTime
 							err := tmp.Scan(src)
 							if err != nil {
 								return err
@@ -261,7 +261,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						}
 			
 						func (s %s) Value() (driver.Value, error) {
-							return pq.NullTime{Time: s.Time(), Valid: true}.Value()
+							return sql.NullTime{Time: s.Time(), Valid: true}.Value()
 						}
 						`, goTypeName, goTypeName),
 					})
@@ -270,7 +270,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						ID: "datetime_value" + goTypeName,
 						Content: fmt.Sprintf(`
 						func (s *%s) Scan(src any) error {
-							var tmp pq.NullTime
+							var tmp sql.NullTime
 							err := tmp.Scan(src)
 							if err != nil {
 								return err
@@ -280,7 +280,7 @@ func (ctx context) generateTable(ta sql.Table) (decls []gen.Declaration) {
 						}
 			
 						func (s %s) Value() (driver.Value, error) {
-							return pq.NullTime{Time: time.Time(s), Valid: true}.Value()
+							return sql.NullTime{Time: time.Time(s), Valid: true}.Value()
 						}
 						`, goTypeName, goTypeName, goTypeName),
 					})
