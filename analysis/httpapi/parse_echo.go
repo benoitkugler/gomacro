@@ -219,6 +219,9 @@ func parseAssignments(rhs []ast.Expr, pkg *packages.Package, out *Contract) {
 		if formFile, _ := parseCallWithString(rh, "FormFile", pkg); formFile != "" {
 			out.InputForm.File = formFile
 		}
+		if formFiles, _ := parseCallWithString(rh, "FormFiles", pkg); formFiles != "" {
+			out.InputForm.Files = formFiles
+		}
 		if formField, ty := parseFormValueJSON(rh, pkg); formField != "" {
 			out.InputForm.JSON = TypedParam{Name: formField, type_: ty}
 		}

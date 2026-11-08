@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/benoitkugler/gomacro/analysis"
@@ -48,6 +49,28 @@ func TestGenerateMaps(t *testing.T) {
 		},
 	}
 	fmt.Println(generateMethod(api))
+}
+
+func TestGenerateMultipleFileUpload(t *testing.T) {
+	api := httpapi.Endpoint{
+		Url:    "/upload",
+		Method: http.MethodPost,
+		Contract: httpapi.Contract{
+			Name: "Upload",
+			InputForm: httpapi.Form{
+				Files: "documents",
+			},
+		},
+	}
+	code := generateMethod(api)
+	if !strings.Contains(code, "Upload(files: File[])") {
+		t.Fatalf("generated method does not accept a file array:\n%s", code)
+	}
+	if !strings.Contains(code, `for (const file of files) {
+formData.append("documents", file, file.name)
+}`) {
+		t.Fatalf("generated method does not append each file under the field name:\n%s", code)
+	}
 }
 
 func TestGenerateAxios(t *testing.T) {

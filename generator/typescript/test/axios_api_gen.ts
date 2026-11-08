@@ -82,8 +82,8 @@ export abstract class AbstractAPI {
     }
   }
 
-  /** Anonymous11448478 performs the request and handles the error */
-  async Anonymous11448478() {
+  /** Anonymous11448752 performs the request and handles the error */
+  async Anonymous11448752() {
     const fullUrl =
       this.baseURL +
       "/const_url_from_inner_package/endpoint/entoher/const_local_url";
@@ -194,6 +194,22 @@ export abstract class AbstractAPI {
     }
   }
 
+  /** handlerFiles performs the request and handles the error */
+  async handlerFiles(files: File[]) {
+    const fullUrl = this.baseURL + "/upload_multiple";
+    this.startRequest();
+    try {
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("documents", file, file.name);
+      }
+      await Axios.post(fullUrl, formData, { headers: this.getHeaders() });
+      return true;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
   /** TopLevel performs the request and handles the error */
   async TopLevel() {
     const fullUrl = this.baseURL + "/extern function";
@@ -206,8 +222,8 @@ export abstract class AbstractAPI {
     }
   }
 
-  /** Anonymous11448877 performs the request and handles the error */
-  async Anonymous11448877() {
+  /** Anonymous11449196 performs the request and handles the error */
+  async Anonymous11449196() {
     const fullUrl = this.baseURL + "/func litteral";
     this.startRequest();
     try {
@@ -266,8 +282,8 @@ export abstract class AbstractAPI {
     }
   }
 
-  /** Anonymous11449064 performs the request and handles the error */
-  async Anonymous11449064(params: { token: string }) {
+  /** Anonymous11449383 performs the request and handles the error */
+  async Anonymous11449383(params: { token: string }) {
     const fullUrl = this.baseURL + "/with middleware";
     this.startRequest();
     try {

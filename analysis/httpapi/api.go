@@ -48,12 +48,13 @@ type Contract struct {
 
 type Form struct {
 	File       string // empty means no file
+	Files      string // empty means no multiple-file upload
 	ValueNames []TypedParam
 	JSON       TypedParam
 }
 
 func (f Form) IsZero() bool {
-	return f.File == "" && len(f.ValueNames) == 0 && f.JSON.Name == ""
+	return f.File == "" && f.Files == "" && len(f.ValueNames) == 0 && f.JSON.Name == ""
 }
 
 type specialComment uint8

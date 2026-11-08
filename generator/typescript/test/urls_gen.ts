@@ -35,7 +35,7 @@ export class Endpoints {
   }
 
   /** Returns an URL with method POST */
-  Anonymous11448349() {
+  Anonymous11448752() {
     return (
       this.baseURL +
       "/const_url_from_inner_package/endpoint/entoher/const_local_url" +
@@ -81,13 +81,18 @@ export class Endpoints {
     );
   }
 
+  /** Returns an URL with method POST */
+  handlerFiles() {
+    return this.baseURL + "/upload_multiple" + ``;
+  }
+
   /** Returns an URL with method GET */
   TopLevel() {
     return this.baseURL + "/extern function" + ``;
   }
 
   /** Returns an URL with method GET */
-  Anonymous11448748() {
+  Anonymous11449196() {
     return this.baseURL + "/func litteral" + ``;
   }
 
@@ -102,7 +107,7 @@ export class Endpoints {
   }
 
   /** Returns an URL with method GET */
-  Anonymous11448935(token: string) {
+  Anonymous11449383(token: string) {
     return this.baseURL + "/with middleware" + `?token=${token}`;
   }
 

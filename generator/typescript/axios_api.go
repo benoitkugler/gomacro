@@ -77,6 +77,9 @@ func typeIn(a httpapi.Endpoint) string {
 		if fi := a.Contract.InputForm.File; fi != "" {
 			chunks = append(chunks, "file: File")
 		}
+		if a.Contract.InputForm.Files != "" {
+			chunks = append(chunks, "files: File[]")
+		}
 		if json := a.Contract.InputForm.JSON; json.Name != "" {
 			chunks = append(chunks, "formValue: "+typeName(json.Type))
 		}
@@ -138,6 +141,9 @@ func generateAxiosCall(a httpapi.Endpoint) string {
 		form := "const formData = new FormData()\n"
 		if fi := a.Contract.InputForm.File; fi != "" {
 			form += fmt.Sprintf("formData.append(%q, file, file.name)\n", fi)
+		}
+		if files := a.Contract.InputForm.Files; files != "" {
+			form += fmt.Sprintf("for (const file of files) {\nformData.append(%q, file, file.name)\n}\n", files)
 		}
 		for _, param := range a.Contract.InputForm.ValueNames {
 			form += fmt.Sprintf("formData.append(%q, %s)\n", param.Name, stringify(param, "formParams"))

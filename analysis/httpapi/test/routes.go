@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"iter"
+	"mime/multipart"
 
 	"github.com/benoitkugler/gomacro/analysis/httpapi/test/echo"
 	"github.com/benoitkugler/gomacro/analysis/httpapi/test/inner"
@@ -19,7 +20,10 @@ func (controller) QueryParamInt64(echo.Context, string) int64 { return 0 }
 func (controller) QueryParamBool(echo.Context, string) bool   { return false }
 func (controller) JWTMiddlewareForQuery() bool                { return false }
 func FormValueJSON(echo.Context, string, any) error           { return nil }
-func FormValueInt[T ~int64](echo.Context, string) (T, error)  { return 0, nil }
+func FormFiles(form *multipart.Form, name string) []*multipart.FileHeader {
+	return form.File[name]
+}
+func FormValueInt[T ~int64](echo.Context, string) (T, error) { return 0, nil }
 
 func (controller) handle1(c echo.Context) error {
 	var (
@@ -65,6 +69,13 @@ func (controller) handler8(c echo.Context) error {
 	return c.JSON(200, code)
 }
 
+func (controller) handlerFiles(c echo.Context) error {
+	var form multipart.Form
+	files := FormFiles(&form, "documents")
+	fmt.Println(files)
+	return nil
+}
+
 // with Blob
 func (controller) handler9(c echo.Context) error {
 	var output []byte
@@ -101,6 +112,7 @@ func routes(e *echo.Echo, ct *controller, ct2 inner.Controller) {
 	e.PUT("/with_param/:param", ct.handler6)
 	e.DELETE("/special_param_value/:class/route", ct.handler7)
 	e.DELETE("/special_param_value/:default/route", ct.handler8)
+	e.POST("/upload_multiple", ct.handlerFiles)
 
 	e.GET("/extern function", inner.TopLevel)
 
