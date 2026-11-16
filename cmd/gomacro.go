@@ -187,7 +187,6 @@ func saveOutputs(commonDir, dartOutputDir string, dartAnalysis []*analysis.Analy
 	fmt.Println("Code generated. Saving and formatting...")
 
 	var wg sync.WaitGroup
-	wg.Add(len(outputs))
 	for _, out := range outputs {
 		output := out.file
 		format := out.format
@@ -198,13 +197,13 @@ func saveOutputs(commonDir, dartOutputDir string, dartAnalysis []*analysis.Analy
 
 		fmt.Printf("\tCode written to %s (pending formatting).\n", output)
 
-		go func() {
+		wg.Go(func() {
 			err = fmts.FormatFile(format, output)
 			if err != nil {
 				panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
 			}
-			wg.Done()
-		}()
+			fmt.Println("\tDone formatting", output)
+		})
 	}
 	fmt.Println("Waiting for formatters...")
 	wg.Wait()
