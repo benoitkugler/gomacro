@@ -110,7 +110,14 @@ func (item Exercice) Insert(tx DB) (out Exercice, err error) {
 		) VALUES (
 		$1, $2, $3, $4, $5, $6
 		) RETURNING id, title, description, parameters, flow, idteacher, public;
-		`, item.Title, item.Description, item.Parameters, item.Flow, item.IdTeacher, item.Public)
+		`,
+		item.Title,
+		item.Description,
+		item.Parameters,
+		item.Flow,
+		item.IdTeacher,
+		item.Public,
+	)
 	return ScanExercice(row)
 }
 
@@ -121,7 +128,15 @@ func (item Exercice) Update(tx DB) (out Exercice, err error) {
 		) = (
 		$1, $2, $3, $4, $5, $6
 		) WHERE id = $7 RETURNING id, title, description, parameters, flow, idteacher, public;
-		`, item.Title, item.Description, item.Parameters, item.Flow, item.IdTeacher, item.Public, item.Id)
+		`,
+		item.Title,
+		item.Description,
+		item.Parameters,
+		item.Flow,
+		item.IdTeacher,
+		item.Public,
+		item.Id,
+	)
 	return ScanExercice(row)
 }
 
@@ -197,7 +212,12 @@ func (item ExerciceQuestion) Insert(db DB) error {
 			) VALUES (
 			$1, $2, $3, $4
 			);
-			`, item.IdExercice, item.IdQuestion, item.Bareme, item.Index)
+			`,
+		item.IdExercice,
+		item.IdQuestion,
+		item.Bareme,
+		item.Index,
+	)
 	if err != nil {
 		return err
 	}
@@ -222,7 +242,12 @@ func InsertManyExerciceQuestions(tx *sql.Tx, items ...ExerciceQuestion) error {
 	}
 
 	for _, item := range items {
-		_, err = stmt.Exec(item.IdExercice, item.IdQuestion, item.Bareme, item.Index)
+		_, err = stmt.Exec(
+			item.IdExercice,
+			item.IdQuestion,
+			item.Bareme,
+			item.Index,
+		)
 		if err != nil {
 			return err
 		}
@@ -399,7 +424,10 @@ func (item Link) Insert(db DB) error {
 			) VALUES (
 			$1, $2
 			);
-			`, item.Repas, item.IdTable1)
+			`,
+		item.Repas,
+		item.IdTable1,
+	)
 	if err != nil {
 		return err
 	}
@@ -422,7 +450,10 @@ func InsertManyLinks(tx *sql.Tx, items ...Link) error {
 	}
 
 	for _, item := range items {
-		_, err = stmt.Exec(item.Repas, item.IdTable1)
+		_, err = stmt.Exec(
+			item.Repas,
+			item.IdTable1,
+		)
 		if err != nil {
 			return err
 		}
@@ -558,7 +589,9 @@ func (item Progression) Insert(tx DB) (out Progression, err error) {
 		) VALUES (
 		$1
 		) RETURNING id, idexercice;
-		`, item.IdExercice)
+		`,
+		item.IdExercice,
+	)
 	return ScanProgression(row)
 }
 
@@ -569,7 +602,10 @@ func (item Progression) Update(tx DB) (out Progression, err error) {
 		) = (
 		$1
 		) WHERE id = $2 RETURNING id, idexercice;
-		`, item.IdExercice, item.Id)
+		`,
+		item.IdExercice,
+		item.Id,
+	)
 	return ScanProgression(row)
 }
 
@@ -645,7 +681,12 @@ func (item ProgressionQuestion) Insert(db DB) error {
 			) VALUES (
 			$1, $2, $3, $4
 			);
-			`, item.IdProgression, item.IdExercice, item.Index, item.History)
+			`,
+		item.IdProgression,
+		item.IdExercice,
+		item.Index,
+		item.History,
+	)
 	if err != nil {
 		return err
 	}
@@ -670,7 +711,12 @@ func InsertManyProgressionQuestions(tx *sql.Tx, items ...ProgressionQuestion) er
 	}
 
 	for _, item := range items {
-		_, err = stmt.Exec(item.IdProgression, item.IdExercice, item.Index, item.History)
+		_, err = stmt.Exec(
+			item.IdProgression,
+			item.IdExercice,
+			item.Index,
+			item.History,
+		)
 		if err != nil {
 			return err
 		}
@@ -866,7 +912,13 @@ func (item Question) Insert(tx DB) (out Question, err error) {
 		) VALUES (
 		$1, $2, $3, $4, $5
 		) RETURNING id, page, public, idteacher, description, needexercice;
-		`, item.Page, item.Public, item.IdTeacher, item.Description, item.NeedExercice)
+		`,
+		item.Page,
+		item.Public,
+		item.IdTeacher,
+		item.Description,
+		item.NeedExercice,
+	)
 	return ScanQuestion(row)
 }
 
@@ -877,7 +929,14 @@ func (item Question) Update(tx DB) (out Question, err error) {
 		) = (
 		$1, $2, $3, $4, $5
 		) WHERE id = $6 RETURNING id, page, public, idteacher, description, needexercice;
-		`, item.Page, item.Public, item.IdTeacher, item.Description, item.NeedExercice, item.Id)
+		`,
+		item.Page,
+		item.Public,
+		item.IdTeacher,
+		item.Description,
+		item.NeedExercice,
+		item.Id,
+	)
 	return ScanQuestion(row)
 }
 
@@ -949,7 +1008,10 @@ func (item QuestionTag) Insert(db DB) error {
 			) VALUES (
 			$1, $2
 			);
-			`, item.Tag, item.IdQuestion)
+			`,
+		item.Tag,
+		item.IdQuestion,
+	)
 	if err != nil {
 		return err
 	}
@@ -972,7 +1034,10 @@ func InsertManyQuestionTags(tx *sql.Tx, items ...QuestionTag) error {
 	}
 
 	for _, item := range items {
-		_, err = stmt.Exec(item.Tag, item.IdQuestion)
+		_, err = stmt.Exec(
+			item.Tag,
+			item.IdQuestion,
+		)
 		if err != nil {
 			return err
 		}
@@ -1148,7 +1213,10 @@ func (item Repas) Insert(tx DB) (out Repas, err error) {
 		) VALUES (
 		$1, $2
 		) RETURNING order, id, v;
-		`, item.Order, item.V)
+		`,
+		item.Order,
+		item.V,
+	)
 	return ScanRepas(row)
 }
 
@@ -1159,7 +1227,11 @@ func (item Repas) Update(tx DB) (out Repas, err error) {
 		) = (
 		$1, $2
 		) WHERE id = $3 RETURNING order, id, v;
-		`, item.Order, item.V, item.Id)
+		`,
+		item.Order,
+		item.V,
+		item.Id,
+	)
 	return ScanRepas(row)
 }
 
@@ -1266,7 +1338,20 @@ func (item Table1) Insert(tx DB) (out Table1, err error) {
 		) VALUES (
 		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 		) RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance, cp2;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.OptKey, item.Advance, item.Cp2)
+		`,
+		item.Ex1,
+		item.Ex2,
+		item.L,
+		item.Other,
+		item.F,
+		item.Strings,
+		item.Cp,
+		item.External,
+		item.BoolArray,
+		item.OptKey,
+		item.Advance,
+		item.Cp2,
+	)
 	return ScanTable1(row)
 }
 
@@ -1277,7 +1362,21 @@ func (item Table1) Update(tx DB) (out Table1, err error) {
 		) = (
 		$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 		) WHERE id = $13 RETURNING id, ex1, ex2, l, other, f, strings, cp, external, boolarray, optkey, advance, cp2;
-		`, item.Ex1, item.Ex2, item.L, item.Other, item.F, item.Strings, item.Cp, item.External, item.BoolArray, item.OptKey, item.Advance, item.Cp2, item.Id)
+		`,
+		item.Ex1,
+		item.Ex2,
+		item.L,
+		item.Other,
+		item.F,
+		item.Strings,
+		item.Cp,
+		item.External,
+		item.BoolArray,
+		item.OptKey,
+		item.Advance,
+		item.Cp2,
+		item.Id,
+	)
 	return ScanTable1(row)
 }
 
@@ -1545,7 +1644,10 @@ func (item WithOptionalTime) Insert(tx DB) (out WithOptionalTime, err error) {
 		) VALUES (
 		$1, $2
 		) RETURNING id, deadine, deadineopt;
-		`, item.Deadine, item.DeadineOpt)
+		`,
+		item.Deadine,
+		item.DeadineOpt,
+	)
 	return ScanWithOptionalTime(row)
 }
 
@@ -1556,7 +1658,11 @@ func (item WithOptionalTime) Update(tx DB) (out WithOptionalTime, err error) {
 		) = (
 		$1, $2
 		) WHERE id = $3 RETURNING id, deadine, deadineopt;
-		`, item.Deadine, item.DeadineOpt, item.Id)
+		`,
+		item.Deadine,
+		item.DeadineOpt,
+		item.Id,
+	)
 	return ScanWithOptionalTime(row)
 }
 

@@ -812,12 +812,12 @@ func newColumnsCode(ta sql.Table) columnsCode {
 
 	return columnsCode{
 		goScanFields:         strings.Join(scanFields, "\n"),
-		goValueFields:        strings.Join(valueFields, ", "),
+		goValueFields:        strings.Join(valueFields, ",\n"),
 		sqlQuotedColumnNames: strings.Join(quotedColumnNames, "\n"),
 		sqlColumnNames:       strings.Join(columnNames, ", "),
 		sqlPlaceholders:      strings.Join(placeholders, ", "),
 
-		goValueFieldsNoPrimary:   strings.Join(valueFieldsNoPrimary, ", "),
+		goValueFieldsNoPrimary:   strings.Join(valueFieldsNoPrimary, ",\n"),
 		sqlColumnNamesNoPrimary:  strings.Join(columnNamesNoPrimary, ", "),
 		sqlPlaceholdersNoPrimary: strings.Join(placeholdersNoPrimary, ", "),
 

@@ -81,7 +81,9 @@ func (ctx context) generateLinkTable(ta sql.Table, cols columnsCode) gen.Declara
 			) VALUES (
 			%[10]s
 			);
-			`+"`,"+`%[5]s)
+			`+"`,"+`
+			%[5]s,
+			)
 		if err != nil {
 			return err
 		}
@@ -103,7 +105,9 @@ func (ctx context) generateLinkTable(ta sql.Table, cols columnsCode) gen.Declara
 		}
 
 		for _, item := range items {
-			_, err = stmt.Exec(%[5]s)
+			_, err = stmt.Exec(
+			%[5]s,
+			)
 			if err != nil {
 				return err
 			}

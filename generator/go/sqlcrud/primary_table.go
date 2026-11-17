@@ -90,7 +90,9 @@ func (item %[1]s) Insert(tx DB) (out %[1]s, err error) {
 		) VALUES (
 		%[6]s
 		) RETURNING %[10]s;
-		`+"`,"+`%[7]s)
+		`+"`,"+`
+		%[7]s,
+		)
 	return Scan%[1]s(row)
 }
 
@@ -101,7 +103,10 @@ func (item %[1]s) Update(tx DB) (out %[1]s, err error) {
 		) = (
 		%[6]s
 		) WHERE id = $%[8]d RETURNING %[10]s;
-		`+"`,"+`%[7]s, item.%[9]s)
+		`+"`,"+`
+		%[7]s, 
+		item.%[9]s,
+		)
 	return Scan%[1]s(row)
 }
 
