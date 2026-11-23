@@ -186,6 +186,11 @@ type Table struct {
 
 	uniquesCols [][]string // not filtered
 
+	// Columns covered by a CREATE UNIQUE INDEX comment. They generate
+	// single-row selectors, but do not mark foreign keys as unique:
+	// partial indexes only enforce uniqueness for matching rows.
+	indexUniqueCols [][]string
+
 	selectKeys [][]string
 }
 
@@ -239,6 +244,10 @@ func (ta *Table) processComments(comments []an.SpecialComment) {
 			ta.uniquesCols = append(ta.uniquesCols, columns)
 		}
 
+		if columns := isUniqueIndexColumns(comment.Content); len(columns) != 0 {
+			ta.indexUniqueCols = append(ta.indexUniqueCols, columns)
+		}
+
 		if colums := isSelectKey(comment.Content); len(colums) != 0 {
 			ta.selectKeys = append(ta.selectKeys, colums)
 			// do not add the comment to CustomConstraints
@@ -281,9 +290,9 @@ func (ta Table) columnsByName() map[string]Column {
 }
 
 // `AdditionalUniqueCols` returns the columns which have a
-// UNIQUE constraint.
-// The columns returned by `ForeignKeys` are not included,
-// since they usually require additional handling.
+// UNIQUE constraint, either through ADD UNIQUE or CREATE UNIQUE INDEX.
+// Foreign keys covered by ADD UNIQUE are not included,
+// since they are handled by `ForeignKeys`.
 func (ta Table) AdditionalUniqueCols() [][]Column {
 	foreignKeys := make(map[string]bool)
 	for _, key := range ta.ForeignKeys() {
@@ -298,18 +307,26 @@ func (ta Table) AdditionalUniqueCols() [][]Column {
 		if len(colNames) == 1 && foreignKeys[colNames[0]] {
 			continue
 		}
-		cols := make([]Column, len(colNames))
-		for i, name := range colNames {
-			var ok bool
-			cols[i], ok = colsByName[name]
-			if !ok {
-				panic(fmt.Sprintf("unknown column name %s in table %s", name, ta.TableName()))
-			}
-		}
-
-		out = append(out, cols)
+		out = append(out, ta.columnsForNames(colsByName, colNames))
+	}
+	// Unique indexes do not set ForeignKey.IsUnique, so their columns
+	// are all included here, including foreign keys.
+	for _, colNames := range ta.indexUniqueCols {
+		out = append(out, ta.columnsForNames(colsByName, colNames))
 	}
 	return out
+}
+
+func (ta Table) columnsForNames(colsByName map[string]Column, colNames []string) []Column {
+	cols := make([]Column, len(colNames))
+	for i, name := range colNames {
+		var ok bool
+		cols[i], ok = colsByName[name]
+		if !ok {
+			panic(fmt.Sprintf("unknown column name %s in table %s", name, ta.TableName()))
+		}
+	}
+	return cols
 }
 
 // SelectKeys returns a list of keys for which 'SelectByXXX' and 'DeleteByXXX' functions

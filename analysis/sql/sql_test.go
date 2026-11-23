@@ -58,6 +58,12 @@ func TestSQL(t *testing.T) {
 	exercicesQuestion := NewTable(an.Types[Lookup(an.Pkg, "ExerciceQuestion")].(*analysis.Struct))
 	Assert(t, len(exercicesQuestion.AdditionalUniqueCols()) == 1)
 
+	questionTag := NewTable(an.Types[Lookup(an.Pkg, "QuestionTag")].(*analysis.Struct))
+	// ADD UNIQUE(IdQuestion, Tag) and CREATE UNIQUE INDEX(Tag) both yield a selector,
+	// but the index must not change the foreign key handling.
+	Assert(t, len(questionTag.AdditionalUniqueCols()) == 2)
+	Assert(t, len(questionTag.ForeignKeys()) == 1 && !questionTag.ForeignKeys()[0].IsUnique)
+
 	withOptTime := NewTable(an.Types[Lookup(an.Pkg, "WithOptionalTime")].(*analysis.Struct))
 	Assert(t, len(withOptTime.Columns) == 3)
 	bt, ok := withOptTime.Columns[1].SQLType.(Builtin)

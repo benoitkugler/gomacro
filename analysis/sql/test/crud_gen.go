@@ -1106,6 +1106,16 @@ func SelectQuestionTagByIdQuestionAndTag(tx DB, idQuestion int64, tag string) (i
 	return item, true, err
 }
 
+// SelectQuestionTagByTag return zero or one item, thanks to a UNIQUE SQL constraint.
+func SelectQuestionTagByTag(tx DB, tag string) (item QuestionTag, found bool, err error) {
+	row := tx.QueryRow("SELECT tag, idquestion FROM question_tags WHERE Tag = $1", tag)
+	item, err = ScanQuestionTag(row)
+	if err == sql.ErrNoRows {
+		return item, false, nil
+	}
+	return item, true, err
+}
+
 // NeedExercices returns the list of non null NeedExercice
 // contained in this table.
 // They are not garanteed to be distinct.
