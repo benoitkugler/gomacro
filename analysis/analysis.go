@@ -15,6 +15,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -260,6 +261,32 @@ func fetchEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
 	return outEnums, outUnions
 }
 
+type enumsUnions struct {
+	enums  enumsMap
+	unions unionsMap
+}
+
+// enumsUnionsCache reuses the enums and unions of a root package across the
+// analyses built from its files. The package graph does not change once
+// packages.Load has returned, so one entry per root package is enough.
+var enumsUnionsCache sync.Map // map[*packages.Package]enumsUnions
+
+// cachedEnumsAndUnions returns the enums and unions for pa, computing them
+// only once per root package. The returned maps are shared between callers
+// and must be treated as read-only.
+func cachedEnumsAndUnions(pa *packages.Package) (enumsMap, unionsMap) {
+	if cached, ok := enumsUnionsCache.Load(pa); ok {
+		result := cached.(enumsUnions)
+		return result.enums, result.unions
+	}
+
+	enums, unions := fetchEnumsAndUnions(pa)
+	// LoadOrStore keeps a single result if called concurrently.
+	actual, _ := enumsUnionsCache.LoadOrStore(pa, enumsUnions{enums: enums, unions: unions})
+	result := actual.(enumsUnions)
+	return result.enums, result.unions
+}
+
 // Analysis is the result of analyzing one package.
 type Analysis struct {
 	// Types adds the additional analysis of this package,
@@ -325,7 +352,7 @@ func NewAnalysisFromTypes(pkg *packages.Package, source []types.Type) *Analysis 
 
 func (an *Analysis) populateTypes(pa *packages.Package) {
 	log.Println("Fetching enums and unions....")
-	enums, unions := fetchEnumsAndUnions(pa)
+	enums, unions := cachedEnumsAndUnions(pa)
 
 	ctx := context{enums: enums, unions: unions, rootPackage: pa}
 
