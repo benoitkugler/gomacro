@@ -186,28 +186,36 @@ func saveOutputs(commonDir, dartOutputDir string, dartAnalysis []*analysis.Analy
 
 	fmt.Println("Code generated. Saving and formatting...")
 
+	type formatJob struct {
+		format generator.Format
+		file   string
+	}
+
+	jobs := make(chan formatJob)
 	var wg sync.WaitGroup
+	wg.Go(func() {
+		for job := range jobs {
+			if err := fmts.FormatFile(job.format, job.file); err != nil {
+				panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", job.file, err))
+			}
+			fmt.Println("\tDone formatting", job.file)
+		}
+	})
+
+	var writeErr error
 	for _, out := range outputs {
 		output := out.file
-		format := out.format
-		err := os.WriteFile(output, []byte(out.content), os.ModePerm)
-		if err != nil {
-			return err
+		if err := os.WriteFile(output, []byte(out.content), os.ModePerm); err != nil {
+			writeErr = err
+			break
 		}
 
 		fmt.Printf("\tCode written to %s (pending formatting).\n", output)
-
-		wg.Go(func() {
-			err = fmts.FormatFile(format, output)
-			if err != nil {
-				panic(fmt.Sprintf("formatting %s failed: generated code is probably incorrect: %s", output, err))
-			}
-			fmt.Println("\tDone formatting", output)
-		})
+		jobs <- formatJob{format: out.format, file: output}
 	}
-	fmt.Println("Waiting for formatters...")
+	close(jobs)
 	wg.Wait()
-	return nil
+	return writeErr
 }
 
 // configuration file based API
