@@ -473,7 +473,20 @@ func (ctx context) generateSelectByUniques(ta sql.Table, code columnsCode) gen.D
 	var content string
 	goTypeName := ta.TableName()
 	sqlTableName := gen.SQLTableName(goTypeName)
+
+	// Constraints including the primary key are already covered by
+	// Select<Table>(tx, id), so they do not need a selector here.
+	primaryName := ""
+	if primary := ta.Primary(); primary >= 0 {
+		primaryName = ta.Columns[primary].Field.Field.Name()
+	}
+
 	for _, cols := range ta.AdditionalUniqueCols() {
+		if primaryName != "" && slices.ContainsFunc(cols, func(col sql.Column) bool {
+			return col.Field.Field.Name() == primaryName
+		}) {
+			continue
+		}
 		comparison := columnsComparison(cols)
 		funcTitle := columsFuncTitle(cols)
 		varNames, varDecls := ctx.columsVarDecls(cols)

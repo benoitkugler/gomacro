@@ -2,6 +2,7 @@ package sqlcrud
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/benoitkugler/gomacro/analysis"
@@ -38,6 +39,20 @@ func TestPrintID(t *testing.T) {
 	ctx := context{ana, nil, make(generator.Cache), true}
 	Assert(t, ctx.typeName(table1ID) == "int64")
 	Assert(t, ctx.typeName(repasID) == "RepasID")
+}
+
+func TestSelectByUniques(t *testing.T) {
+	var out strings.Builder
+	for _, decl := range Generate(ana, true) {
+		out.WriteString(decl.Content)
+	}
+	generated := out.String()
+
+	// ADD UNIQUE(Id, IdExercice) is already covered by SelectProgression(tx, id).
+	Assert(t, !strings.Contains(generated, "func SelectProgressionByIdAndIdExercice("))
+	// Constraints without the primary key still get their selector.
+	Assert(t, strings.Contains(generated, "func SelectQuestionTagByTag("))
+	Assert(t, strings.Contains(generated, "func SelectExerciceQuestionByIdExerciceAndIndex("))
 }
 
 func TestGenerate(t *testing.T) {

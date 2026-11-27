@@ -821,16 +821,6 @@ func SelectProgressionQuestionByIdProgressionAndIndex(tx DB, idProgression IdPro
 	return item, true, err
 }
 
-// SelectProgressionByIdAndIdExercice return zero or one item, thanks to a UNIQUE SQL constraint.
-func SelectProgressionByIdAndIdExercice(tx DB, id IdProgression, idExercice int64) (item Progression, found bool, err error) {
-	row := tx.QueryRow("SELECT id, idexercice FROM progressions WHERE Id = $1 AND IdExercice = $2", id, idExercice)
-	item, err = ScanProgression(row)
-	if err == sql.ErrNoRows {
-		return item, false, nil
-	}
-	return item, true, err
-}
-
 func scanOneQuestion(row scanner) (Question, error) {
 	var item Question
 	err := row.Scan(
